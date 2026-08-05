@@ -1,0 +1,59 @@
+{
+  "generatedAt": "2026-08-05T15:49:17.810Z",
+  "profile": {
+    "login": "siruimei07",
+    "name": "Sirui Mei",
+    "avatar_url": "/assets/avatar.jpg",
+    "html_url": "https://github.com/siruimei07",
+    "bio": "Undergraduate student at University of Toronto",
+    "location": null,
+    "followers": 5,
+    "following": 5,
+    "public_repos": 1
+  },
+  "repositories": [
+    {
+      "id": -1,
+      "name": "GUI-for-RePKG",
+      "full_name": "siruimei07/GUI-for-RePKG",
+      "html_url": "https://github.com/siruimei07/GUI-for-RePKG",
+      "description": "An extensible C# WPF frontend with an Endfield-inspired maximal UI, rich motion, responsive navigation, and backend extension points.",
+      "homepage": null,
+      "language": "C#",
+      "stargazers_count": 4,
+      "forks_count": null,
+      "topics": [],
+      "updated_at": null,
+      "visibility": "public",
+      "archived": false,
+      "fork": false
+    }
+  ],
+  "events": [],
+  "contributions": [
+    {
+      "date": "2025-09-11",
+      "level": 4,
+      "count": 1,
+      "label": "1 contribution on September 11th."
+    },
+    {
+      "date": "2026-08-03",
+      "level": 1,
+      "count": 3,
+      "label": "3 contributions on August 3rd."
+    },
+    {
+      "date": "2026-08-04",
+      "level": 4,
+      "count": 13,
+      "label": "13 contributions on August 4th."
+    },
+    {
+      "date": "2026-08-05",
+      "level": 1,
+      "count": 2,
+      "label": "2 contributions on August 5th."
+    }
+  ]
+}
