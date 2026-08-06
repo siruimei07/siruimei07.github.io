@@ -47,25 +47,8 @@ type ContributionPayload = {
 
 const FIRST_PROFILE_YEAR = 2025;
 const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
-const REVEAL_SESSION_KEY = "sirui-contribution-reveal-v1";
 const SWEEPER_LOAD_GRACE_MS = 1400;
 const SWEEPER_ANIMATION_MS = 3900;
-
-function hasPlayedContributionReveal() {
-  try {
-    return window.sessionStorage.getItem(REVEAL_SESSION_KEY) === "played";
-  } catch {
-    return false;
-  }
-}
-
-function rememberContributionReveal() {
-  try {
-    window.sessionStorage.setItem(REVEAL_SESSION_KEY, "played");
-  } catch {
-    // Storage can be disabled without affecting the contribution calendar.
-  }
-}
 
 // A small, truthful last-known snapshot keeps the profile useful if GitHub is
 // temporarily unreachable. The same dates are replaced by the GitHub Pages
@@ -193,21 +176,39 @@ function snapshotForRange(from: string, to: string) {
   return CONTRIBUTION_SNAPSHOT.filter((entry) => entry.date >= from && entry.date <= to);
 }
 
-function normalizeEntries(payload: ContributionPayload) {
-  if (!Array.isArray(payload.contributions)) throw new Error("Malformed contribution response");
+function isRealIsoDate(value: unknown): value is string {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split("-").map(Number);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+  return parsed.getUTCFullYear() === year
+    && parsed.getUTCMonth() === month - 1
+    && parsed.getUTCDate() === day;
+}
 
-  return payload.contributions.flatMap((entry) => {
-    const validDate = /^\d{4}-\d{2}-\d{2}$/.test(entry?.date ?? "");
-    const validLevel = Number.isInteger(entry?.level) && entry.level >= 0 && entry.level <= 4;
-    const validCount = Number.isInteger(entry?.count) && entry.count >= 0;
-    if (!validDate || !validLevel || !validCount) return [];
-    return [{
+function normalizeEntries(payload: ContributionPayload) {
+  if (!payload || typeof payload !== "object" || !Array.isArray(payload.contributions)) {
+    throw new Error("Malformed contribution response");
+  }
+
+  const entriesByDate = new Map<string, ContributionEntry>();
+  payload.contributions.forEach((entry) => {
+    const validLevel = Number.isSafeInteger(entry?.level) && entry.level >= 0 && entry.level <= 4;
+    const validCount = Number.isSafeInteger(entry?.count) && entry.count >= 0;
+    if (!isRealIsoDate(entry?.date) || !validLevel || !validCount) return;
+
+    const fallbackLabel = `${entry.count} contributions on ${entry.date}`;
+    const label = typeof entry.label === "string" && entry.label.trim()
+      ? entry.label.trim().slice(0, 240)
+      : fallbackLabel;
+    entriesByDate.set(entry.date, {
       date: entry.date,
       level: entry.level as ContributionLevel,
       count: entry.count,
-      label: entry.label || `${entry.count} contributions on ${entry.date}`,
-    }];
+      label,
+    });
   });
+
+  return [...entriesByDate.values()].sort((left, right) => left.date.localeCompare(right.date));
 }
 
 function ContributionGraph({
@@ -341,7 +342,13 @@ function ActivitySummary({
   );
 }
 
-export function ContributionExplorer({ onRevealComplete }: { onRevealComplete?: () => void }) {
+export function ContributionExplorer({
+  active = true,
+  onRevealComplete,
+}: {
+  active?: boolean;
+  onRevealComplete?: () => void;
+}) {
   const [today, setToday] = useState(() => startOfLocalDay(new Date()));
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
@@ -397,14 +404,16 @@ export function ContributionExplorer({ onRevealComplete }: { onRevealComplete?: 
   }, []);
 
   useEffect(() => {
+    if (!active) return;
     const refreshTimer = window.setInterval(() => setRefreshTick((tick) => tick + 1), REFRESH_INTERVAL_MS);
     return () => window.clearInterval(refreshTimer);
-  }, []);
+  }, [active]);
 
   useEffect(() => {
+    if (!active) return;
     const controller = new AbortController();
     const abortTimer = window.setTimeout(() => controller.abort(), 8000);
-    let active = true;
+    let requestActive = true;
     const saved = cache.current.get(graph.key);
     const fallback = snapshotForRange(graph.from, graph.to);
 
@@ -417,6 +426,7 @@ export function ContributionExplorer({ onRevealComplete }: { onRevealComplete?: 
     fetch(`/data/github.json?v=${refreshTick}`, {
       cache: "no-store",
       credentials: "same-origin",
+      headers: { Accept: "application/json" },
       signal: controller.signal,
     })
       .then(async (response) => {
@@ -424,14 +434,14 @@ export function ContributionExplorer({ onRevealComplete }: { onRevealComplete?: 
         return response.json() as Promise<ContributionPayload>;
       })
       .then((payload) => {
-        if (!active) return;
+        if (!requestActive) return;
         const entries = normalizeEntries(payload)
           .filter((entry) => entry.date >= graph.from && entry.date <= graph.to);
         cache.current.set(graph.key, entries);
         setResult({ key: graph.key, entries, status: "github" });
       })
       .catch((error: unknown) => {
-        if (!active) return;
+        if (!requestActive) return;
         if (controller.signal.aborted && error instanceof DOMException && error.name === "AbortError") {
           setResult({ key: graph.key, entries: fallback, status: fallback.length ? "snapshot" : "error" });
           return;
@@ -441,18 +451,17 @@ export function ContributionExplorer({ onRevealComplete }: { onRevealComplete?: 
       .finally(() => window.clearTimeout(abortTimer));
 
     return () => {
-      active = false;
+      requestActive = false;
       window.clearTimeout(abortTimer);
       controller.abort();
     };
-  }, [graph.from, graph.key, graph.to, refreshTick]);
+  }, [active, graph.from, graph.key, graph.to, refreshTick]);
 
   useLayoutEffect(() => {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const hasPlayed = hasPlayedContributionReveal();
 
     const prepareFrame = window.requestAnimationFrame(() => {
-      if (!reduceMotion && !hasPlayed) setRevealPhase("preparing");
+      if (!reduceMotion) setRevealPhase("preparing");
       setRevealConfigured(true);
     });
     return () => window.cancelAnimationFrame(prepareFrame);
@@ -467,7 +476,6 @@ export function ContributionExplorer({ onRevealComplete }: { onRevealComplete?: 
   useEffect(() => {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const finishImmediately = () => {
-      rememberContributionReveal();
       setRevealPhase("done");
     };
 
@@ -507,7 +515,6 @@ export function ContributionExplorer({ onRevealComplete }: { onRevealComplete?: 
     // This effect deliberately has no persistent ref guard; React Strict Mode
     // may probe it twice in development, and the second pass must reschedule it.
     const startTimer = window.setTimeout(() => {
-      rememberContributionReveal();
       setRevealPhase("running");
     }, 220);
     return () => window.clearTimeout(startTimer);
@@ -591,6 +598,10 @@ export function ContributionExplorer({ onRevealComplete }: { onRevealComplete?: 
                         ref={sweeperImage}
                         src="/assets/contribution-sweeper.gif"
                         alt=""
+                        width={1024}
+                        height={1024}
+                        decoding="async"
+                        fetchPriority="high"
                         onLoad={() => setSweeperReady(true)}
                         onError={() => setSweeperReady(true)}
                       />
@@ -628,7 +639,7 @@ export function ContributionExplorer({ onRevealComplete }: { onRevealComplete?: 
       </section>
 
       <section id="activity" className="section-block activity-section" aria-labelledby="activity-title">
-        <img className="activity-reader" src="/assets/study-reader.gif" alt="" aria-hidden="true" />
+        <img className="activity-reader" src="/assets/study-reader.gif" alt="" aria-hidden="true" width={1024} height={1024} loading="lazy" decoding="async" fetchPriority="low" />
         <div className="activity-title-row">
           <span className="section-kicker">{selectedYear === null ? "LATEST / THROUGH TODAY" : `YEAR ${selectedYear}`}</span>
           <h2 id="activity-title">Contribution activity</h2>
@@ -647,7 +658,7 @@ export function ContributionExplorer({ onRevealComplete }: { onRevealComplete?: 
           className="show-more"
           href={`https://github.com/siruimei07?tab=overview&from=${graph.from}&to=${graph.to}`}
           target="_blank"
-          rel="noreferrer"
+          rel="noopener noreferrer"
         >
           Open this period on GitHub
         </a>

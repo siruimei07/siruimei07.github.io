@@ -78,7 +78,7 @@ export function SummerFlight() {
         <span className="flight-bubble bubble-one" />
         <span className="flight-bubble bubble-two" />
         <span className="flight-bubble bubble-three" />
-        <img src="/assets/paper-flight.gif" alt="" />
+        <img src="/assets/paper-flight.gif" alt="" width={1024} height={1024} decoding="async" fetchPriority="low" />
       </div>
     </div>
   );

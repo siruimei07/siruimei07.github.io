@@ -72,7 +72,7 @@ test("configures vinext for a trailing-slash static export", async () => {
   assert.match(config, /\btrailingSlash\s*:\s*true/);
 });
 
-test("loads static contribution data while preserving dynamic years and the first-visit reveal", async () => {
+test("loads static contribution data while preserving dynamic years and the reload reveal", async () => {
   const [component, css] = await Promise.all([
     readProjectFile("app/ContributionExplorer.tsx"),
     readProjectFile("app/globals.css"),
@@ -90,16 +90,17 @@ test("loads static contribution data while preserving dynamic years and the firs
   assert.match(component, /createYearModel\(selectedYear,\s*today\)/);
   assert.match(component, /const\s+nextMidnight\s*=\s*new Date/);
   assert.match(component, /setInterval\([^,]+,\s*REFRESH_INTERVAL_MS\)/s);
+  assert.match(component, /if\s*\(!active\)\s*return;[\s\S]*?setInterval\([^,]+,\s*REFRESH_INTERVAL_MS\)/);
+  assert.match(component, /\},\s*\[active\]\);/);
   assert.match(component, /aria-pressed=\{selectedYear\s*===\s*null\}/);
   assert.match(component, /aria-pressed=\{selectedYear\s*===\s*year\}/);
 
-  assert.match(component, /const\s+REVEAL_SESSION_KEY\s*=\s*["'][^"']+["']/);
-  assert.match(component, /sessionStorage\.getItem\(REVEAL_SESSION_KEY\)\s*===\s*["']played["']/);
-  assert.match(component, /sessionStorage\.setItem\(REVEAL_SESSION_KEY,\s*["']played["']\)/);
+  assert.doesNotMatch(component, /REVEAL_SESSION_KEY|sessionStorage/);
   assert.match(component, /useState<RevealPhase>\(["']done["']\)/);
   assert.match(component, /SWEEPER_LOAD_GRACE_MS/);
   assert.match(component, /SWEEPER_ANIMATION_MS/);
   assert.match(component, /src=["']\/assets\/contribution-sweeper\.gif["']/);
+  assert.match(component, /if\s*\(!reduceMotion\)\s*setRevealPhase\(["']preparing["']\)/);
   assert.match(component, /setRevealPhase\(["']preparing["']\)/);
   assert.match(component, /setRevealPhase\(["']running["']\)/);
   assert.match(component, /setRevealPhase\(["']done["']\)/);
@@ -113,18 +114,24 @@ test("loads static contribution data while preserving dynamic years and the firs
   assert.match(css, /prefers-reduced-motion[\s\S]*?\.contribution-data[\s\S]*?clip-path\s*:\s*none\s*!important/);
 });
 
-test("runs the avatar mascot handoff once per browsing session", async () => {
+test("replays on reload, delays unvisited views, and runs the mascot handoff once per page lifecycle", async () => {
   const [page, css] = await Promise.all([
     readProjectFile("app/page.tsx"),
     readProjectFile("app/globals.css"),
   ]);
 
-  assert.match(page, /sirui-avatar-mascot-state-v1/);
-  assert.match(page, /sirui-avatar-mascot-switch-v1/);
+  assert.doesNotMatch(page, /sirui-avatar-mascot-state-v1|sirui-avatar-mascot-switch-v1|sessionStorage/);
+  assert.match(page, /performance\.getEntriesByType\(["']navigation["']\)/);
+  assert.match(page, /navigation\?\.type\s*===\s*["']reload["']/);
+  assert.match(page, /history\.replaceState\(null,\s*["']["'],\s*["']#overview["']\)/);
   assert.match(page, /scheduleMascotPhase\(["']bike-enter["'],\s*2000\)/);
   assert.match(page, /scheduleMascotPhase\(["']sitter-enter["'],\s*1000\)/);
   assert.match(page, /if\s*\(mascotSwitchConsumedRef\.current\)\s*return/);
-  assert.match(page, /<ContributionExplorer\s+onRevealComplete=\{handleContributionRevealComplete\}/);
+  assert.match(page, /useState<ReadonlySet<ProfileView>>/);
+  assert.match(page, /new Set<ProfileView>\(\[["']overview["']\]\)/);
+  assert.match(page, /mountedViews\.has\(["']repositories["']\)\s*&&\s*<RepositoriesPanel/);
+  assert.match(page, /mountedViews\.has\(["']activity["']\)\s*&&\s*<ActivityPanel/);
+  assert.match(page, /<ContributionExplorer[\s\S]*?active=\{activeView\s*===\s*["']overview["']\}[\s\S]*?onRevealComplete=\{handleContributionRevealComplete\}/);
   assert.match(css, /@keyframes\s+avatar-bike-enter/);
   assert.match(css, /@keyframes\s+avatar-bike-exit/);
   assert.match(css, /@keyframes\s+avatar-sitter-enter/);
@@ -148,10 +155,13 @@ test("uses the deployed GitHub snapshot whenever live public API requests fail",
   assert.match(panels, /fetch\(`\/data\/github\.json\?v=\$\{Date\.now\(\)\}`/);
   assert.match(panels, /fetchDeployedSnapshot\(\)\.catch\(\(\)\s*=>\s*null\)/);
   assert.match(panels, /Promise\.allSettled\(\[/);
-  assert.match(panels, /data:\s*deployed\?\.profile\s*\?\?\s*FALLBACK_PROFILE/);
   assert.match(panels, /data:\s*deployed\?\.repositories\s*\?\?\s*FALLBACK_REPOSITORIES/);
   assert.match(panels, /data:\s*deployed\.events,[\s\S]*?source:\s*["']snapshot["']/);
   assert.match(panels, /Latest deployed snapshot:/);
+  assert.match(panels, /payload\.repositories[\s\S]*?\.map\(normalizeRepository\)/);
+  assert.match(panels, /payload\.events[\s\S]*?\.map\(normalizeEvent\)/);
+  assert.doesNotMatch(panels, /GitHubProfile|FALLBACK_PROFILE|profileResult/);
+  assert.doesNotMatch(panels, /fetchGitHubPage<[^>]*Profile>\(GITHUB_API\)/);
   assert.match(panels, /export\s+function\s+RepositoriesPanel/);
   assert.match(panels, /export\s+function\s+ActivityPanel/);
 });
@@ -181,6 +191,55 @@ test("uses real PushEvent payload fallbacks instead of displaying zero commits",
   assert.match(panels, /arrayLengthValue\(payload,\s*["']commits["']\)/);
   assert.match(panels, /size\s*===\s*null\s*\?\s*["']Pushed commits["']/);
   assert.doesNotMatch(panels, /numberValue\(payload,\s*["']size["']\)\s*\?\?\s*0/);
+});
+
+test("validates public GitHub data and only renders safe external URLs", async () => {
+  const [panels, contribution] = await Promise.all([
+    readProjectFile("app/GitHubProfilePanels.tsx"),
+    readProjectFile("app/ContributionExplorer.tsx"),
+  ]);
+
+  assert.match(panels, /const\s+MAX_ACTIVITY_ITEMS\s*=\s*25/);
+  assert.match(panels, /const\s+MAX_REPOSITORY_PAGES\s*=\s*100/);
+  assert.match(panels, /page\s*<=\s*MAX_REPOSITORY_PAGES/);
+  assert.match(panels, /per_page:\s*String\(MAX_ACTIVITY_ITEMS\)/);
+  assert.match(panels, /requestUrl\.origin\s*!==\s*GITHUB_API_ORIGIN/);
+  assert.match(panels, /function\s+safeHttpsUrl/);
+  assert.match(panels, /function\s+safeGitHubUrl/);
+  assert.match(panels, /\.map\(normalizeRepository\)/);
+  assert.match(panels, /\.map\(normalizeEvent\)/);
+  assert.match(panels, /safeGitHubValue\(forkee,\s*["']html_url["']\)/);
+  assert.doesNotMatch(panels, /href=\{repository\.(?:html_url|homepage)\}/);
+
+  assert.match(contribution, /function\s+isRealIsoDate/);
+  assert.match(contribution, /Number\.isSafeInteger\(entry\?\.level\)/);
+  assert.match(contribution, /Number\.isSafeInteger\(entry\?\.count\)/);
+  assert.match(contribution, /new Map<string,\s*ContributionEntry>/);
+  assert.match(contribution, /\.slice\(0,\s*240\)/);
+  assert.match(contribution, /let\s+requestActive\s*=\s*true/);
+});
+
+test("supplies intrinsic image sizes and isolates every new browsing context", async () => {
+  const sources = await Promise.all([
+    "app/page.tsx",
+    "app/ContributionExplorer.tsx",
+    "app/GitHubProfilePanels.tsx",
+    "app/SummerFlight.tsx",
+  ].map(readProjectFile));
+  const source = sources.join("\n");
+  const images = source.match(/<img\b[\s\S]*?\/>/g) ?? [];
+  assert.ok(images.length >= 20, "Expected all decorative and profile images to be present");
+  for (const image of images) {
+    assert.match(image, /\bwidth=\{/);
+    assert.match(image, /\bheight=\{/);
+    assert.match(image, /\bdecoding=["']async["']/);
+  }
+
+  const blankLinks = source.match(/<a\b[\s\S]*?target=["']_blank["'][\s\S]*?>/g) ?? [];
+  assert.ok(blankLinks.length > 0);
+  for (const link of blankLinks) {
+    assert.match(link, /rel=["']noopener noreferrer["']/);
+  }
 });
 
 test("ships a valid flat GitHub data snapshot", async () => {

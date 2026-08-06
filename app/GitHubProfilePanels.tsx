@@ -4,21 +4,12 @@ import { useEffect, useId, useState } from "react";
 
 const GITHUB_LOGIN = "siruimei07";
 const GITHUB_API = `https://api.github.com/users/${GITHUB_LOGIN}`;
+const GITHUB_API_ORIGIN = "https://api.github.com";
+const GITHUB_PROFILE_URL = `https://github.com/${GITHUB_LOGIN}`;
 const MAX_ACTIVITY_ITEMS = 25;
+const MAX_REPOSITORY_PAGES = 100;
 
 type SourceKind = "github" | "snapshot" | "unavailable";
-
-type GitHubProfile = {
-  login: string;
-  name: string | null;
-  avatar_url: string;
-  html_url: string;
-  bio: string | null;
-  location: string | null;
-  followers: number | null;
-  following: number | null;
-  public_repos: number | null;
-};
 
 type GitHubRepository = {
   id: number;
@@ -52,17 +43,15 @@ type Resource<T> = {
 };
 
 type GitHubSnapshot = {
-  profile: Resource<GitHubProfile>;
   repositories: Resource<GitHubRepository[]>;
   events: Resource<GitHubEvent[]>;
   loadedAt: string;
 };
 
 type StaticGitHubData = {
-  generatedAt?: string;
-  profile?: GitHubProfile;
-  repositories?: GitHubRepository[];
-  events?: GitHubEvent[];
+  generatedAt?: unknown;
+  repositories?: unknown;
+  events?: unknown;
 };
 
 type PanelProps = {
@@ -73,18 +62,6 @@ type EventDescription = {
   action: string;
   detail?: string;
   url: string;
-};
-
-const FALLBACK_PROFILE: GitHubProfile = {
-  login: GITHUB_LOGIN,
-  name: "Sirui Mei",
-  avatar_url: "/assets/avatar.jpg",
-  html_url: `https://github.com/${GITHUB_LOGIN}`,
-  bio: "Undergraduate student at University of Toronto",
-  location: null,
-  followers: 5,
-  following: 5,
-  public_repos: 1,
 };
 
 // This is deliberately labelled as a saved snapshot in the interface. Fields
@@ -139,12 +116,38 @@ function parseRateLimitReset(value: string | null) {
   return Number.isFinite(timestamp) && timestamp > 0 ? new Date(timestamp * 1000) : null;
 }
 
+function safeHttpsUrl(value: unknown) {
+  if (typeof value !== "string") return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
+function safeGitHubUrl(value: unknown) {
+  const safeUrl = safeHttpsUrl(value);
+  if (!safeUrl) return null;
+  const url = new URL(safeUrl);
+  return url.hostname === "github.com" ? url.href : null;
+}
+
+function safeGitHubValue(record: Record<string, unknown> | null, key: string) {
+  return safeGitHubUrl(stringValue(record, key));
+}
+
 async function fetchGitHubPage<T>(url: string) {
+  const requestUrl = new URL(url);
+  if (requestUrl.origin !== GITHUB_API_ORIGIN || !requestUrl.pathname.startsWith(`/users/${GITHUB_LOGIN}`)) {
+    throw new Error("Refused a GitHub API request outside the configured public profile");
+  }
+
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), 10_000);
 
   try {
-    const response = await fetch(url, {
+    const response = await fetch(requestUrl, {
       cache: "no-store",
       credentials: "omit",
       headers: {
@@ -182,7 +185,7 @@ async function fetchAllOwnerRepositories() {
   let page = 1;
   let nextPage = true;
 
-  while (nextPage) {
+  while (nextPage && page <= MAX_REPOSITORY_PAGES) {
     const query = new URLSearchParams({
       type: "owner",
       sort: "updated",
@@ -191,34 +194,74 @@ async function fetchAllOwnerRepositories() {
       page: String(page),
     });
     const result = await fetchGitHubPage<GitHubRepository[]>(`${GITHUB_API}/repos?${query}`);
-    repositories.push(...result.data);
+    if (!Array.isArray(result.data)) throw new Error("GitHub returned malformed repository data");
+    const normalized = result.data
+      .map(normalizeRepository)
+      .filter((repository): repository is GitHubRepository => repository !== null);
+    if (result.data.length > 0 && normalized.length === 0) {
+      throw new Error("GitHub repository data failed runtime validation");
+    }
+    repositories.push(...normalized);
     nextPage = hasNextPage(result.link);
     page += 1;
   }
+
+  if (nextPage) throw new Error("GitHub repository pagination exceeded the safe page limit");
 
   return repositories;
 }
 
 async function fetchRecentEvents() {
-  const query = new URLSearchParams({ per_page: "100" });
+  const query = new URLSearchParams({ per_page: String(MAX_ACTIVITY_ITEMS) });
   const result = await fetchGitHubPage<GitHubEvent[]>(`${GITHUB_API}/events/public?${query}`);
-  return result.data;
+  if (!Array.isArray(result.data)) throw new Error("GitHub returned malformed activity data");
+  return result.data
+    .map(normalizeEvent)
+    .filter((event): event is GitHubEvent => event !== null);
 }
 
 async function fetchDeployedSnapshot() {
-  const response = await fetch(`/data/github.json?v=${Date.now()}`, {
-    cache: "no-store",
-    credentials: "same-origin",
-  });
-  if (!response.ok) throw new Error(`Saved GitHub data returned ${response.status}`);
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 10_000);
 
-  const payload = await response.json() as StaticGitHubData;
-  return {
-    profile: payload.profile?.login ? payload.profile : FALLBACK_PROFILE,
-    repositories: Array.isArray(payload.repositories) ? payload.repositories : FALLBACK_REPOSITORIES,
-    events: Array.isArray(payload.events) ? payload.events : [],
-    generatedAt: typeof payload.generatedAt === "string" ? payload.generatedAt : null,
-  };
+  try {
+    const response = await fetch(`/data/github.json?v=${Date.now()}`, {
+      cache: "no-store",
+      credentials: "same-origin",
+      headers: { Accept: "application/json" },
+      signal: controller.signal,
+    });
+    if (!response.ok) throw new Error(`Saved GitHub data returned ${response.status}`);
+
+    const rawPayload = await response.json() as unknown;
+    if (!isRecord(rawPayload)) throw new Error("Saved GitHub data is malformed");
+    const payload = rawPayload as StaticGitHubData;
+    if (!Array.isArray(payload.repositories) || !Array.isArray(payload.events)) {
+      throw new Error("Saved GitHub data is missing repository or activity arrays");
+    }
+
+    const repositories = payload.repositories
+      .map(normalizeRepository)
+      .filter((repository): repository is GitHubRepository => repository !== null);
+    const events = payload.events
+      .map(normalizeEvent)
+      .filter((event): event is GitHubEvent => event !== null)
+      .slice(0, MAX_ACTIVITY_ITEMS);
+    if (payload.repositories.length > 0 && repositories.length === 0) {
+      throw new Error("Saved repository data failed runtime validation");
+    }
+    if (payload.events.length > 0 && events.length === 0) {
+      throw new Error("Saved activity data failed runtime validation");
+    }
+
+    const generatedAt = typeof payload.generatedAt === "string"
+      && Number.isFinite(Date.parse(payload.generatedAt))
+      ? payload.generatedAt
+      : null;
+    return { repositories, events, generatedAt };
+  } finally {
+    window.clearTimeout(timeout);
+  }
 }
 
 function publicErrorMessage(error: unknown) {
@@ -242,10 +285,9 @@ function publicErrorMessage(error: unknown) {
 }
 
 async function loadGitHubSnapshot(): Promise<GitHubSnapshot> {
-  const [deployed, [profileResult, repositoriesResult, eventsResult]] = await Promise.all([
+  const [deployed, [repositoriesResult, eventsResult]] = await Promise.all([
     fetchDeployedSnapshot().catch(() => null),
     Promise.allSettled([
-      fetchGitHubPage<GitHubProfile>(GITHUB_API).then((result) => result.data),
       fetchAllOwnerRepositories(),
       fetchRecentEvents(),
     ]),
@@ -256,13 +298,6 @@ async function loadGitHubSnapshot(): Promise<GitHubSnapshot> {
     : "Using the repository's saved public snapshot.";
 
   return {
-    profile: profileResult.status === "fulfilled"
-      ? { data: profileResult.value, source: "github" }
-      : {
-          data: deployed?.profile ?? FALLBACK_PROFILE,
-          source: "snapshot",
-          message: `${deployedMessage} ${publicErrorMessage(profileResult.reason)}`,
-        },
     repositories: repositoriesResult.status === "fulfilled"
       ? { data: repositoriesResult.value, source: "github" }
       : {
@@ -351,8 +386,65 @@ function booleanValue(record: Record<string, unknown> | null, key: string) {
   return typeof value === "boolean" ? value : null;
 }
 
+function normalizeRepository(value: unknown): GitHubRepository | null {
+  if (!isRecord(value)) return null;
+  const id = numberValue(value, "id");
+  const name = stringValue(value, "name")?.trim();
+  const fullName = stringValue(value, "full_name")?.trim();
+  const htmlUrl = safeGitHubUrl(stringValue(value, "html_url"));
+  if (id === null || !Number.isSafeInteger(id) || !name || !fullName || !htmlUrl) return null;
+
+  const description = stringValue(value, "description")?.trim().slice(0, 1000) || null;
+  const homepage = safeHttpsUrl(stringValue(value, "homepage"));
+  const language = stringValue(value, "language")?.trim().slice(0, 80) || null;
+  const stars = numberValue(value, "stargazers_count");
+  const forks = numberValue(value, "forks_count");
+  const topicsValue = value.topics;
+  const updatedAt = stringValue(value, "updated_at");
+  const validUpdatedAt = updatedAt && Number.isFinite(Date.parse(updatedAt)) ? updatedAt : null;
+
+  return {
+    id: id as number,
+    name: name.slice(0, 200),
+    full_name: fullName.slice(0, 260),
+    html_url: htmlUrl,
+    description,
+    homepage,
+    language,
+    stargazers_count: stars !== null && Number.isSafeInteger(stars) && stars >= 0 ? stars : 0,
+    forks_count: forks !== null && Number.isSafeInteger(forks) && forks >= 0 ? forks : null,
+    topics: Array.isArray(topicsValue)
+      ? topicsValue.filter((topic): topic is string => typeof topic === "string").slice(0, 20).map((topic) => topic.slice(0, 80))
+      : [],
+    updated_at: validUpdatedAt,
+    visibility: stringValue(value, "visibility")?.slice(0, 30) || "public",
+    archived: booleanValue(value, "archived") ?? false,
+    fork: booleanValue(value, "fork") ?? false,
+  };
+}
+
+function normalizeEvent(value: unknown): GitHubEvent | null {
+  if (!isRecord(value)) return null;
+  const id = stringValue(value, "id");
+  const type = stringValue(value, "type");
+  const createdAt = stringValue(value, "created_at");
+  const repo = nestedRecord(value, "repo");
+  const repoName = stringValue(repo, "name");
+  if (!id || !type || !createdAt || !Number.isFinite(Date.parse(createdAt)) || !repoName) return null;
+
+  return {
+    id: id.slice(0, 160),
+    type: type.slice(0, 80),
+    created_at: createdAt,
+    repo: { name: repoName.slice(0, 260) },
+    payload: nestedRecord(value, "payload") ?? {},
+  };
+}
+
 function repoUrl(event: GitHubEvent) {
-  return `https://github.com/${event.repo.name}`;
+  const match = /^([A-Za-z0-9.-]+)\/([A-Za-z0-9._-]+)$/.exec(event.repo.name);
+  if (!match) return GITHUB_PROFILE_URL;
+  return `https://github.com/${encodeURIComponent(match[1])}/${encodeURIComponent(match[2])}`;
 }
 
 function describeEvent(event: GitHubEvent): EventDescription {
@@ -402,7 +494,7 @@ function describeEvent(event: GitHubEvent): EventDescription {
       return {
         action: "Forked a repository",
         detail: stringValue(forkee, "full_name") || repository,
-        url: stringValue(forkee, "html_url") || repoUrl(event),
+        url: safeGitHubValue(forkee, "html_url") || repoUrl(event),
       };
     }
     case "WatchEvent":
@@ -414,7 +506,7 @@ function describeEvent(event: GitHubEvent): EventDescription {
       return {
         action: `${stringValue(payload, "action") || "Published"} a release`,
         detail: stringValue(release, "name") || stringValue(release, "tag_name") || repository,
-        url: stringValue(release, "html_url") || repoUrl(event),
+        url: safeGitHubValue(release, "html_url") || repoUrl(event),
       };
     }
     case "PullRequestEvent": {
@@ -425,7 +517,7 @@ function describeEvent(event: GitHubEvent): EventDescription {
       return {
         action: `${action[0].toUpperCase()}${action.slice(1)} pull request${number ? ` #${number}` : ""}`,
         detail: stringValue(pullRequest, "title") || repository,
-        url: stringValue(pullRequest, "html_url") || repoUrl(event),
+        url: safeGitHubValue(pullRequest, "html_url") || repoUrl(event),
       };
     }
     case "PullRequestReviewEvent":
@@ -436,7 +528,7 @@ function describeEvent(event: GitHubEvent): EventDescription {
       return {
         action: event.type === "PullRequestReviewEvent" ? "Reviewed a pull request" : "Commented on a pull request",
         detail: stringValue(pullRequest, "title") || repository,
-        url: stringValue(comment, "html_url") || stringValue(review, "html_url") || stringValue(pullRequest, "html_url") || repoUrl(event),
+        url: safeGitHubValue(comment, "html_url") || safeGitHubValue(review, "html_url") || safeGitHubValue(pullRequest, "html_url") || repoUrl(event),
       };
     }
     case "IssuesEvent": {
@@ -445,7 +537,7 @@ function describeEvent(event: GitHubEvent): EventDescription {
       return {
         action: `${action[0].toUpperCase()}${action.slice(1)} issue`,
         detail: stringValue(issue, "title") || repository,
-        url: stringValue(issue, "html_url") || repoUrl(event),
+        url: safeGitHubValue(issue, "html_url") || repoUrl(event),
       };
     }
     case "IssueCommentEvent": {
@@ -454,7 +546,7 @@ function describeEvent(event: GitHubEvent): EventDescription {
       return {
         action: "Commented on an issue",
         detail: stringValue(issue, "title") || repository,
-        url: stringValue(comment, "html_url") || stringValue(issue, "html_url") || repoUrl(event),
+        url: safeGitHubValue(comment, "html_url") || safeGitHubValue(issue, "html_url") || repoUrl(event),
       };
     }
     case "CommitCommentEvent": {
@@ -462,7 +554,7 @@ function describeEvent(event: GitHubEvent): EventDescription {
       return {
         action: "Commented on a commit",
         detail: repository,
-        url: stringValue(comment, "html_url") || repoUrl(event),
+        url: safeGitHubValue(comment, "html_url") || repoUrl(event),
       };
     }
     case "MemberEvent": {
@@ -505,23 +597,23 @@ function PanelDecorations({ variant }: { variant: "repositories" | "activity" })
   if (variant === "repositories") {
     return (
       <div className="github-panel-decor github-panel-decor-repositories" aria-hidden="true">
-        <img className="panel-sticker panel-sticker-repo-shopping" src="/assets/summer-drink.gif" alt="" />
-        <img className="panel-sticker panel-sticker-repo-reader" src="/assets/study-reader.gif" alt="" />
-        <img className="panel-ui panel-ui-repo-bunny" src="/assets/angelina-ui/16.png" alt="" />
-        <img className="panel-ui panel-ui-repo-stars" src="/assets/angelina-ui/22.png" alt="" />
-        <img className="panel-ui panel-ui-repo-flower" src="/assets/angelina-ui/25.png" alt="" />
+        <img className="panel-sticker panel-sticker-repo-shopping" src="/assets/summer-drink.gif" alt="" width={1024} height={1024} loading="lazy" decoding="async" fetchPriority="low" />
+        <img className="panel-sticker panel-sticker-repo-reader" src="/assets/study-reader.gif" alt="" width={1024} height={1024} loading="lazy" decoding="async" fetchPriority="low" />
+        <img className="panel-ui panel-ui-repo-bunny" src="/assets/angelina-ui/16.png" alt="" width={223} height={145} loading="lazy" decoding="async" fetchPriority="low" />
+        <img className="panel-ui panel-ui-repo-stars" src="/assets/angelina-ui/22.png" alt="" width={508} height={395} loading="lazy" decoding="async" fetchPriority="low" />
+        <img className="panel-ui panel-ui-repo-flower" src="/assets/angelina-ui/25.png" alt="" width={48} height={49} loading="lazy" decoding="async" fetchPriority="low" />
       </div>
     );
   }
 
   return (
     <div className="github-panel-decor github-panel-decor-activity" aria-hidden="true">
-      <img className="panel-sticker panel-sticker-activity-delivery" src="/assets/delivery-run.gif" alt="" />
-      <img className="panel-sticker panel-sticker-activity-explorer" src="/assets/raincoat-walker.gif" alt="" />
-      <img className="panel-sticker panel-sticker-activity-diver" src="/assets/diver.gif" alt="" />
-      <img className="panel-ui panel-ui-activity-lineup" src="/assets/angelina-ui/17.png" alt="" />
-      <img className="panel-ui panel-ui-activity-flower" src="/assets/angelina-ui/24.png" alt="" />
-      <img className="panel-ui panel-ui-activity-petal" src="/assets/angelina-ui/26.png" alt="" />
+      <img className="panel-sticker panel-sticker-activity-delivery" src="/assets/delivery-run.gif" alt="" width={1024} height={1024} loading="lazy" decoding="async" fetchPriority="low" />
+      <img className="panel-sticker panel-sticker-activity-explorer" src="/assets/raincoat-walker.gif" alt="" width={1024} height={1024} loading="lazy" decoding="async" fetchPriority="low" />
+      <img className="panel-sticker panel-sticker-activity-diver" src="/assets/diver.gif" alt="" width={1024} height={1024} loading="lazy" decoding="async" fetchPriority="low" />
+      <img className="panel-ui panel-ui-activity-lineup" src="/assets/angelina-ui/17.png" alt="" width={270} height={136} loading="lazy" decoding="async" fetchPriority="low" />
+      <img className="panel-ui panel-ui-activity-flower" src="/assets/angelina-ui/24.png" alt="" width={83} height={84} loading="lazy" decoding="async" fetchPriority="low" />
+      <img className="panel-ui panel-ui-activity-petal" src="/assets/angelina-ui/26.png" alt="" width={49} height={47} loading="lazy" decoding="async" fetchPriority="low" />
     </div>
   );
 }
@@ -579,25 +671,33 @@ export function RepositoriesPanel({ className }: PanelProps) {
 
       {repositories.length > 0 ? (
         <div className="github-repository-grid">
-          {repositories.map((repository, index) => (
-            <article
-              className={combineClassNames(
-                "github-repository-card",
-                index === 0 ? "github-repository-card-with-camera" : undefined,
-              )}
-              key={repository.id}
-            >
+          {repositories.map((repository, index) => {
+            const repositoryUrl = safeGitHubUrl(repository.html_url) ?? GITHUB_PROFILE_URL;
+            const homepageUrl = safeHttpsUrl(repository.homepage);
+            return (
+              <article
+                className={combineClassNames(
+                  "github-repository-card",
+                  index === 0 ? "github-repository-card-with-camera" : undefined,
+                )}
+                key={repository.id}
+              >
               {index === 0 && (
                 <img
                   className="panel-sticker panel-sticker-repo-camera"
                   src="/assets/camera-nap.gif"
                   alt=""
                   aria-hidden="true"
+                  width={1024}
+                  height={1024}
+                  loading="lazy"
+                  decoding="async"
+                  fetchPriority="low"
                 />
               )}
               <header className="github-repository-header">
                 <div>
-                  <a className="github-repository-name" href={repository.html_url} target="_blank" rel="noreferrer">
+                  <a className="github-repository-name" href={repositoryUrl} target="_blank" rel="noopener noreferrer">
                     {repository.name}
                   </a>
                   {repository.fork && <span className="github-repository-fork">Fork</span>}
@@ -636,18 +736,19 @@ export function RepositoriesPanel({ className }: PanelProps) {
                     Updated {DATE_FORMAT.format(new Date(repository.updated_at))}
                   </time>
                 )}
-                {repository.homepage && (
-                  <a href={repository.homepage} target="_blank" rel="noreferrer">Project site</a>
+                {homepageUrl && (
+                  <a href={homepageUrl} target="_blank" rel="noopener noreferrer">Project site</a>
                 )}
               </footer>
-            </article>
-          ))}
+              </article>
+            );
+          })}
         </div>
       ) : (
         <p className="github-panel-empty">No public owner repositories are currently available.</p>
       )}
 
-      <a className="github-panel-external-link" href={`https://github.com/${GITHUB_LOGIN}?tab=repositories`} target="_blank" rel="noreferrer">
+      <a className="github-panel-external-link" href={`https://github.com/${GITHUB_LOGIN}?tab=repositories`} target="_blank" rel="noopener noreferrer">
         View repositories on GitHub <span aria-hidden="true">-&gt;</span>
       </a>
     </section>
@@ -707,7 +808,7 @@ export function ActivityPanel({ className }: PanelProps) {
                 <span className="github-activity-marker" aria-hidden="true">+</span>
                 <article>
                   <div className="github-activity-item-heading">
-                    <a href={description.url} target="_blank" rel="noreferrer">{description.action}</a>
+                    <a href={description.url} target="_blank" rel="noopener noreferrer">{description.action}</a>
                     <time dateTime={event.created_at}>{DATE_TIME_FORMAT.format(new Date(event.created_at))}</time>
                   </div>
                   {description.detail && <p>{description.detail}</p>}
@@ -724,13 +825,13 @@ export function ActivityPanel({ className }: PanelProps) {
               ? "GitHub has no recent public events to show for this profile."
               : "Recent events are not cached, so no activity has been invented while GitHub is unavailable."}
           </p>
-          <a href={`https://github.com/${GITHUB_LOGIN}?tab=overview`} target="_blank" rel="noreferrer">
+          <a href={`https://github.com/${GITHUB_LOGIN}?tab=overview`} target="_blank" rel="noopener noreferrer">
             Open the public GitHub profile
           </a>
         </div>
       )}
 
-      <a className="github-panel-external-link" href={`https://github.com/${GITHUB_LOGIN}?tab=overview`} target="_blank" rel="noreferrer">
+      <a className="github-panel-external-link" href={`https://github.com/${GITHUB_LOGIN}?tab=overview`} target="_blank" rel="noopener noreferrer">
         View full activity on GitHub <span aria-hidden="true">-&gt;</span>
       </a>
     </section>

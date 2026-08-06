@@ -1282,6 +1282,10 @@ a:focus-visible,
   padding-top: 82px;
 }
 
+.github-activity-panel {
+  padding-top: 124px;
+}
+
 .github-panel > :not(.github-panel-decor) {
   position: relative;
   z-index: 2;
@@ -1361,7 +1365,7 @@ a:focus-visible,
 }
 
 .panel-sticker-activity-explorer {
-  top: -48px;
+  top: 4px;
   right: auto;
   left: 18px;
   width: 112px;
@@ -2293,6 +2297,10 @@ a:focus-visible,
     padding-top: 68px;
   }
 
+  .github-activity-panel {
+    padding-top: 108px;
+  }
+
   .github-panel-heading {
     align-items: flex-start;
     flex-direction: column;
@@ -2320,7 +2328,7 @@ a:focus-visible,
   }
 
   .panel-sticker-activity-explorer {
-    top: -39px;
+    top: 4px;
     right: auto;
     left: 4px;
     width: 92px;
