@@ -402,6 +402,7 @@ a:focus-visible,
 }
 
 .avatar-mascot {
+  --avatar-entry-run: clamp(220px, calc(50vw - 410px), 650px);
   position: absolute;
   left: 50%;
   z-index: 6;
@@ -411,6 +412,7 @@ a:focus-visible,
   transform: translate3d(-50%, 0, 0);
   pointer-events: none;
   user-select: none;
+  backface-visibility: hidden;
   will-change: transform, opacity;
 }
 
@@ -420,8 +422,8 @@ a:focus-visible,
 }
 
 .avatar-mascot-sitter {
-  /* The visible feet end at 92.6% of the transparent 1024px canvas. */
-  top: -134px;
+  /* Align the broom with the avatar rim while the feet overlap the portrait. */
+  top: -108px;
 }
 
 .avatar-mascot img {
@@ -433,7 +435,7 @@ a:focus-visible,
 }
 
 .avatar-mascot-bike-enter {
-  animation: avatar-bike-enter 1.4s cubic-bezier(0.22, 0.78, 0.28, 1) forwards;
+  animation: avatar-bike-enter 1.55s cubic-bezier(0.25, 0.45, 0.35, 1) both;
 }
 
 .avatar-mascot-bike-rest,
@@ -444,11 +446,11 @@ a:focus-visible,
 
 .avatar-mascot-bike-exit {
   opacity: 1;
-  animation: avatar-bike-exit 1.08s cubic-bezier(0.48, 0.04, 0.8, 0.38) forwards;
+  animation: avatar-bike-exit 1.22s cubic-bezier(0.28, 0.12, 0.72, 0.92) both;
 }
 
 .avatar-mascot-sitter-enter {
-  animation: avatar-sitter-enter 1.42s cubic-bezier(0.22, 0.78, 0.28, 1) forwards;
+  animation: avatar-sitter-enter 1.55s cubic-bezier(0.25, 0.45, 0.35, 1) both;
 }
 
 .avatar-frame::before,
@@ -480,20 +482,35 @@ a:focus-visible,
   object-fit: cover;
 }
 
-.status-bubble {
+.status-citrus {
   position: absolute;
-  right: -2px;
-  bottom: 12px;
-  display: grid;
-  width: 38px;
-  height: 38px;
-  place-items: center;
-  border: 4px solid #fff;
-  border-radius: 50%;
-  color: var(--cyan-dark);
-  background: #fff;
-  box-shadow: 0 0 0 1px var(--border), var(--shadow);
-  font-size: 16px;
+  right: -8px;
+  bottom: 9px;
+  z-index: 4;
+  display: block;
+  width: 50px;
+  height: 49px;
+  transform: rotate(14deg);
+  filter: drop-shadow(0 7px 8px rgba(122, 88, 33, 0.2));
+  pointer-events: none;
+}
+
+.status-citrus-crop {
+  position: relative;
+  display: block;
+  width: 50px;
+  height: 49px;
+  overflow: hidden;
+}
+
+.status-citrus-crop img {
+  position: absolute;
+  top: -46px;
+  left: -81px;
+  display: block;
+  width: 328px;
+  max-width: none;
+  height: auto;
 }
 
 .identity h1 {
@@ -597,7 +614,7 @@ a:focus-visible,
 .sidebar-sticker {
   position: absolute;
   right: 8px;
-  bottom: -10px;
+  bottom: 0;
   width: 124px;
   height: 124px;
   pointer-events: none;
@@ -1261,6 +1278,10 @@ a:focus-visible,
   isolation: isolate;
 }
 
+.github-repositories-panel {
+  padding-top: 82px;
+}
+
 .github-panel > :not(.github-panel-decor) {
   position: relative;
   z-index: 2;
@@ -1284,10 +1305,12 @@ a:focus-visible,
 }
 
 .panel-sticker {
+  z-index: 2;
   filter: drop-shadow(0 9px 12px rgba(58, 105, 129, 0.13));
 }
 
 .panel-ui {
+  z-index: 1;
   opacity: 0.22;
   mix-blend-mode: multiply;
 }
@@ -1299,8 +1322,8 @@ a:focus-visible,
 }
 
 .panel-sticker-repo-camera {
-  top: 156px;
-  right: -34px;
+  top: -84px;
+  right: 18px;
   width: 138px;
 }
 
@@ -1338,8 +1361,9 @@ a:focus-visible,
 }
 
 .panel-sticker-activity-explorer {
-  top: 180px;
-  right: -29px;
+  top: -48px;
+  right: auto;
+  left: 18px;
   width: 112px;
 }
 
@@ -1350,10 +1374,10 @@ a:focus-visible,
 }
 
 .panel-ui-activity-lineup {
-  top: 14px;
-  left: 8px;
-  width: 184px;
-  opacity: 0.17;
+  top: 11px;
+  left: 132px;
+  width: 160px;
+  opacity: 0.13;
 }
 
 .panel-ui-activity-flower {
@@ -1560,10 +1584,12 @@ a:focus-visible,
 .github-repository-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr));
+  padding-top: 80px;
   gap: 14px;
 }
 
 .github-repository-card {
+  position: relative;
   display: flex;
   min-height: 190px;
   flex-direction: column;
@@ -1573,6 +1599,14 @@ a:focus-visible,
   background: rgba(255, 255, 255, 0.7);
   box-shadow: 0 8px 24px rgba(26, 122, 151, 0.07);
   transition: transform 170ms ease, border-color 170ms ease, background 170ms ease;
+}
+
+.github-repository-card-with-camera {
+  padding-top: 34px;
+}
+
+.github-repository-card > .panel-sticker-repo-camera {
+  z-index: 4;
 }
 
 .github-repository-card:hover {
@@ -1976,13 +2010,9 @@ a:focus-visible,
 @keyframes avatar-bike-enter {
   0% {
     opacity: 0;
-    transform: translate3d(calc(-100vw - 50%), 14px, 0) rotate(-3deg);
+    transform: translate3d(calc(-50% - var(--avatar-entry-run)), 14px, 0) rotate(-3deg);
   }
   10% { opacity: 1; }
-  72% {
-    opacity: 1;
-    transform: translate3d(calc(-50% - 13px), 3px, 0) rotate(-0.8deg);
-  }
   100% {
     opacity: 1;
     transform: translate3d(-50%, 0, 0) rotate(0);
@@ -1994,10 +2024,7 @@ a:focus-visible,
     opacity: 1;
     transform: translate3d(-50%, 0, 0) rotate(0);
   }
-  32% {
-    opacity: 1;
-    transform: translate3d(calc(12vw - 50%), -24px, 0) rotate(-5deg);
-  }
+  82% { opacity: 1; }
   100% {
     opacity: 0;
     transform: translate3d(calc(100vw - 50%), -176px, 0) rotate(-12deg);
@@ -2007,13 +2034,9 @@ a:focus-visible,
 @keyframes avatar-sitter-enter {
   0% {
     opacity: 0;
-    transform: translate3d(calc(-100vw - 50%), 13px, 0) rotate(-2deg);
+    transform: translate3d(calc(-50% - var(--avatar-entry-run)), 13px, 0) rotate(-2deg);
   }
   10% { opacity: 1; }
-  72% {
-    opacity: 1;
-    transform: translate3d(calc(-50% - 12px), 3px, 0) rotate(-0.5deg);
-  }
   100% {
     opacity: 1;
     transform: translate3d(-50%, 0, 0) rotate(0);
@@ -2106,7 +2129,7 @@ a:focus-visible,
   }
 
   .avatar-mascot-bike { top: -105px; }
-  .avatar-mascot-sitter { top: -124px; }
+  .avatar-mascot-sitter { top: -100px; }
 
   .profile-content {
     padding-right: 22px;
@@ -2178,18 +2201,18 @@ a:focus-visible,
   }
 
   .avatar-mascot {
+    --avatar-entry-run: 140px;
     width: 90px;
     height: 90px;
   }
 
   .avatar-mascot-bike { top: -62px; }
-  .avatar-mascot-sitter { top: -75px; }
+  .avatar-mascot-sitter { top: -62px; }
 
-  .status-bubble {
-    right: -4px;
-    bottom: 0;
-    width: 31px;
-    height: 31px;
+  .status-citrus {
+    right: -10px;
+    bottom: -3px;
+    transform: rotate(14deg) scale(0.78);
   }
 
   .identity {
@@ -2223,7 +2246,7 @@ a:focus-visible,
 
   .sidebar-sticker {
     right: 4px;
-    bottom: -8px;
+    bottom: 0;
     width: 112px;
     height: 112px;
   }
@@ -2266,6 +2289,10 @@ a:focus-visible,
     padding-bottom: 82px;
   }
 
+  .github-repositories-panel {
+    padding-top: 68px;
+  }
+
   .github-panel-heading {
     align-items: flex-start;
     flex-direction: column;
@@ -2283,8 +2310,8 @@ a:focus-visible,
   }
 
   .panel-sticker-repo-camera {
-    top: 212px;
-    right: -30px;
+    top: -65px;
+    right: 4px;
     width: 112px;
   }
 
@@ -2293,7 +2320,9 @@ a:focus-visible,
   }
 
   .panel-sticker-activity-explorer {
-    top: 230px;
+    top: -39px;
+    right: auto;
+    left: 4px;
     width: 92px;
   }
 
@@ -2304,6 +2333,18 @@ a:focus-visible,
   .panel-ui-repo-bunny,
   .panel-ui-activity-lineup {
     width: 124px;
+  }
+
+  .panel-ui-activity-lineup {
+    left: 92px;
+  }
+
+  .github-repository-grid {
+    padding-top: 66px;
+  }
+
+  .github-repository-card-with-camera {
+    padding-top: 30px;
   }
 
   .github-activity-item-heading {
@@ -2430,12 +2471,13 @@ a:focus-visible,
   }
 
   .avatar-mascot {
+    --avatar-entry-run: 125px;
     width: 82px;
     height: 82px;
   }
 
   .avatar-mascot-bike { top: -56px; }
-  .avatar-mascot-sitter { top: -67px; }
+  .avatar-mascot-sitter { top: -56px; }
 
   .sidebar-sticker {
     width: 96px;
@@ -2490,7 +2532,7 @@ a:focus-visible,
   }
 
   .avatar-mascot-bike { top: -88px; }
-  .avatar-mascot-sitter { top: -105px; }
+  .avatar-mascot-sitter { top: -86px; }
 
   .identity h1 {
     font-size: 23px;

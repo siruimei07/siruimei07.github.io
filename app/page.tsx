@@ -112,7 +112,11 @@ function ProfileSidebar({
 
         <div className="avatar-frame">
           <img className="avatar" src="/assets/avatar.jpg" alt="Sirui Mei's GitHub avatar" />
-          <span className="status-bubble" title="Summer mode" aria-label="Status: summer mode">*</span>
+          <span className="status-citrus" title="Summer mode" aria-label="Status: summer mode">
+            <span className="status-citrus-crop" aria-hidden="true">
+              <img src="/assets/angelina-ui/10.png" alt="" />
+            </span>
+          </span>
         </div>
       </div>
 
@@ -346,7 +350,7 @@ export default function Home() {
     const fallbackDelay = mascotPhase === "bike-enter"
       ? 1900
       : mascotPhase === "bike-exit"
-        ? 1450
+        ? 1550
         : mascotPhase === "sitter-enter"
           ? 1900
           : null;

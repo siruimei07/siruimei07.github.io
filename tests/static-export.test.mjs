@@ -128,6 +128,17 @@ test("runs the avatar mascot handoff once per browsing session", async () => {
   assert.match(css, /@keyframes\s+avatar-bike-enter/);
   assert.match(css, /@keyframes\s+avatar-bike-exit/);
   assert.match(css, /@keyframes\s+avatar-sitter-enter/);
+  assert.match(css, /\.avatar-mascot-sitter\s*\{[^}]*top\s*:\s*-108px/s);
+  assert.doesNotMatch(
+    css.match(/@keyframes\s+avatar-bike-enter\s*\{([\s\S]*?)\n\}\s*\n\s*@keyframes\s+avatar-bike-exit/)?.[1] ?? "",
+    /72%/,
+  );
+  assert.doesNotMatch(
+    css.match(/@keyframes\s+avatar-bike-exit\s*\{([\s\S]*?)\n\}\s*\n\s*@keyframes\s+avatar-sitter-enter/)?.[1] ?? "",
+    /32%/,
+  );
+  assert.match(page, /status-citrus[\s\S]*?angelina-ui\/10\.png/);
+  assert.match(css, /\.sidebar-sticker\s*\{[^}]*bottom\s*:\s*0/s);
 });
 
 test("uses the deployed GitHub snapshot whenever live public API requests fail", async () => {
@@ -146,7 +157,10 @@ test("uses the deployed GitHub snapshot whenever live public API requests fail",
 });
 
 test("keeps the duplicate profile out of right panels and shows curated stickers", async () => {
-  const panels = await readProjectFile("app/GitHubProfilePanels.tsx");
+  const [panels, css] = await Promise.all([
+    readProjectFile("app/GitHubProfilePanels.tsx"),
+    readProjectFile("app/globals.css"),
+  ]);
 
   assert.doesNotMatch(panels, /function\s+ProfileSummary|github-panel-profile-band/);
   assert.ok((panels.match(/className=["']panel-sticker/g) ?? []).length >= 6);
@@ -154,6 +168,9 @@ test("keeps the duplicate profile out of right panels and shows curated stickers
   assert.match(panels, /angelina-ui\/17\.png/);
   assert.match(panels, /angelina-ui\/22\.png/);
   assert.doesNotMatch(panels, /angelina-ui\/9(?:-1)?\.png/);
+  assert.match(panels, /repositories\.map\(\(repository,\s*index\)/);
+  assert.match(panels, /index\s*===\s*0[\s\S]*?panel-sticker-repo-camera/);
+  assert.match(css, /\.panel-sticker-activity-explorer\s*\{[^}]*left\s*:\s*18px/s);
 });
 
 test("uses real PushEvent payload fallbacks instead of displaying zero commits", async () => {

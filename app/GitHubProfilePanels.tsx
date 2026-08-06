@@ -506,7 +506,6 @@ function PanelDecorations({ variant }: { variant: "repositories" | "activity" })
     return (
       <div className="github-panel-decor github-panel-decor-repositories" aria-hidden="true">
         <img className="panel-sticker panel-sticker-repo-shopping" src="/assets/summer-drink.gif" alt="" />
-        <img className="panel-sticker panel-sticker-repo-camera" src="/assets/camera-nap.gif" alt="" />
         <img className="panel-sticker panel-sticker-repo-reader" src="/assets/study-reader.gif" alt="" />
         <img className="panel-ui panel-ui-repo-bunny" src="/assets/angelina-ui/16.png" alt="" />
         <img className="panel-ui panel-ui-repo-stars" src="/assets/angelina-ui/22.png" alt="" />
@@ -580,8 +579,22 @@ export function RepositoriesPanel({ className }: PanelProps) {
 
       {repositories.length > 0 ? (
         <div className="github-repository-grid">
-          {repositories.map((repository) => (
-            <article className="github-repository-card" key={repository.id}>
+          {repositories.map((repository, index) => (
+            <article
+              className={combineClassNames(
+                "github-repository-card",
+                index === 0 ? "github-repository-card-with-camera" : undefined,
+              )}
+              key={repository.id}
+            >
+              {index === 0 && (
+                <img
+                  className="panel-sticker panel-sticker-repo-camera"
+                  src="/assets/camera-nap.gif"
+                  alt=""
+                  aria-hidden="true"
+                />
+              )}
               <header className="github-repository-header">
                 <div>
                   <a className="github-repository-name" href={repository.html_url} target="_blank" rel="noreferrer">
