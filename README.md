@@ -33,7 +33,7 @@ pnpm test
 - 最近公开 Activity events；
 - 从 2025 年到当前年份的 contribution calendar。
 
-同步结果写入 `public/data/github.json`，网站完全静态，不需要把 Token 发送给浏览器，也不需要个人访问令牌。浏览器中的 Repositories 和 Activity 仍会尝试读取较新的公开 REST 数据；匿名 API 达到限额时会自动回退到部署时生成的完整快照。
+同步结果写入 `public/data/github.json`，网站完全静态，不会把 Token 发送给浏览器。浏览器中的 Repositories 和 Activity 仍会尝试读取较新的公开 REST 数据；匿名 API 达到限额时会自动回退到部署时生成的完整快照。
 
 本地没有 Token 时可以安全运行：
 
@@ -41,14 +41,16 @@ pnpm test
 pnpm run sync-data
 ```
 
-该命令只验证并保留已提交的公开快照。设置 `GITHUB_TOKEN` 或 `GH_TOKEN` 后才会联网刷新数据。
+该命令会尝试使用 GitHub 的公开 REST/贡献日历刷新数据；离线或公开 API 暂时不可用时，会验证并保留已提交的快照。设置 `GITHUB_TOKEN` 或 `GH_TOKEN` 后会优先使用 GraphQL contribution calendar。
+
+登录本人账户看到的贡献数可能高于未登录的公开数据，这是私有贡献可见性造成的。若希望公开主页与本站都显示匿名化的私有贡献计数，可在 GitHub 个人资料的 **Contribution settings → Private contributions** 开启显示。工作流还支持可选仓库 Secret `PROFILE_GITHUB_TOKEN`，但只有在明确希望把私有贡献的每日计数发布到这个公开网站时才应使用；Secret 的值不会写入静态产物。
 
 ## 贡献日历行为
 
 - `Latest` 以浏览器当天日期作为热力图最右侧。
 - 年份按钮从 2025 自动生成到当前年份；跨年后会自动出现新按钮。
 - 已打开的页面每五分钟重新请求部署快照。
-- `0.gif` 仅在当前标签页会话首次进入时扫过热力图，失败或加载过慢时会自动解除遮罩。
+- 骑行角色仅在当前标签页会话首次进入时扫过热力图，随后停在头像上方；首次切换栏目时离场并由坐坐角色接替，之后不再重复触发。
 - GitHub Pages 的定时 Actions 是“尽力约每五分钟”运行，GitHub 繁忙时可能延迟；它不是严格的实时服务。
 
 ## GitHub Pages 部署

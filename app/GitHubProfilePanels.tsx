@@ -322,10 +322,6 @@ function combineClassNames(base: string, className?: string) {
   return className ? `${base} ${className}` : base;
 }
 
-function formatCount(value: number | null) {
-  return value === null ? null : NUMBER_FORMAT.format(value);
-}
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
@@ -343,6 +339,11 @@ function stringValue(record: Record<string, unknown> | null, key: string) {
 function numberValue(record: Record<string, unknown> | null, key: string) {
   const value = record?.[key];
   return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function arrayLengthValue(record: Record<string, unknown> | null, key: string) {
+  const value = record?.[key];
+  return Array.isArray(value) ? value.length : null;
 }
 
 function booleanValue(record: Record<string, unknown> | null, key: string) {
@@ -365,10 +366,15 @@ function describeEvent(event: GitHubEvent): EventDescription {
 
   switch (event.type) {
     case "PushEvent": {
-      const size = numberValue(payload, "size") ?? 0;
+      const sizeCandidates = [
+        numberValue(payload, "size"),
+        numberValue(payload, "distinct_size"),
+        arrayLengthValue(payload, "commits"),
+      ];
+      const size = sizeCandidates.find((value) => value !== null && value > 0) ?? null;
       const ref = stringValue(payload, "ref")?.replace("refs/heads/", "");
       return {
-        action: `Pushed ${size} ${size === 1 ? "commit" : "commits"}`,
+        action: size === null ? "Pushed commits" : `Pushed ${size} ${size === 1 ? "commit" : "commits"}`,
         detail: ref ? `${repository} / ${ref}` : repository,
         url: repoUrl(event),
       };
@@ -495,37 +501,28 @@ function DataSourceNotice({ resource }: { resource: Resource<unknown> }) {
   );
 }
 
-function ProfileSummary({ profile, compact = false }: { profile: Resource<GitHubProfile>; compact?: boolean }) {
-  const data = profile.data;
-  return (
-    <div className={`github-profile-summary${compact ? " github-profile-summary-compact" : ""}`}>
-      <a className="github-profile-avatar-link" href={data.html_url} target="_blank" rel="noreferrer">
-        {/* Remote GitHub avatars and the local fallback both need to work on static GitHub Pages. */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          className="github-profile-avatar"
-          src={data.avatar_url}
-          alt={`${data.login}'s GitHub avatar`}
-          width={compact ? 64 : 112}
-          height={compact ? 64 : 112}
-        />
-      </a>
-      <div className="github-profile-copy">
-        <p className="github-panel-kicker">PUBLIC GITHUB PROFILE</p>
-        <h2>{data.name || data.login}</h2>
-        <a className="github-profile-login" href={data.html_url} target="_blank" rel="noreferrer">
-          @{data.login}
-        </a>
-        {data.bio && <p className="github-profile-bio">{data.bio}</p>}
-        {!compact && (
-          <ul className="github-profile-stats" aria-label="GitHub profile statistics">
-            {formatCount(data.public_repos) && <li><strong>{formatCount(data.public_repos)}</strong> repositories</li>}
-            {formatCount(data.followers) && <li><strong>{formatCount(data.followers)}</strong> followers</li>}
-            {formatCount(data.following) && <li><strong>{formatCount(data.following)}</strong> following</li>}
-            {data.location && <li>{data.location}</li>}
-          </ul>
-        )}
+function PanelDecorations({ variant }: { variant: "repositories" | "activity" }) {
+  if (variant === "repositories") {
+    return (
+      <div className="github-panel-decor github-panel-decor-repositories" aria-hidden="true">
+        <img className="panel-sticker panel-sticker-repo-shopping" src="/assets/summer-drink.gif" alt="" />
+        <img className="panel-sticker panel-sticker-repo-camera" src="/assets/camera-nap.gif" alt="" />
+        <img className="panel-sticker panel-sticker-repo-reader" src="/assets/study-reader.gif" alt="" />
+        <img className="panel-ui panel-ui-repo-bunny" src="/assets/angelina-ui/16.png" alt="" />
+        <img className="panel-ui panel-ui-repo-stars" src="/assets/angelina-ui/22.png" alt="" />
+        <img className="panel-ui panel-ui-repo-flower" src="/assets/angelina-ui/25.png" alt="" />
       </div>
+    );
+  }
+
+  return (
+    <div className="github-panel-decor github-panel-decor-activity" aria-hidden="true">
+      <img className="panel-sticker panel-sticker-activity-delivery" src="/assets/delivery-run.gif" alt="" />
+      <img className="panel-sticker panel-sticker-activity-explorer" src="/assets/raincoat-walker.gif" alt="" />
+      <img className="panel-sticker panel-sticker-activity-diver" src="/assets/diver.gif" alt="" />
+      <img className="panel-ui panel-ui-activity-lineup" src="/assets/angelina-ui/17.png" alt="" />
+      <img className="panel-ui panel-ui-activity-flower" src="/assets/angelina-ui/24.png" alt="" />
+      <img className="panel-ui panel-ui-activity-petal" src="/assets/angelina-ui/26.png" alt="" />
     </div>
   );
 }
@@ -546,6 +543,7 @@ export function RepositoriesPanel({ className }: PanelProps) {
   if (!snapshot && loading) {
     return (
       <section id="repositories" className={combineClassNames("github-panel github-repositories-panel", className)} aria-busy="true">
+        <PanelDecorations variant="repositories" />
         <LoadingPanel label="Loading public repositories from GitHub..." />
       </section>
     );
@@ -562,10 +560,7 @@ export function RepositoriesPanel({ className }: PanelProps) {
       aria-busy={loading}
       data-source={snapshot.repositories.source}
     >
-      <div className="github-panel-profile-band">
-        <ProfileSummary profile={snapshot.profile} />
-        <DataSourceNotice resource={snapshot.repositories} />
-      </div>
+      <PanelDecorations variant="repositories" />
 
       <div className="github-panel-heading">
         <div>
@@ -575,9 +570,12 @@ export function RepositoriesPanel({ className }: PanelProps) {
             {repositories.length} owner {repositories.length === 1 ? "repository" : "repositories"}, ordered by latest update
           </p>
         </div>
-        <button className="github-refresh-button" type="button" onClick={retry} disabled={loading}>
-          {loading ? "Refreshing..." : "Refresh GitHub data"}
-        </button>
+        <div className="github-panel-actions">
+          <DataSourceNotice resource={snapshot.repositories} />
+          <button className="github-refresh-button" type="button" onClick={retry} disabled={loading}>
+            {loading ? "Refreshing..." : "Refresh GitHub data"}
+          </button>
+        </div>
       </div>
 
       {repositories.length > 0 ? (
@@ -650,6 +648,7 @@ export function ActivityPanel({ className }: PanelProps) {
   if (!snapshot && loading) {
     return (
       <section id="activity" className={combineClassNames("github-panel github-activity-panel", className)} aria-busy="true">
+        <PanelDecorations variant="activity" />
         <LoadingPanel label="Loading recent public activity from GitHub..." />
       </section>
     );
@@ -666,10 +665,7 @@ export function ActivityPanel({ className }: PanelProps) {
       aria-busy={loading}
       data-source={snapshot.events.source}
     >
-      <div className="github-panel-profile-band github-activity-profile-band">
-        <ProfileSummary profile={snapshot.profile} compact />
-        <DataSourceNotice resource={snapshot.events} />
-      </div>
+      <PanelDecorations variant="activity" />
 
       <div className="github-panel-heading">
         <div>
@@ -681,9 +677,12 @@ export function ActivityPanel({ className }: PanelProps) {
               : "Public activity is available directly from GitHub"}
           </p>
         </div>
-        <button className="github-refresh-button" type="button" onClick={retry} disabled={loading}>
-          {loading ? "Refreshing..." : "Refresh GitHub data"}
-        </button>
+        <div className="github-panel-actions">
+          <DataSourceNotice resource={snapshot.events} />
+          <button className="github-refresh-button" type="button" onClick={retry} disabled={loading}>
+            {loading ? "Refreshing..." : "Refresh GitHub data"}
+          </button>
+        </div>
       </div>
 
       {events.length > 0 ? (

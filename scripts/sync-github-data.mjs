@@ -9,7 +9,11 @@ const FIRST_CONTRIBUTION_YEAR = 2025;
 const REST_API_ROOT = "https://api.github.com";
 const GRAPHQL_API_URL = "https://api.github.com/graphql";
 const OUTPUT_PATH = fileURLToPath(new URL("../public/data/github.json", import.meta.url));
-const TOKEN = process.env.GITHUB_TOKEN?.trim() || process.env.GH_TOKEN?.trim() || "";
+const PROFILE_TOKEN = process.env.PROFILE_GITHUB_TOKEN?.trim() || "";
+const TOKEN = PROFILE_TOKEN
+  || process.env.GITHUB_TOKEN?.trim()
+  || process.env.GH_TOKEN?.trim()
+  || "";
 
 const CONTRIBUTION_LEVELS = Object.freeze({
   NONE: 0,
@@ -94,7 +98,11 @@ function expectIsoDate(value, field) {
 
 function redactSecrets(value) {
   let message = String(value);
-  for (const secret of [process.env.GITHUB_TOKEN, process.env.GH_TOKEN]) {
+  for (const secret of [
+    process.env.PROFILE_GITHUB_TOKEN,
+    process.env.GITHUB_TOKEN,
+    process.env.GH_TOKEN,
+  ]) {
     if (secret) message = message.split(secret).join("[REDACTED]");
   }
   return message;
@@ -107,15 +115,17 @@ function errorMessage(error) {
 async function requestJson(url, { label, method = "GET", body } = {}) {
   let response;
   try {
+    const headers = {
+      Accept: "application/vnd.github+json",
+      "Content-Type": "application/json",
+      "User-Agent": "siruimei07.github.io-data-sync",
+      "X-GitHub-Api-Version": "2022-11-28",
+    };
+    if (TOKEN) headers.Authorization = `Bearer ${TOKEN}`;
+
     response = await fetch(url, {
       method,
-      headers: {
-        Accept: "application/vnd.github+json",
-        Authorization: `Bearer ${TOKEN}`,
-        "Content-Type": "application/json",
-        "User-Agent": "siruimei07.github.io-data-sync",
-        "X-GitHub-Api-Version": "2022-11-28",
-      },
+      headers,
       body,
       signal: AbortSignal.timeout(30_000),
     });
@@ -141,6 +151,89 @@ async function requestJson(url, { label, method = "GET", body } = {}) {
   }
 
   return payload;
+}
+
+async function requestText(url, { label } = {}) {
+  let response;
+  try {
+    response = await fetch(url, {
+      headers: {
+        Accept: "text/html",
+        "User-Agent": "siruimei07.github.io-data-sync",
+      },
+      signal: AbortSignal.timeout(30_000),
+    });
+  } catch (error) {
+    fail(`Network request failed while fetching ${label}: ${errorMessage(error)}`);
+  }
+
+  if (!response.ok) {
+    fail(`GitHub request for ${label} failed (HTTP ${response.status} ${response.statusText})`);
+  }
+  return response.text();
+}
+
+function decodeHtmlEntities(value) {
+  const namedEntities = {
+    amp: "&",
+    apos: "'",
+    gt: ">",
+    lt: "<",
+    nbsp: " ",
+    quot: '"',
+  };
+  return value.replace(/&(#x[\da-f]+|#\d+|amp|apos|gt|lt|nbsp|quot);/gi, (entity, encoded) => {
+    if (!encoded.startsWith("#")) return namedEntities[encoded.toLowerCase()] ?? entity;
+    const hexadecimal = encoded[1]?.toLowerCase() === "x";
+    const digits = encoded.slice(hexadecimal ? 2 : 1);
+    const codePoint = Number.parseInt(digits, hexadecimal ? 16 : 10);
+    if (!Number.isFinite(codePoint) || codePoint > 0x10ffff) return entity;
+    try {
+      return String.fromCodePoint(codePoint);
+    } catch {
+      return entity;
+    }
+  });
+}
+
+function readHtmlAttribute(attributes, name) {
+  const match = attributes.match(new RegExp(`\\b${name}\\s*=\\s*["']([^"']+)["']`, "i"));
+  return match?.[1] ?? null;
+}
+
+function parsePublicContributionCalendar(html, year) {
+  const contributions = [];
+  const cellPattern = /<td\b([^>]*)>\s*<\/td>\s*<tool-tip\b[^>]*>([\s\S]*?)<\/tool-tip>/gi;
+
+  for (const match of html.matchAll(cellPattern)) {
+    const date = readHtmlAttribute(match[1], "data-date");
+    const levelText = readHtmlAttribute(match[1], "data-level");
+    if (!date || !date.startsWith(`${year}-`) || !levelText) continue;
+
+    const level = Number.parseInt(levelText, 10);
+    if (!Number.isInteger(level) || level < 0 || level > 4) continue;
+    const label = decodeHtmlEntities(match[2].replace(/<[^>]*>/g, " ")).replace(/\s+/g, " ").trim();
+    const countMatch = label.match(/^\s*(No|[\d,]+)\s+contributions?\b/i);
+    const count = !countMatch || countMatch[1].toLowerCase() === "no"
+      ? 0
+      : Number.parseInt(countMatch[1].replaceAll(",", ""), 10) || 0;
+    contributions.push({ date, level, count, label });
+  }
+
+  if (contributions.length === 0) {
+    fail(`GitHub returned contribution markup that could not be parsed for ${year}`);
+  }
+  return contributions.sort((left, right) => left.date.localeCompare(right.date));
+}
+
+async function fetchPublicContributionYear(year) {
+  const url = new URL(`https://github.com/users/${GITHUB_LOGIN}/contributions`);
+  url.searchParams.set("from", `${year}-01-01`);
+  url.searchParams.set("to", `${year}-12-31`);
+  return parsePublicContributionCalendar(
+    await requestText(url, { label: `public contribution calendar for ${year}` }),
+    year,
+  );
 }
 
 function normalizeProfile(value) {
@@ -260,7 +353,7 @@ async function fetchRecentPublicEvents() {
   return payload.map(normalizeEvent);
 }
 
-async function fetchContributionYear(year, now) {
+async function fetchContributionYearGraphql(year, now) {
   const currentYear = now.getUTCFullYear();
   const from = `${year}-01-01T00:00:00.000Z`;
   const to = year === currentYear ? now.toISOString() : `${year}-12-31T23:59:59.999Z`;
@@ -314,6 +407,19 @@ async function fetchContributionYear(year, now) {
   return contributions;
 }
 
+async function fetchContributionYear(year, now) {
+  if (TOKEN) {
+    try {
+      return await fetchContributionYearGraphql(year, now);
+    } catch (error) {
+      if (PROFILE_TOKEN) throw error;
+      console.warn(`Authenticated contribution query failed for ${year}; using the public calendar. ${errorMessage(error)}`);
+    }
+  }
+
+  return fetchPublicContributionYear(year);
+}
+
 async function validateExistingSnapshot() {
   let source;
   try {
@@ -333,11 +439,6 @@ async function validateExistingSnapshot() {
 }
 
 async function synchronize() {
-  if (!TOKEN) {
-    await validateExistingSnapshot();
-    return;
-  }
-
   const now = new Date();
   const currentYear = now.getUTCFullYear();
   const years = Array.from(
@@ -370,7 +471,19 @@ async function synchronize() {
   );
 }
 
-synchronize().catch((error) => {
+synchronize().catch(async (error) => {
+  if (!TOKEN) {
+    console.warn(`Public GitHub refresh failed; keeping the validated deployed snapshot. ${errorMessage(error)}`);
+    try {
+      await validateExistingSnapshot();
+      return;
+    } catch (snapshotError) {
+      console.error(`GitHub data sync failed: ${errorMessage(snapshotError)}`);
+      process.exitCode = 1;
+      return;
+    }
+  }
+
   console.error(`GitHub data sync failed: ${errorMessage(error)}`);
   process.exitCode = 1;
 });

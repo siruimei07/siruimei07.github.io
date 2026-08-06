@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { access, readFile, readdir } from "node:fs/promises";
+import { access, readFile, readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -103,9 +103,31 @@ test("loads static contribution data while preserving dynamic years and the firs
   assert.match(component, /setRevealPhase\(["']preparing["']\)/);
   assert.match(component, /setRevealPhase\(["']running["']\)/);
   assert.match(component, /setRevealPhase\(["']done["']\)/);
+  assert.match(component, /onRevealCompleteRef\.current\?\.\(\)/);
+  assert.match(component, /event\.animationName\s*!==\s*["']contribution-wipe["']/);
+  assert.match(component, /className=["']contribution-data["'][\s\S]*?className=["']year-data["']/);
+  assert.doesNotMatch(component, /flight-flash/);
   assert.match(css, /@keyframes\s+contribution-sweep/);
   assert.match(css, /@keyframes\s+contribution-wipe/);
+  assert.doesNotMatch(css, /\.flight-live\s+\.flight-flash/);
   assert.match(css, /prefers-reduced-motion[\s\S]*?\.contribution-data[\s\S]*?clip-path\s*:\s*none\s*!important/);
+});
+
+test("runs the avatar mascot handoff once per browsing session", async () => {
+  const [page, css] = await Promise.all([
+    readProjectFile("app/page.tsx"),
+    readProjectFile("app/globals.css"),
+  ]);
+
+  assert.match(page, /sirui-avatar-mascot-state-v1/);
+  assert.match(page, /sirui-avatar-mascot-switch-v1/);
+  assert.match(page, /scheduleMascotPhase\(["']bike-enter["'],\s*2000\)/);
+  assert.match(page, /scheduleMascotPhase\(["']sitter-enter["'],\s*1000\)/);
+  assert.match(page, /if\s*\(mascotSwitchConsumedRef\.current\)\s*return/);
+  assert.match(page, /<ContributionExplorer\s+onRevealComplete=\{handleContributionRevealComplete\}/);
+  assert.match(css, /@keyframes\s+avatar-bike-enter/);
+  assert.match(css, /@keyframes\s+avatar-bike-exit/);
+  assert.match(css, /@keyframes\s+avatar-sitter-enter/);
 });
 
 test("uses the deployed GitHub snapshot whenever live public API requests fail", async () => {
@@ -121,6 +143,27 @@ test("uses the deployed GitHub snapshot whenever live public API requests fail",
   assert.match(panels, /Latest deployed snapshot:/);
   assert.match(panels, /export\s+function\s+RepositoriesPanel/);
   assert.match(panels, /export\s+function\s+ActivityPanel/);
+});
+
+test("keeps the duplicate profile out of right panels and shows curated stickers", async () => {
+  const panels = await readProjectFile("app/GitHubProfilePanels.tsx");
+
+  assert.doesNotMatch(panels, /function\s+ProfileSummary|github-panel-profile-band/);
+  assert.ok((panels.match(/className=["']panel-sticker/g) ?? []).length >= 6);
+  assert.match(panels, /angelina-ui\/16\.png/);
+  assert.match(panels, /angelina-ui\/17\.png/);
+  assert.match(panels, /angelina-ui\/22\.png/);
+  assert.doesNotMatch(panels, /angelina-ui\/9(?:-1)?\.png/);
+});
+
+test("uses real PushEvent payload fallbacks instead of displaying zero commits", async () => {
+  const panels = await readProjectFile("app/GitHubProfilePanels.tsx");
+
+  assert.match(panels, /numberValue\(payload,\s*["']size["']\)/);
+  assert.match(panels, /numberValue\(payload,\s*["']distinct_size["']\)/);
+  assert.match(panels, /arrayLengthValue\(payload,\s*["']commits["']\)/);
+  assert.match(panels, /size\s*===\s*null\s*\?\s*["']Pushed commits["']/);
+  assert.doesNotMatch(panels, /numberValue\(payload,\s*["']size["']\)\s*\?\?\s*0/);
 });
 
 test("ships a valid flat GitHub data snapshot", async () => {
@@ -168,10 +211,13 @@ test("syncs every public data source before the Pages build", async () => {
   ]);
 
   assert.match(syncScript, /GITHUB_TOKEN/);
+  assert.match(syncScript, /PROFILE_GITHUB_TOKEN/);
   assert.match(syncScript, /users\/\$\{GITHUB_LOGIN\}/);
   assert.match(syncScript, /repos\?\$\{query\}/);
   assert.match(syncScript, /events\/public\?\$\{query\}/);
   assert.match(syncScript, /contributionsCollection\(from:\s*\$from,\s*to:\s*\$to\)/);
+  assert.match(syncScript, /fetchPublicContributionYear/);
+  assert.match(syncScript, /parsePublicContributionCalendar/);
   assert.match(syncScript, /FIRST_CONTRIBUTION_YEAR\s*=\s*2025/);
   assert.match(syncScript, /currentYear\s*-\s*FIRST_CONTRIBUTION_YEAR\s*\+\s*1/);
   assert.match(syncScript, /writeFile\(temporaryPath/);
@@ -180,7 +226,8 @@ test("syncs every public data source before the Pages build", async () => {
   assert.match(workflow, /branches:\s*\n\s*- main/);
   assert.match(workflow, /cron:\s*["']2-59\/5 \* \* \* \*["']/);
   assert.match(workflow, /pnpm run sync-data/);
-  assert.match(workflow, /GITHUB_TOKEN:\s*\$\{\{ secrets\.GITHUB_TOKEN \}\}/);
+  assert.match(workflow, /PROFILE_GITHUB_TOKEN:\s*\$\{\{ secrets\.PROFILE_GITHUB_TOKEN \}\}/);
+  assert.match(workflow, /GITHUB_TOKEN:\s*\$\{\{ github\.token \}\}/);
   assert.match(workflow, /actions\/upload-pages-artifact@v4/);
   assert.match(workflow, /path:\s*\.\/dist\/client/);
   assert.match(workflow, /actions\/deploy-pages@v4/);
@@ -209,7 +256,17 @@ test("produces a self-contained GitHub Pages artifact with every public asset", 
   assert.ok(publicFiles.length > 0, "public must contain deployable files");
   await Promise.all(publicFiles.map((relativePath) => access(path.join(exportRoot, relativePath))));
 
-  await Promise.all(expectedAssets.map((name) => access(path.join(exportRoot, "assets", name))));
+  await Promise.all(expectedAssets.map(async (name) => {
+    const assetPath = path.join(exportRoot, "assets", name);
+    await access(assetPath);
+    if (name.endsWith(".gif")) assert.ok((await stat(assetPath)).size > 800_000, `${name} must be the HD asset`);
+  }));
+
+  const uiAssets = (await readdir(path.join(exportRoot, "assets", "angelina-ui")))
+    .filter((name) => name.endsWith(".png"));
+  assert.equal(uiAssets.length, 26);
+  assert.ok(!uiAssets.includes("9.png"));
+  assert.ok(!uiAssets.includes("9-1.png"));
 
   const outputFiles = await collectFiles(exportRoot);
   const textFiles = outputFiles.filter((relativePath) => textOutputExtensions.has(path.extname(relativePath)));

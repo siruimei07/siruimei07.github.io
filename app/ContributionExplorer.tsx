@@ -1,6 +1,14 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type AnimationEvent,
+  type CSSProperties,
+} from "react";
 
 type ContributionLevel = 0 | 1 | 2 | 3 | 4;
 type RevealPhase = "preparing" | "running" | "done";
@@ -41,7 +49,7 @@ const FIRST_PROFILE_YEAR = 2025;
 const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
 const REVEAL_SESSION_KEY = "sirui-contribution-reveal-v1";
 const SWEEPER_LOAD_GRACE_MS = 1400;
-const SWEEPER_ANIMATION_MS = 3700;
+const SWEEPER_ANIMATION_MS = 3900;
 
 function hasPlayedContributionReveal() {
   try {
@@ -66,7 +74,8 @@ const CONTRIBUTION_SNAPSHOT: ContributionEntry[] = [
   { date: "2025-09-11", level: 4, count: 1, label: "1 contribution on September 11th." },
   { date: "2026-08-03", level: 1, count: 3, label: "3 contributions on August 3rd." },
   { date: "2026-08-04", level: 4, count: 13, label: "13 contributions on August 4th." },
-  { date: "2026-08-05", level: 1, count: 2, label: "2 contributions on August 5th." },
+  { date: "2026-08-05", level: 1, count: 3, label: "3 contributions on August 5th." },
+  { date: "2026-08-06", level: 1, count: 1, label: "1 contribution on August 6th." },
 ];
 
 const DATE_LABEL = new Intl.DateTimeFormat("en-US", {
@@ -257,7 +266,7 @@ function ContributionGraph({
           <span>Fri</span>
         </div>
         <div className="contribution-grid" role="img" aria-label={`${total} public contributions, ${periodLabel}`}>
-          {model.slots.map((slot, index) => {
+          {model.slots.map((slot) => {
             const contribution = slot.date ? entryMap.get(slot.date) : undefined;
             const isToday = slot.date === todayIso;
             const title = slot.date
@@ -265,13 +274,11 @@ function ContributionGraph({
                 ? `Future date: ${DATE_LABEL.format(parseIsoDate(slot.date))}`
                 : contribution?.label || `No contributions on ${DATE_LABEL.format(parseIsoDate(slot.date))}`
               : "Outside the selected contribution period";
-            const shouldGlint = Boolean(contribution?.count) || index >= model.slots.length - 10;
-
             return (
               <span
                 key={slot.key}
                 aria-hidden="true"
-                className={`heat-cell level-${contribution?.level ?? 0}${slot.isFuture ? " future-cell" : ""}${isToday ? " today-cell" : ""}${shouldGlint ? " flight-flash" : ""}`}
+                className={`heat-cell level-${contribution?.level ?? 0}${slot.isFuture ? " future-cell" : ""}${isToday ? " today-cell" : ""}`}
                 title={title}
               />
             );
@@ -334,13 +341,14 @@ function ActivitySummary({
   );
 }
 
-export function ContributionExplorer() {
+export function ContributionExplorer({ onRevealComplete }: { onRevealComplete?: () => void }) {
   const [today, setToday] = useState(() => startOfLocalDay(new Date()));
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
   // Render the server response fully visible. Hydration opts into the decorative
   // reveal before paint, so a missing script can never leave the graph masked.
   const [revealPhase, setRevealPhase] = useState<RevealPhase>("done");
+  const [revealConfigured, setRevealConfigured] = useState(false);
   const [sweeperReady, setSweeperReady] = useState(false);
   const graph = useMemo(() => createGraphModel(today, selectedYear), [selectedYear, today]);
   const [result, setResult] = useState<{
@@ -350,6 +358,12 @@ export function ContributionExplorer() {
   }>(() => ({ key: graph.key, entries: snapshotForRange(graph.from, graph.to), status: "loading" }));
   const cache = useRef(new Map<string, ContributionEntry[]>());
   const sweeperImage = useRef<HTMLImageElement>(null);
+  const revealCompletionSent = useRef(false);
+  const onRevealCompleteRef = useRef(onRevealComplete);
+
+  useEffect(() => {
+    onRevealCompleteRef.current = onRevealComplete;
+  }, [onRevealComplete]);
 
   const currentResult = result.key === graph.key
     ? result
@@ -435,14 +449,20 @@ export function ContributionExplorer() {
 
   useLayoutEffect(() => {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-    if (reduceMotion || hasPlayedContributionReveal()) return;
+    const hasPlayed = hasPlayedContributionReveal();
 
     const prepareFrame = window.requestAnimationFrame(() => {
-      setRevealPhase("preparing");
+      if (!reduceMotion && !hasPlayed) setRevealPhase("preparing");
+      setRevealConfigured(true);
     });
     return () => window.cancelAnimationFrame(prepareFrame);
   }, []);
+
+  useEffect(() => {
+    if (!revealConfigured || revealPhase !== "done" || revealCompletionSent.current) return;
+    revealCompletionSent.current = true;
+    onRevealCompleteRef.current?.();
+  }, [revealConfigured, revealPhase]);
 
   useEffect(() => {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -504,6 +524,11 @@ export function ContributionExplorer() {
     return () => window.clearTimeout(finishTimer);
   }, [revealPhase]);
 
+  const finishRevealAnimation = (event: AnimationEvent<HTMLDivElement>) => {
+    if (event.currentTarget !== event.target || event.animationName !== "contribution-wipe") return;
+    setRevealPhase("done");
+  };
+
   const statusLabel = currentResult.status === "github"
     ? "Synced from the latest GitHub Pages contribution snapshot"
     : currentResult.status === "snapshot"
@@ -535,22 +560,24 @@ export function ContributionExplorer() {
             aria-busy={currentResult.status === "loading" || revealPhase !== "done"}
           >
             <div className="contribution-reveal-stage">
-              <div key={graph.key} className="contribution-data year-data">
-                <ContributionGraph
-                  model={graph}
-                  entries={currentResult.entries}
-                  total={total}
-                  today={today}
-                  periodLabel={periodLabel}
-                  alignToEnd={selectedYear === null}
-                />
-                <div className="contribution-footer">
-                  <span>{statusLabel}</span>
-                  <span className="legend" aria-label="Contribution intensity legend">
-                    Less
-                    {[0, 1, 2, 3, 4].map((level) => <i key={level} className={`heat-cell level-${level}`} />)}
-                    More
-                  </span>
+              <div className="contribution-data" onAnimationEnd={finishRevealAnimation}>
+                <div key={graph.key} className="year-data">
+                  <ContributionGraph
+                    model={graph}
+                    entries={currentResult.entries}
+                    total={total}
+                    today={today}
+                    periodLabel={periodLabel}
+                    alignToEnd={selectedYear === null}
+                  />
+                  <div className="contribution-footer">
+                    <span>{statusLabel}</span>
+                    <span className="legend" aria-label="Contribution intensity legend">
+                      Less
+                      {[0, 1, 2, 3, 4].map((level) => <i key={level} className={`heat-cell level-${level}`} />)}
+                      More
+                    </span>
+                  </div>
                 </div>
               </div>
 

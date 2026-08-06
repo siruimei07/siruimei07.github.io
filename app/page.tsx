@@ -1,11 +1,29 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type AnimationEvent,
+  type MouseEvent,
+} from "react";
 import { ContributionExplorer } from "./ContributionExplorer";
 import { ActivityPanel, RepositoriesPanel } from "./GitHubProfilePanels";
 import { SummerFlight } from "./SummerFlight";
 
 type ProfileView = "overview" | "repositories" | "activity";
+type AvatarMascotPhase =
+  | "hidden"
+  | "bike-enter"
+  | "bike-rest"
+  | "bike-exit"
+  | "sitter-enter"
+  | "sitter-rest";
+
+const MASCOT_STATE_SESSION_KEY = "sirui-avatar-mascot-state-v1";
+const MASCOT_SWITCH_SESSION_KEY = "sirui-avatar-mascot-switch-v1";
 
 function Header({ activeView, onSelect }: { activeView: ProfileView; onSelect: (view: ProfileView) => void }) {
   const tabProps = (view: ProfileView) => ({
@@ -66,12 +84,36 @@ function SummerBackdrop() {
   );
 }
 
-function ProfileSidebar() {
+function ProfileSidebar({
+  mascotPhase,
+  onMascotAnimationEnd,
+}: {
+  mascotPhase: AvatarMascotPhase;
+  onMascotAnimationEnd: (event: AnimationEvent<HTMLDivElement>) => void;
+}) {
+  const sitterVisible = mascotPhase === "sitter-enter" || mascotPhase === "sitter-rest";
+
   return (
     <aside className="profile-sidebar" aria-label="Profile information">
-      <div className="avatar-frame">
-        <img className="avatar" src="/assets/avatar.jpg" alt="Sirui Mei's GitHub avatar" />
-        <span className="status-bubble" title="Summer mode" aria-label="Status: summer mode">*</span>
+      <div className="avatar-stage">
+        {mascotPhase !== "hidden" && (
+          <div
+            className={`avatar-mascot avatar-mascot-${sitterVisible ? "sitter" : "bike"} avatar-mascot-${mascotPhase}`}
+            data-phase={mascotPhase}
+            aria-hidden="true"
+            onAnimationEnd={onMascotAnimationEnd}
+          >
+            <img
+              src={sitterVisible ? "/assets/staff-sitter.gif" : "/assets/contribution-sweeper.gif"}
+              alt=""
+            />
+          </div>
+        )}
+
+        <div className="avatar-frame">
+          <img className="avatar" src="/assets/avatar.jpg" alt="Sirui Mei's GitHub avatar" />
+          <span className="status-bubble" title="Summer mode" aria-label="Status: summer mode">*</span>
+        </div>
       </div>
 
       <div className="identity">
@@ -138,13 +180,192 @@ function RepositorySection() {
 
 export default function Home() {
   const [activeView, setActiveView] = useState<ProfileView>("overview");
+  const [mascotPhase, setMascotPhase] = useState<AvatarMascotPhase>("hidden");
   const contentRef = useRef<HTMLDivElement>(null);
+  const activeViewRef = useRef<ProfileView>("overview");
+  const mascotPhaseRef = useRef<AvatarMascotPhase>("hidden");
+  const mascotSwitchConsumedRef = useRef(false);
+  const mascotSwitchPendingRef = useRef(false);
+  const mascotArrivalScheduledRef = useRef(false);
+  const reducedMotionRef = useRef(false);
+  const mascotTimersRef = useRef(new Set<number>());
+
+  const storeSessionValue = useCallback((key: string, value: string) => {
+    try {
+      window.sessionStorage.setItem(key, value);
+    } catch {
+      // Session storage can be disabled without affecting navigation.
+    }
+  }, []);
+
+  const commitMascotPhase = useCallback((phase: AvatarMascotPhase) => {
+    mascotPhaseRef.current = phase;
+    setMascotPhase(phase);
+  }, []);
+
+  const scheduleMascotPhase = useCallback((phase: AvatarMascotPhase, delay: number) => {
+    const timer = window.setTimeout(() => {
+      mascotTimersRef.current.delete(timer);
+      commitMascotPhase(phase);
+    }, delay);
+    mascotTimersRef.current.add(timer);
+  }, [commitMascotPhase]);
+
+  useLayoutEffect(() => {
+    reducedMotionRef.current = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    let storedMascot: string | null = null;
+    let storedSwitch: string | null = null;
+    try {
+      storedMascot = window.sessionStorage.getItem(MASCOT_STATE_SESSION_KEY);
+      storedSwitch = window.sessionStorage.getItem(MASCOT_SWITCH_SESSION_KEY);
+    } catch {
+      // The decorative state simply restarts when session storage is unavailable.
+    }
+
+    const restoreFrame = window.requestAnimationFrame(() => {
+      mascotSwitchConsumedRef.current = storedSwitch === "pending" || storedSwitch === "done";
+      mascotSwitchPendingRef.current = storedSwitch === "pending";
+
+      if (storedSwitch === "done" || storedMascot === "sitter-rest") {
+        commitMascotPhase("sitter-rest");
+        mascotSwitchConsumedRef.current = true;
+        mascotSwitchPendingRef.current = false;
+        return;
+      }
+
+      if (storedMascot === "await-sitter") {
+        mascotSwitchConsumedRef.current = true;
+        mascotSwitchPendingRef.current = true;
+        if (reducedMotionRef.current) {
+          commitMascotPhase("sitter-rest");
+          storeSessionValue(MASCOT_STATE_SESSION_KEY, "sitter-rest");
+          storeSessionValue(MASCOT_SWITCH_SESSION_KEY, "done");
+          mascotSwitchPendingRef.current = false;
+        } else {
+          scheduleMascotPhase("sitter-enter", 1000);
+        }
+        return;
+      }
+
+      if (storedMascot === "bike-rest") {
+        if (storedSwitch === "pending" && !reducedMotionRef.current) {
+          storeSessionValue(MASCOT_STATE_SESSION_KEY, "await-sitter");
+          commitMascotPhase("bike-exit");
+        } else {
+          commitMascotPhase("bike-rest");
+        }
+        if (storedSwitch === "pending" && reducedMotionRef.current) {
+          commitMascotPhase("sitter-rest");
+          storeSessionValue(MASCOT_STATE_SESSION_KEY, "sitter-rest");
+          storeSessionValue(MASCOT_SWITCH_SESSION_KEY, "done");
+          mascotSwitchPendingRef.current = false;
+        }
+      }
+    });
+
+    return () => window.cancelAnimationFrame(restoreFrame);
+  }, [commitMascotPhase, scheduleMascotPhase, storeSessionValue]);
+
+  useEffect(() => () => {
+    mascotTimersRef.current.forEach((timer) => window.clearTimeout(timer));
+    mascotTimersRef.current.clear();
+  }, []);
+
+  const handleContributionRevealComplete = useCallback(() => {
+    if (mascotPhaseRef.current !== "hidden" || mascotArrivalScheduledRef.current) return;
+
+    mascotArrivalScheduledRef.current = true;
+    if (reducedMotionRef.current) {
+      commitMascotPhase(mascotSwitchPendingRef.current ? "sitter-rest" : "bike-rest");
+      const restingState = mascotSwitchPendingRef.current ? "sitter-rest" : "bike-rest";
+      storeSessionValue(MASCOT_STATE_SESSION_KEY, restingState);
+      if (mascotSwitchPendingRef.current) {
+        storeSessionValue(MASCOT_SWITCH_SESSION_KEY, "done");
+        mascotSwitchPendingRef.current = false;
+      }
+      return;
+    }
+
+    // Let the contribution sweep fully clear before the rider returns by the avatar.
+    scheduleMascotPhase("bike-enter", 2000);
+  }, [commitMascotPhase, scheduleMascotPhase, storeSessionValue]);
+
+  const beginFirstMascotSwitch = useCallback(() => {
+    if (mascotSwitchConsumedRef.current) return;
+
+    mascotSwitchConsumedRef.current = true;
+    mascotSwitchPendingRef.current = true;
+    storeSessionValue(MASCOT_SWITCH_SESSION_KEY, "pending");
+
+    if (reducedMotionRef.current) {
+      commitMascotPhase("sitter-rest");
+      storeSessionValue(MASCOT_STATE_SESSION_KEY, "sitter-rest");
+      storeSessionValue(MASCOT_SWITCH_SESSION_KEY, "done");
+      mascotSwitchPendingRef.current = false;
+      return;
+    }
+
+    if (mascotPhaseRef.current === "bike-rest") {
+      storeSessionValue(MASCOT_STATE_SESSION_KEY, "await-sitter");
+      commitMascotPhase("bike-exit");
+    }
+  }, [commitMascotPhase, storeSessionValue]);
+
+  const advanceMascotPhase = useCallback(() => {
+    switch (mascotPhaseRef.current) {
+      case "bike-enter":
+        commitMascotPhase("bike-rest");
+        storeSessionValue(MASCOT_STATE_SESSION_KEY, "bike-rest");
+        if (mascotSwitchPendingRef.current) {
+          storeSessionValue(MASCOT_STATE_SESSION_KEY, "await-sitter");
+          scheduleMascotPhase("bike-exit", 360);
+        }
+        break;
+      case "bike-exit":
+        commitMascotPhase("hidden");
+        scheduleMascotPhase("sitter-enter", 1000);
+        break;
+      case "sitter-enter":
+        commitMascotPhase("sitter-rest");
+        storeSessionValue(MASCOT_STATE_SESSION_KEY, "sitter-rest");
+        storeSessionValue(MASCOT_SWITCH_SESSION_KEY, "done");
+        mascotSwitchPendingRef.current = false;
+        break;
+      default:
+        break;
+    }
+  }, [commitMascotPhase, scheduleMascotPhase, storeSessionValue]);
+
+  const handleMascotAnimationEnd = useCallback((event: AnimationEvent<HTMLDivElement>) => {
+    if (event.currentTarget !== event.target) return;
+    advanceMascotPhase();
+  }, [advanceMascotPhase]);
+
+  useEffect(() => {
+    const fallbackDelay = mascotPhase === "bike-enter"
+      ? 1900
+      : mascotPhase === "bike-exit"
+        ? 1450
+        : mascotPhase === "sitter-enter"
+          ? 1900
+          : null;
+    if (fallbackDelay === null) return;
+
+    const fallbackTimer = window.setTimeout(() => {
+      if (mascotPhaseRef.current === mascotPhase) advanceMascotPhase();
+    }, fallbackDelay);
+    return () => window.clearTimeout(fallbackTimer);
+  }, [advanceMascotPhase, mascotPhase]);
 
   const selectView = useCallback((view: ProfileView, updateHistory = true) => {
+    const changed = activeViewRef.current !== view;
+    activeViewRef.current = view;
     setActiveView(view);
     if (updateHistory) window.history.pushState(null, "", `#${view}`);
+    if (updateHistory && changed) beginFirstMascotSwitch();
     contentRef.current?.scrollTo({ top: 0, behavior: "smooth" });
-  }, []);
+  }, [beginFirstMascotSwitch]);
 
   useEffect(() => {
     const syncFromHash = () => {
@@ -170,7 +391,7 @@ export default function Home() {
         <SummerBackdrop />
 
         <main className="profile-shell content-layer">
-          <ProfileSidebar />
+          <ProfileSidebar mascotPhase={mascotPhase} onMascotAnimationEnd={handleMascotAnimationEnd} />
           <section className="profile-content-frame" aria-label="Scrollable profile activity">
             <div className="scroll-hint" aria-hidden="true">SCROLL / EXPLORE</div>
             <div
@@ -187,7 +408,7 @@ export default function Home() {
                 hidden={activeView !== "overview"}
               >
                 <RepositorySection />
-                <ContributionExplorer />
+                <ContributionExplorer onRevealComplete={handleContributionRevealComplete} />
                 <div className="scroll-end-note" aria-hidden="true">
                   <span>STAY COOL</span>
                   <i />
