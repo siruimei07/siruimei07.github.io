@@ -1,247 +1,171 @@
-// Builds the page markup from content.ts + the GitHub snapshot. Runs at build
-// time (vite.config.ts injects it into index.html), so the site is readable
-// before JavaScript loads and the 3D layer only enhances it.
+import { contact, credits, hero, identity, loader, profile, sections, skills } from "./content.ts";
+import { mergeWorks, summarize, type GitHubSnapshot } from "./github.ts";
 
-import { contact, credits, hero, identity, profile, sections, skills } from "./content.ts";
-import { heatmap, mergeWorks, summarize, type GitHubSnapshot } from "./github.ts";
+// Pre-renders the whole page into index.html at build time, so every word is
+// in the document before (and without) JavaScript. The 3D layer and the
+// chapter controller take over once the script runs.
 
-const esc = (s: string) =>
-  s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
-const ext = (href: string, inner: string, cls = "") =>
-  `<a class="${cls}" href="${esc(href)}" target="_blank" rel="noopener noreferrer">${inner}</a>`;
+const ext = (href: string, text: string, cls = "") =>
+  `<a${cls ? ` class="${cls}"` : ""} href="${esc(href)}" target="_blank" rel="noopener noreferrer">${text}</a>`;
 
-const FORMULAS: Record<string, string> = {
-  stats: "X ~ N(μ, σ²)",
-  econ: "Q<sub>d</sub>(P*) = Q<sub>s</sub>(P*)",
-  quant: "dS = μS dt + σS dW",
-};
-
-function sectionHead(i: number, id: string) {
+function head(id: string) {
+  const i = sections.findIndex((s) => s.id === id);
   const s = sections[i];
-  return `<header class="sec-head" data-reveal>
-    <p class="sec-head__index"><span class="numeral">${s.index}</span><i></i>${esc(s.en)}</p>
-    <h2 class="sec-head__title" id="${id}">${esc(s.zh)}</h2>
-    <p class="sec-head__ja" lang="ja">${esc(s.ja)}</p>
+  return `<header class="chapter__head" data-reveal>
+    <span class="chapter__index">${s.index}</span>
+    <h2 class="chapter__title">${esc(s.zh)}</h2>
+    <span class="chapter__sub"><i>${esc(s.en)}</i> · ${esc(s.ja)}</span>
   </header>`;
 }
 
-function loader() {
-  return `<p class="skip-hint" aria-hidden="true">轻触或滚动 · 快进</p>
-<div class="loader" id="loader">
-  <div class="loader__core">
-    <p class="loader__status"><span id="loader-text">即将启程…</span><b id="loader-pct">0%</b></p>
-    <div class="loader__line" aria-hidden="true"><i id="loader-bar"></i></div>
-    <div class="loader__actions" id="loader-actions">
-      <button type="button" class="btn btn--primary" data-dive="sound">启程 · 开启声音</button>
-      <button type="button" class="btn btn--ghost" data-dive="mute">静音启程</button>
+function renderLoader() {
+  return `<div class="loader" data-loader>
+  <div class="loader__inner">
+    <p class="loader__mark"><span class="loader__kanji">${esc(loader.title)}</span><span class="loader__kana">${esc(loader.titleJa)}</span></p>
+    <p class="loader__line">${esc(loader.line)}</p>
+    <div class="loader__bar" aria-hidden="true"><i data-progress></i></div>
+    <p class="loader__status" data-status>准备中…</p>
+    <div class="loader__actions">
+      <button class="btn btn--primary" type="button" data-start disabled>${esc(loader.start)}<small>${esc(loader.startJa)}</small></button>
     </div>
   </div>
-  <p class="loader__foot"><span lang="ja">月読</span> · ${esc(identity.handle.family + identity.handle.given)} · 建议佩戴耳机</p>
 </div>`;
 }
 
-function hud() {
+function renderTopbar() {
   const rail = sections
-    .map(
-      (s, i) =>
-        `<a href="#${s.id}" data-rail="${i}"><span class="rail__label">${esc(s.zh)}</span><span class="rail__num">${s.index}</span><i class="rail__dot"></i></a>`,
-    )
+    .map((s, i) => `<a href="#${s.id}" data-rail="${i}" aria-label="${esc(s.zh)}"><b>${s.index}</b><span>${esc(s.zh)}</span></a>`)
     .join("");
-  return `<header class="hud-top">
-  <a class="brand" href="#login" aria-label="回到开头">
-    <svg class="brand__mark" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.5" /><circle class="brand__fill" cx="16" cy="16" r="9" /></svg>
-    <span class="brand__ja" lang="ja">月読</span><span class="brand__en">TSUKUYOMI</span>
-  </a>
-  <div class="hud-top__right">
-    <p class="hud-top__time"><span id="jihou" lang="ja">—の刻</span><span id="clock">--:--</span></p>
-    <button type="button" class="chip" id="quality" title="画质（点击切换）"><b id="fps">--</b> fps · <span id="quality-label">auto</span></button>
-    <button type="button" class="chip" id="sound" aria-pressed="false" title="声音"><span class="wave" aria-hidden="true"><i></i><i></i><i></i></span><span id="sound-label">音 · 关</span></button>
-  </div>
+  return `<header class="topbar" data-ui>
+  <a class="topbar__mark" href="#cover" data-rail="0"><b>月読</b><span>TSUKUYOMI</span></a>
+  <nav class="rail" aria-label="章节">${rail}</nav>
 </header>
-<nav class="rail" aria-label="章节导航">${rail}</nav>
-<div class="bubble" id="bubble" role="status" aria-live="polite"></div>
-<div class="cursor" aria-hidden="true"><div class="cursor__ring"><span class="cursor__label"></span></div><div class="cursor__dot"></div></div>`;
+<button class="skip" type="button" data-skip hidden>${esc(loader.skip)} <span aria-hidden="true">›</span></button>`;
 }
 
-function heroSection() {
+function renderCover() {
   const h = identity.handle;
-  return `<section class="sec sec--hero" id="login" data-section="0" aria-label="${esc(sections[0].zh)}">
-  <div class="hero">
-    <p class="hero__kicker" data-reveal><span class="seal" lang="ja">${esc(hero.kicker)}</span><span lang="ja">${esc(hero.kickerJa)}</span></p>
-    <h1 class="hero__name" lang="ja" data-reveal>
-      <ruby>${esc(h.family)}<rt>${esc(h.familyKana)}</rt></ruby><span class="hero__gap"></span><ruby>${esc(h.given)}<rt>${esc(h.givenKana)}</rt></ruby>
-    </h1>
-    <p class="hero__roman" data-reveal>${esc(identity.handleRoman)}</p>
-    <p class="hero__real" data-reveal>真名 <strong>${esc(identity.realName)}</strong><span></span>${esc(identity.affiliation.en)}</p>
-    <p class="hero__tagline" data-reveal>${hero.tagline.map(esc).join("<br />")}</p>
-    <p class="hero__tagline-ja" lang="ja" data-reveal>${esc(hero.taglineJa)}</p>
-    <ul class="hero__focus" data-reveal aria-label="擅长">${hero.focus.map((f) => `<li>${esc(f)}</li>`).join("")}</ul>
-    <div class="hero__cta" data-reveal>
-      <a class="btn btn--primary" href="#profile" data-magnetic>穿过鸟居</a>
-      <a class="btn btn--ghost" href="#contact" data-magnetic>写一封信</a>
-    </div>
+  return `<section id="cover" class="chapter chapter--cover" data-chapter="0" aria-label="鸟居">
+  <div class="cover">
+    <p class="kicker" data-reveal><span class="kicker__kanji">${esc(hero.kicker)}</span><span class="kicker__ja">${esc(hero.kickerJa)}</span></p>
+    <h1 class="name" data-reveal><ruby>${esc(h.family)}<rt>${esc(h.familyKana)}</rt></ruby><ruby>${esc(h.given)}<rt>${esc(h.givenKana)}</rt></ruby></h1>
+    <p class="roman" data-reveal>${esc(identity.handleRoman)} <i>·</i> ${esc(identity.realName)}</p>
+    <p class="tagline" data-reveal>${hero.tagline.map(esc).join("<br>")}</p>
+    <p class="tagline-ja" data-reveal>${esc(hero.taglineJa)}</p>
+    <ul class="focus" data-reveal>${hero.focus.map((f) => `<li>${esc(f)}</li>`).join("")}</ul>
+    <div class="cta" data-reveal><a class="btn btn--primary" href="#profile" data-next>${esc(hero.enter)}<small>${esc(hero.enterJa)}</small></a></div>
   </div>
-  <ul class="hints" aria-label="操作提示">${hero.hints.map((x) => `<li><b>${esc(x.key)}</b>${esc(x.text)}</li>`).join("")}</ul>
-  <div class="scroll-cue" aria-hidden="true"><i></i></div>
+  <ul class="hints" data-reveal>${hero.hints.map((x) => `<li><b>${esc(x.key)}</b>${esc(x.text)}</li>`).join("")}</ul>
 </section>`;
 }
 
-function profileSection() {
-  const h = identity.handle;
-  const rows = profile.fields.map((f) => `<div class="stat-row"><dt>${esc(f.k)}</dt><dd>${esc(f.v)}</dd></div>`).join("");
-  return `<section class="sec sec--profile" id="profile" data-section="1" data-center="1" aria-labelledby="profile-title">
-  <div class="panel panel--right" data-reveal>
-    ${sectionHead(1, "profile-title")}
-    <div class="idcard">
-      <div class="idcard__photo"><img src="/assets/avatar-256.webp" alt="酒寄彩葉的头像" width="256" height="256" loading="lazy" /></div>
-      <div class="idcard__name">
-        <p class="idcard__handle" lang="ja">${esc(h.family)} ${esc(h.given)}</p>
-        <p class="idcard__roman">${esc(identity.handleRoman)}</p>
-        <p class="idcard__real">${esc(identity.realName)} · ${esc(identity.status.zh)}</p>
+function renderProfile() {
+  const fields = profile.fields.map((f) => `<div><dt>${esc(f.k)}</dt><dd>${esc(f.v)}</dd></div>`).join("");
+  return `<section id="profile" class="chapter chapter--profile" data-chapter="1" aria-label="档案">
+  <div class="panel">
+    ${head("profile")}
+    <div class="profile__who" data-reveal>
+      <img class="profile__avatar" src="/assets/avatar-256.webp" width="96" height="96" alt="酒寄彩葉的头像" loading="lazy" decoding="async" />
+      <div>
+        <p class="profile__name">${esc(identity.handle.family)} ${esc(identity.handle.given)}</p>
+        <p class="profile__real">${esc(identity.realName)} · ${esc(identity.affiliation.en)}</p>
       </div>
     </div>
-    <p class="prose" data-reveal>${esc(profile.intro)}</p>
-    <p class="prose prose--ja" lang="ja" data-reveal>${esc(profile.introJa)}</p>
-    <dl class="stats" data-reveal>${rows}</dl>
-    <p class="links-row" data-reveal>
-      ${ext(identity.githubUrl, `GitHub <span>@${esc(identity.github)} ↗</span>`, "link-chip")}
-      <a class="link-chip" href="mailto:${esc(identity.email)}">Mail <span>${esc(identity.email)}</span></a>
-    </p>
+    <p class="profile__intro" data-reveal>${esc(profile.intro)}</p>
+    <p class="profile__ja" data-reveal>${esc(profile.introJa)}</p>
+    <dl class="fields" data-reveal>${fields}</dl>
   </div>
 </section>`;
 }
 
-function skillsSection() {
+function renderSkills() {
   const cards = skills
     .map(
-      (s, i) => `<article class="skill" data-skill="${i}" data-reveal data-tilt>
-      <p class="skill__index"><span class="numeral">${s.index}</span><span>${esc(s.en)}</span></p>
-      <h3 class="skill__title">${esc(s.zh)}<small lang="ja">${esc(s.ja)}</small><span class="skill__seal" lang="ja" aria-hidden="true">${esc(s.lantern)}</span></h3>
-      <p class="skill__formula">${FORMULAS[s.id]}</p>
-      <p class="skill__motto">「${esc(s.motto)}」</p>
-      <p class="skill__body">${esc(s.body)}</p>
-      <ul class="skill__topics">${s.topics.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>
+      (s) => `<article class="skill" data-skill="${s.id}" data-reveal tabindex="0">
+      <span class="skill__lantern" aria-hidden="true">${esc(s.lantern)}</span>
+      <div class="skill__body">
+        <h3>${esc(s.zh)} <small>${esc(s.en)} · ${esc(s.ja)}</small></h3>
+        <p class="skill__motto">${esc(s.motto)}</p>
+        <p class="skill__text">${esc(s.body)}</p>
+        <ul class="tags">${s.topics.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>
+      </div>
     </article>`,
     )
     .join("");
-  return `<section class="sec sec--skills" id="skills" data-section="2" data-center="1" aria-labelledby="skills-title">
-  <div class="skills-wrap">
-    ${sectionHead(2, "skills-title")}
-    <p class="skills-lead" data-reveal>穿过鸟居，三盏提灯浮在水面上——各自照亮一种看世界的方式。</p>
+  return `<section id="skills" class="chapter chapter--skills" data-chapter="2" aria-label="擅长">
+  <div class="panel panel--wide">
+    ${head("skills")}
     <div class="skills">${cards}</div>
   </div>
 </section>`;
 }
 
-function worksSection(data: GitHubSnapshot | null) {
-  const works = mergeWorks(data);
+function renderWorks(data: GitHubSnapshot | null) {
+  const list = mergeWorks(data);
   const stats = summarize(data);
-  const cards = works
-    .map((w) => {
-      const meta = [
-        w.stars !== null ? `<span>★ ${w.stars}</span>` : "",
-        w.language ? `<span>${esc(w.language)}</span>` : "",
-        w.updated ? `<span>更新 ${esc(w.updated.slice(0, 10))}</span>` : "",
-      ].join("");
-      return `<article class="work" data-reveal data-tilt>
-      <div class="work__screen"><span class="work__badge work__badge--${w.state}">${w.state === "live" ? "运行中" : "已归档"}</span><span class="work__code">${esc(w.code)}</span></div>
-      <div class="work__body">
-        <p class="work__zh">${esc(w.zh)}</p>
-        <h3 class="work__title">${esc(w.title)}</h3>
-        <p class="work__desc">${esc(w.description)}</p>
-        <ul class="work__stack">${w.stack.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>
-        ${meta ? `<p class="work__meta">${meta}</p>` : ""}
-      </div>
-      ${ext(w.href, `查看仓库 <span aria-hidden="true">↗</span><span class="sr-only">：${esc(w.title)}</span>`, "work__link")}
-    </article>`;
-    })
-    .join("");
-
-  const statTiles = stats
-    ? [
-        ["公开仓库", "Repositories", stats.repos],
-        ["获得星标", "Stars", stats.stars],
-        ["关注者", "Followers", stats.followers],
-        ["年度贡献", "Contributions", stats.yearContributions],
-      ]
-        .map(([zh, en, n]) => `<div class="tile"><b data-count="${n}">${n}</b><span>${zh}<small>${en}</small></span></div>`)
-        .join("")
-    : "";
-
-  const cells = heatmap(data)
+  const cards = list
     .map(
-      (col) =>
-        `<span class="heat__col">${col
-          .map((c) =>
-            c.future
-              ? `<i class="heat__cell heat__cell--future"></i>`
-              : `<i class="heat__cell" data-level="${c.level}" title="${c.date} · ${c.count} contribution${c.count === 1 ? "" : "s"}"></i>`,
-          )
-          .join("")}</span>`,
+      (w) => `<article class="work" data-reveal>
+      <span class="work__code">${esc(w.code)}</span>
+      <div class="work__body">
+        <h3>${ext(w.href, esc(w.title))} <small>${esc(w.zh)}</small></h3>
+        <p>${esc(w.description)}</p>
+        <ul class="tags">${w.stack.map((t) => `<li>${esc(t)}</li>`).join("")}${w.stars !== null ? `<li class="tags__star">★ ${w.stars}</li>` : ""}</ul>
+      </div>
+      <span class="work__state work__state--${w.state}">${w.state === "live" ? "LIVE" : "ARCHIVE"}</span>
+    </article>`,
     )
     .join("");
-
-  return `<section class="sec sec--works" id="works" data-section="3" aria-labelledby="works-title">
-  <div class="works-wrap">
-    ${sectionHead(3, "works-title")}
+  const statLine = stats
+    ? `<p class="stats" data-reveal>GitHub · <b>${stats.repos}</b> 仓库 · <b>${stats.stars}</b> 星标 · 近一年 <b>${stats.yearContributions}</b> 次贡献</p>`
+    : "";
+  return `<section id="works" class="chapter chapter--works" data-chapter="3" aria-label="作品">
+  <div class="panel panel--wide">
+    ${head("works")}
     <div class="works">${cards}</div>
-    <div class="activity" data-reveal>
-      <div class="tiles">${statTiles}</div>
-      <div class="heat" role="img" aria-label="过去一年的 GitHub 贡献日历${stats ? `：${stats.activeDays} 天有提交` : ""}">
-        <p class="heat__label">GitHub · 一年的足迹<span>${stats ? `${stats.activeDays} 日` : ""}</span></p>
-        <div class="heat__grid">${cells}</div>
-      </div>
-    </div>
+    ${statLine}
+    <p class="more" data-reveal>${ext(identity.githubUrl, `更多在 GitHub · @${esc(identity.github)} ›`)}</p>
   </div>
 </section>`;
 }
 
-function contactSection() {
-  const s = sections[4];
-  return `<section class="sec sec--contact" id="contact" data-section="4" aria-labelledby="contact-title">
-  <div class="contact" data-reveal>
-    <p class="sec-head__index"><span class="numeral">${s.index}</span><i></i>${esc(s.en)}</p>
-    <h2 class="contact__title" id="contact-title">${esc(contact.title)}</h2>
-    <p class="contact__ja" lang="ja">${esc(contact.titleJa)}</p>
-    <p class="contact__lead">${esc(contact.lead)}</p>
-    <form class="wish" id="wish" data-subject="${esc(contact.subject)}" data-email="${esc(identity.email)}">
-      <label class="sr-only" for="wish-text">留言内容</label>
-      <textarea id="wish-text" name="message" rows="3" maxlength="400" placeholder="${esc(contact.placeholder)}"></textarea>
-      <div class="wish__actions">
-        <button type="submit" class="btn btn--primary" data-magnetic>放飞灯笼</button>
-        <a class="btn btn--ghost" id="wish-mail" href="mailto:${esc(identity.email)}?subject=${encodeURIComponent(contact.subject)}" data-magnetic>用邮件寄出</a>
+function renderContact() {
+  return `<section id="contact" class="chapter chapter--contact" data-chapter="4" aria-label="联络">
+  <div class="panel">
+    ${head("contact")}
+    <h3 class="letter__title" data-reveal>${esc(contact.title)} <small>${esc(contact.titleJa)}</small></h3>
+    <p class="letter__lead" data-reveal>${esc(contact.lead)}</p>
+    <form class="letter" data-letter data-reveal>
+      <label class="sr-only" for="letter-text">留言</label>
+      <textarea id="letter-text" name="message" rows="3" maxlength="400" placeholder="${esc(contact.placeholder)}"></textarea>
+      <div class="letter__actions">
+        <button class="btn btn--primary" type="submit" data-release>${esc(contact.release)}</button>
+        <a class="btn" href="mailto:${esc(identity.email)}?subject=${encodeURIComponent(contact.subject)}" data-mail>${esc(contact.send)}</a>
       </div>
-      <p class="wish__status" id="wish-status" role="status" aria-live="polite"></p>
+      <p class="letter__thanks" data-thanks hidden>${esc(contact.thanks)}</p>
     </form>
-    <div class="contact__links">
-      <button type="button" class="contact-card" id="copy-email" data-email="${esc(identity.email)}"><small>邮箱 · 点击复制</small><b>${esc(identity.email)}</b></button>
-      ${ext(identity.githubUrl, `<small>GitHub</small><b>@${esc(identity.github)} ↗</b>`, "contact-card")}
-    </div>
+    <ul class="links" data-reveal>
+      <li><span>Mail</span><a href="mailto:${esc(identity.email)}">${esc(identity.email)}</a></li>
+      <li><span>GitHub</span>${ext(identity.githubUrl, `@${esc(identity.github)}`)}</li>
+    </ul>
+    <p class="credits" data-reveal>${esc(credits)}</p>
   </div>
 </section>`;
-}
-
-function footer(year: number) {
-  return `<footer class="foot">
-  <p>© ${year} ${esc(identity.realName)} · <span lang="ja">${esc(identity.handle.family + identity.handle.given)}</span></p>
-  <p class="foot__credit">${esc(credits)}</p>
-  <p class="foot__tech">three.js · HDR pipeline · <span id="gpu-note">adaptive quality</span></p>
-</footer>`;
 }
 
 export function renderApp(data: GitHubSnapshot | null): string {
-  const year = new Date(data?.generatedAt ?? Date.now()).getUTCFullYear();
   return [
-    loader(),
-    hud(),
-    `<main id="main">`,
-    heroSection(),
-    profileSection(),
-    skillsSection(),
-    worksSection(data),
-    contactSection(),
+    renderLoader(),
+    renderTopbar(),
+    `<main id="main" class="chapters">`,
+    renderCover(),
+    renderProfile(),
+    renderSkills(),
+    renderWorks(data),
+    renderContact(),
     `</main>`,
-    footer(year),
+    `<p class="toast" data-toast role="status" aria-live="polite"></p>`,
   ].join("\n");
 }

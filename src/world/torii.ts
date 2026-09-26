@@ -1,289 +1,370 @@
 import * as THREE from "three";
-import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
-import { COMMON, globals, REFLECT_LAYER } from "./globals.ts";
-import type { FrameContext, Part } from "./World.ts";
+import { common, skyMath } from "../engine/glsl";
+import { G } from "./atmos";
+import { skyFunctions } from "./sky";
 
-// The great torii (大鳥居) standing in the water — a ryōbu torii with four
-// support legs, modelled after the floating gate at Itsukushima. Passing
-// through its opening is the entrance to Tsukuyomi.
+// A myōjin torii modelled from the clip's proportions (kasagi ≈ 2.3× the
+// pillar spacing, nuki ≈ 1.8×): curved kasagi with a black lacquer cap and
+// swept, slanted ends, shimaki beneath it, gakuzuka, a through-tenon nuki,
+// kusabi wedges, daiwa collars and slightly leaning, tapered pillars.
+// Everything is one merged geometry with a `part` attribute; the shader does
+// vermilion lacquer, wood grain, weathering and the wet base procedurally.
 
-export const GATE_Z = 0;
-export const GATE_OPENING = { halfWidth: 6.4, height: 13 };
+export type ToriiDims = {
+  spacing: number; // pillar centre distance
+  height: number; // top of kasagi at the middle
+  scale: number;
+};
 
-const VERMILION = new THREE.Color(0.55, 0.045, 0.024);
-const BLACK = new THREE.Color(0.016, 0.015, 0.018);
+type Parts = { pos: number[]; nrm: number[]; part: number[]; grain: number[]; idx: number[] };
 
-function paint(geo: THREE.BufferGeometry, c: THREE.Color, gloss: number) {
-  const n = geo.attributes.position.count;
-  const col = new Float32Array(n * 4);
-  for (let i = 0; i < n; i++) col.set([c.r, c.g, c.b, gloss], i * 4);
-  geo.setAttribute("aColor", new THREE.BufferAttribute(col, 4));
-  geo.deleteAttribute("uv");
-  return geo;
+function pushQuadStrip(P: Parts, a: THREE.Vector3[], b: THREE.Vector3[], part: number, grain: THREE.Vector3, flip = false) {
+  // a and b are rows of equal length; builds a strip of quads with flat-ish normals.
+  const base = P.pos.length / 3;
+  for (let i = 0; i < a.length; i++) {
+    for (const v of [a[i], b[i]]) {
+      P.pos.push(v.x, v.y, v.z);
+      P.part.push(part);
+      P.grain.push(grain.x, grain.y, grain.z);
+      P.nrm.push(0, 0, 0);
+    }
+  }
+  for (let i = 0; i < a.length - 1; i++) {
+    const i0 = base + i * 2;
+    if (!flip) P.idx.push(i0, i0 + 1, i0 + 2, i0 + 1, i0 + 3, i0 + 2);
+    else P.idx.push(i0, i0 + 2, i0 + 1, i0 + 1, i0 + 2, i0 + 3);
+  }
 }
 
-function bend(geo: THREE.BufferGeometry, k: number) {
-  const p = geo.attributes.position;
-  for (let i = 0; i < p.count; i++) p.setY(i, p.getY(i) + k * p.getX(i) * p.getX(i));
+function pushPoly(P: Parts, pts: THREE.Vector3[], part: number, grain: THREE.Vector3) {
+  // Convex polygon fan.
+  const base = P.pos.length / 3;
+  for (const v of pts) {
+    P.pos.push(v.x, v.y, v.z);
+    P.part.push(part);
+    P.grain.push(grain.x, grain.y, grain.z);
+    P.nrm.push(0, 0, 0);
+  }
+  for (let i = 1; i < pts.length - 1; i++) P.idx.push(base, base + i, base + i + 1);
+}
+
+// Beam along X from -L/2..L/2. yBot(x)/yTop(x) give the profile; depth(x) the
+// z-thickness; endSlant pushes the top of each end outward (kasagi cut).
+function beam(P: Parts, L: number, seg: number, yBot: (x: number) => number, yTop: (x: number) => number, depth: (x: number) => number, part: number, capPart: number, endSlant = 0, zc = 0) {
+  const grain = new THREE.Vector3(1, 0, 0);
+  const xs: number[] = [];
+  for (let i = 0; i <= seg; i++) xs.push(-L / 2 + (L * i) / seg);
+  const row = (fy: (x: number) => number, fz: (x: number) => number, top: boolean) =>
+    xs.map((x) => {
+      const e = Math.abs(x) / (L / 2);
+      const slant = top ? endSlant * Math.pow(e, 8) * Math.sign(x) : 0;
+      return new THREE.Vector3(x + slant, fy(x), zc + fz(x));
+    });
+  const tf = row(yTop, (x) => depth(x) / 2, true); // top front
+  const tb = row(yTop, (x) => -depth(x) / 2, true); // top back
+  const bf = row(yBot, (x) => depth(x) / 2, false);
+  const bb = row(yBot, (x) => -depth(x) / 2, false);
+  pushQuadStrip(P, tb, tf, capPart, grain); // top
+  pushQuadStrip(P, bf, bb, part, grain); // bottom
+  pushQuadStrip(P, tf, bf, part, grain); // front
+  pushQuadStrip(P, bb, tb, part, grain); // back
+  // End caps.
+  const n = xs.length - 1;
+  pushPoly(P, [tf[0], tb[0], bb[0], bf[0]], part, new THREE.Vector3(0, 1, 0));
+  pushPoly(P, [tf[n], bf[n], bb[n], tb[n]], part, new THREE.Vector3(0, 1, 0));
+}
+
+function box(P: Parts, cx: number, cy: number, cz: number, sx: number, sy: number, sz: number, part: number, grain: THREE.Vector3) {
+  const x0 = cx - sx / 2, x1 = cx + sx / 2, y0 = cy - sy / 2, y1 = cy + sy / 2, z0 = cz - sz / 2, z1 = cz + sz / 2;
+  const v = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
+  pushPoly(P, [v(x0, y1, z1), v(x1, y1, z1), v(x1, y1, z0), v(x0, y1, z0)], part, grain);
+  pushPoly(P, [v(x0, y0, z0), v(x1, y0, z0), v(x1, y0, z1), v(x0, y0, z1)], part, grain);
+  pushPoly(P, [v(x0, y0, z1), v(x1, y0, z1), v(x1, y1, z1), v(x0, y1, z1)], part, grain);
+  pushPoly(P, [v(x1, y0, z0), v(x0, y0, z0), v(x0, y1, z0), v(x1, y1, z0)], part, grain);
+  pushPoly(P, [v(x1, y0, z1), v(x1, y0, z0), v(x1, y1, z0), v(x1, y1, z1)], part, grain);
+  pushPoly(P, [v(x0, y0, z0), v(x0, y0, z1), v(x0, y1, z1), v(x0, y1, z0)], part, grain);
+}
+
+// Tapered, leaning cylinder from y0 to y1.
+function pillar(P: Parts, cx: number, y0: number, y1: number, r0: number, r1: number, lean: number, part: number, radial = 36, rings = 14) {
+  const grain = new THREE.Vector3(0, 1, 0);
+  const base = P.pos.length / 3;
+  for (let j = 0; j <= rings; j++) {
+    const t = j / rings;
+    const y = y0 + (y1 - y0) * t;
+    const r = r0 + (r1 - r0) * t;
+    const x = cx + lean * t;
+    for (let i = 0; i <= radial; i++) {
+      const a = (i / radial) * Math.PI * 2;
+      P.pos.push(x + Math.cos(a) * r, y, Math.sin(a) * r);
+      P.nrm.push(0, 0, 0);
+      P.part.push(part);
+      P.grain.push(grain.x, grain.y, grain.z);
+    }
+  }
+  for (let j = 0; j < rings; j++) {
+    for (let i = 0; i < radial; i++) {
+      const a = base + j * (radial + 1) + i;
+      const b = a + radial + 1;
+      P.idx.push(a, b, a + 1, a + 1, b, b + 1);
+    }
+  }
+}
+
+function ring(P: Parts, cx: number, y0: number, y1: number, r: number, part: number) {
+  // Short cylinder with a rounded (bulging) profile: the daiwa collar.
+  const base = P.pos.length / 3;
+  const radial = 36;
+  const rings = 6;
+  for (let j = 0; j <= rings; j++) {
+    const t = j / rings;
+    const y = y0 + (y1 - y0) * t;
+    const rr = r * (0.9 + 0.1 * Math.sin(t * Math.PI));
+    for (let i = 0; i <= radial; i++) {
+      const a = (i / radial) * Math.PI * 2;
+      P.pos.push(cx + Math.cos(a) * rr, y, Math.sin(a) * rr);
+      P.nrm.push(0, 0, 0);
+      P.part.push(part);
+      P.grain.push(0, 1, 0);
+    }
+  }
+  for (let j = 0; j < rings; j++) {
+    for (let i = 0; i < radial; i++) {
+      const a = base + j * (radial + 1) + i;
+      const b = a + radial + 1;
+      P.idx.push(a, b, a + 1, a + 1, b, b + 1);
+    }
+  }
+  // Top cap.
+  const c = P.pos.length / 3;
+  P.pos.push(cx, y1, 0);
+  P.nrm.push(0, 0, 0);
+  P.part.push(part);
+  P.grain.push(0, 1, 0);
+  const top = base + rings * (radial + 1);
+  for (let i = 0; i < radial; i++) P.idx.push(c, top + i + 1, top + i);
+}
+
+function wedge(P: Parts, cx: number, y: number, sx: number, sy: number, sz: number, part: number) {
+  // Kusabi: a little gabled block sitting on the nuki.
+  const v = (x: number, yy: number, z: number) => new THREE.Vector3(cx + x, y + yy, z);
+  const hx = sx / 2, hz = sz / 2;
+  const g = new THREE.Vector3(1, 0, 0);
+  pushPoly(P, [v(-hx, 0, hz), v(hx, 0, hz), v(hx * 0.7, sy, 0), v(-hx * 0.7, sy, 0)], part, g);
+  pushPoly(P, [v(hx, 0, -hz), v(-hx, 0, -hz), v(-hx * 0.7, sy, 0), v(hx * 0.7, sy, 0)], part, g);
+  pushPoly(P, [v(-hx, 0, -hz), v(-hx, 0, hz), v(-hx * 0.7, sy, 0)], part, g);
+  pushPoly(P, [v(hx, 0, hz), v(hx, 0, -hz), v(hx * 0.7, sy, 0)], part, g);
+}
+
+export const TORII_PILLAR_TOP = 16.25;
+
+export function buildToriiGeometry() {
+  const P: Parts = { pos: [], nrm: [], part: [], grain: [], idx: [] };
+  const half = 6.0; // pillar centres at ±6 m
+  const lean = 0.22;
+  const pillarTop = TORII_PILLAR_TOP;
+  const nukiY = pillarTop * 0.76;
+  // Pillars (0 = vermilion). They continue 2 m below the waterline.
+  pillar(P, -half, -2, pillarTop, 0.74, 0.6, lean, 0);
+  pillar(P, half, -2, pillarTop, 0.74, 0.6, -lean, 0);
+  // Daiwa collars under the shimaki.
+  ring(P, -half + lean, pillarTop - 0.42, pillarTop, 0.72, 0);
+  ring(P, half - lean, pillarTop - 0.42, pillarTop, 0.72, 0);
+  // Nuki: straight tie beam, extending past the pillars.
+  box(P, 0, nukiY, 0, 21.2, 1.15, 0.72, 0, new THREE.Vector3(1, 0, 0));
+  // Kusabi wedges on the nuki, outside each pillar.
+  for (const s of [-1, 1]) {
+    const px = s * (half - lean * 0.72);
+    wedge(P, px + s * 1.05, nukiY + 0.575, 0.9, 0.55, 0.62, 0);
+    wedge(P, px - s * 1.05, nukiY + 0.575, 0.9, 0.55, 0.62, 0);
+  }
+  // Gakuzuka (central strut).
+  const gakuBot = nukiY + 0.575;
+  box(P, 0, (gakuBot + pillarTop) / 2, 0, 1.25, pillarTop - gakuBot, 0.62, 0, new THREE.Vector3(0, 1, 0));
+  // Shimaki: gently curved.
+  const shimakiL = 21.8;
+  const sori = (x: number, L: number, k: number) => k * Math.pow(Math.abs(x) / (L / 2), 2.6);
+  beam(
+    P,
+    shimakiL,
+    64,
+    (x) => pillarTop + sori(x, shimakiL, 0.35),
+    (x) => pillarTop + 0.95 + sori(x, shimakiL, 0.42),
+    () => 1.05,
+    0,
+    0,
+  );
+  // Kasagi: stronger sweep, thicker toward the ends, black top.
+  const kasagiL = 25.6;
+  const ky = pillarTop + 0.95;
+  beam(
+    P,
+    kasagiL,
+    96,
+    (x) => ky + sori(x, kasagiL, 0.62),
+    (x) => ky + 1.18 + sori(x, kasagiL, 1.05) + 0.12 * Math.pow(Math.abs(x) / (kasagiL / 2), 4),
+    () => 1.35,
+    0,
+    1,
+    0.55,
+  );
+  // Black lacquer coping on top of the kasagi (thin slab following the curve).
+  beam(
+    P,
+    kasagiL + 0.35,
+    96,
+    (x) => ky + 1.16 + sori(x, kasagiL, 1.05) + 0.12 * Math.pow(Math.abs(x) / (kasagiL / 2), 4),
+    (x) => ky + 1.44 + sori(x, kasagiL, 1.08) + 0.14 * Math.pow(Math.abs(x) / (kasagiL / 2), 4),
+    () => 1.5,
+    1,
+    1,
+    0.7,
+  );
+
+  // Flat-shade beams/boxes, smooth-shade round parts: compute per-face normals
+  // then average only across vertices that belong to the same face group.
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(P.pos, 3));
+  geo.setAttribute("part", new THREE.Float32BufferAttribute(P.part, 1));
+  geo.setAttribute("grain", new THREE.Float32BufferAttribute(P.grain, 3));
+  geo.setIndex(P.idx);
   geo.computeVertexNormals();
+  geo.computeBoundingSphere();
   return geo;
 }
 
-function gateGeometry() {
-  const parts: THREE.BufferGeometry[] = [];
-  const X = 7.6;
-  for (const side of [-1, 1]) {
-    const pillar = new THREE.CylinderGeometry(0.92, 1.08, 18.6, 32, 1, true);
-    pillar.rotateZ(side * 0.022);
-    pillar.translate(side * X, 9.3, 0);
-    parts.push(paint(pillar, VERMILION, 0.45));
-    const base = new THREE.CylinderGeometry(1.3, 1.45, 1.3, 32);
-    base.translate(side * (X + 0.2), 0.25, 0);
-    parts.push(paint(base, BLACK, 0.2));
-    for (const dz of [-2.7, 2.7]) {
-      const leg = new THREE.CylinderGeometry(0.42, 0.5, 9.6, 20, 1, true);
-      leg.translate(side * X, 4.8, dz);
-      parts.push(paint(leg, VERMILION, 0.4));
-      const legBase = new THREE.CylinderGeometry(0.62, 0.7, 0.8, 20);
-      legBase.translate(side * X, 0.2, dz);
-      parts.push(paint(legBase, BLACK, 0.2));
-      const cap = new THREE.ConeGeometry(0.95, 0.7, 4, 1);
-      cap.rotateY(Math.PI / 4);
-      cap.translate(side * X, 9.9, dz);
-      parts.push(paint(cap, BLACK, 0.3));
-    }
-    for (const y of [3.4, 8.4]) {
-      const tie = new THREE.BoxGeometry(0.34, 0.42, 5.9);
-      tie.translate(side * X, y, 0);
-      parts.push(paint(tie, VERMILION, 0.4));
-    }
+const vert = /* glsl */ `
+attribute float part;
+attribute vec3 grain;
+varying vec3 vWorld;
+varying vec3 vNormal;
+varying vec3 vLocal;
+varying float vPart;
+varying vec3 vGrain;
+void main() {
+  vec4 w = modelMatrix * vec4(position, 1.0);
+  vWorld = w.xyz;
+  vLocal = position;
+  vNormal = normalize(mat3(modelMatrix) * normal);
+  vPart = part;
+  vGrain = grain;
+  gl_Position = projectionMatrix * viewMatrix * w;
+}`;
+
+const frag = /* glsl */ `
+${common}
+${skyMath}
+${skyFunctions}
+uniform vec3 uCamPos;
+uniform vec3 uAmbTop;
+uniform vec3 uAmbBottom;
+uniform vec3 uMoonColor;
+uniform float uLanternLight;
+uniform float uFogDist;
+uniform float uPortal;
+uniform float uWet;
+varying vec3 vWorld;
+varying vec3 vNormal;
+varying vec3 vLocal;
+varying float vPart;
+varying vec3 vGrain;
+
+float D_GGX(float NdH, float a) { float a2 = a * a; float d = NdH * NdH * (a2 - 1.0) + 1.0; return a2 / (PI * d * d); }
+
+void main() {
+  vec3 N = normalize(vNormal);
+  if (!gl_FrontFacing) N = -N;
+  vec3 V = normalize(uCamPos - vWorld);
+  vec3 p = vLocal;
+
+  // Wood grain: stretched noise along the grain axis.
+  vec3 ga = normalize(vGrain);
+  vec3 q = p * 3.0;
+  float along = dot(q, ga);
+  vec3 perp = q - ga * along;
+  float grainN = fbm2(vec2(along * 0.18, length(perp) * 6.0 + dot(perp, vec3(3.1, 1.7, 2.3))), 4);
+  float fine = vnoise(vec2(along * 0.6, dot(perp, vec3(9.0, 7.0, 5.0))));
+  // Weathering: vertical rain streaks and blotches.
+  float streak = fbm2(vec2(p.x * 2.2 + p.z * 1.3, p.y * 0.12), 4);
+  float blotch = fbm2(p.xy * 0.45 + p.z, 4);
+
+  vec3 vermilion = vec3(0.38, 0.042, 0.03);
+  vec3 albedo = vermilion * (0.84 + grainN * 0.3 + fine * 0.08);
+  albedo *= 1.0 - smoothstep(0.55, 0.8, streak) * 0.25;
+  albedo = mix(albedo, albedo * vec3(0.8, 0.72, 0.7), smoothstep(0.55, 0.75, blotch) * 0.5);
+  float rough = 0.42 + grainN * 0.12;
+  if (vPart > 0.5) {
+    albedo = vec3(0.028, 0.024, 0.026) * (0.9 + grainN * 0.2);
+    rough = 0.36;
   }
-  const nuki = new THREE.BoxGeometry(20.2, 1.0, 0.72);
-  nuki.translate(0, 13.6, 0);
-  parts.push(paint(nuki, VERMILION, 0.45));
-  const strut = new THREE.BoxGeometry(0.9, 2.5, 0.6);
-  strut.translate(0, 15.35, 0);
-  parts.push(paint(strut, VERMILION, 0.45));
-  const shimaki = bend(new THREE.BoxGeometry(22.4, 0.95, 1.15, 48, 1, 1), 0.005);
-  shimaki.translate(0, 17.1, 0);
-  parts.push(paint(shimaki, VERMILION, 0.45));
-  const kasagi = bend(new THREE.BoxGeometry(25.6, 1.2, 1.75, 64, 1, 1), 0.0085);
-  kasagi.translate(0, 18.2, 0);
-  parts.push(paint(kasagi, BLACK, 0.7));
-  return mergeGeometries(parts)!;
-}
+  // Wet, darker base where the pillars meet the water.
+  float wet = 1.0 - smoothstep(0.2, 2.6 + blotch * 0.8, vWorld.y);
+  albedo = mix(albedo, albedo * vec3(0.32, 0.22, 0.2), wet * uWet);
+  rough = mix(rough, 0.18, wet * uWet);
 
-function plaqueTexture() {
-  const c = document.createElement("canvas");
-  c.width = 256;
-  c.height = 384;
-  const g = c.getContext("2d")!;
-  g.strokeStyle = "#fff";
-  g.lineWidth = 10;
-  g.strokeRect(14, 14, 228, 356);
-  g.lineWidth = 3;
-  g.strokeRect(32, 32, 192, 320);
-  g.fillStyle = "#fff";
-  g.font = '800 128px "Shippori Mincho B1", "Yu Mincho", serif';
-  g.textAlign = "center";
-  g.textBaseline = "middle";
-  g.fillText("月", 128, 124);
-  g.fillText("読", 128, 262);
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.NoColorSpace;
-  tex.anisotropy = 4;
-  return tex;
-}
+  // Sun.
+  vec3 L = uSunDir;
+  float NdL = saturate(dot(N, L));
+  vec3 H = normalize(L + V);
+  float a = rough * rough;
+  float spec = D_GGX(saturate(dot(N, H)), a) * 0.25;
+  vec3 F0 = vec3(0.045);
+  float fres = pow(1.0 - saturate(dot(N, V)), 5.0);
+  vec3 F = F0 + (1.0 - F0) * fres;
+  float sunVis = smoothstep(-0.02, 0.04, uSunDir.y);
+  vec3 col = (albedo / PI * NdL + F * spec * NdL) * uSunColor * sunVis * PI;
+  // Moon (key light at night).
+  vec3 Lm = uMoonDir;
+  float NdLm = saturate(dot(N, Lm));
+  vec3 Hm = normalize(Lm + V);
+  col += (albedo * NdLm + F * D_GGX(saturate(dot(N, Hm)), a) * 0.25 * NdLm * PI) * uMoonColor * 1.4;
+  // Sky + water ambient (hemisphere) with crude cavity darkening.
+  float cav = 0.7 + 0.3 * saturate(N.y * 0.5 + 0.5);
+  // Occlusion where members meet (under the kasagi, above the nuki, at the base).
+  float occ = 1.0 - 0.35 * exp(-abs(vWorld.y - 16.25) * 1.4) - 0.25 * exp(-abs(vWorld.y - 12.9) * 2.0) * step(abs(abs(vWorld.x) - 5.9), 1.2);
+  vec3 amb = mix(uAmbBottom, uAmbTop, N.y * 0.5 + 0.5);
+  col += albedo * amb * cav * occ * 0.85;
+  // Lacquer reflection of the sky (the long highlight along the pillars).
+  vec3 R = reflect(-V, N);
+  vec3 env = skyGradient(normalize(vec3(R.x, max(R.y, 0.02), R.z)));
+  col += env * F * (1.0 - rough) * 0.55;
+  // Warm light bouncing up from the floating lanterns.
+  col += albedo * vec3(1.0, 0.62, 0.3) * uLanternLight * exp(-max(vWorld.y, 0.0) * 0.28) * saturate(-N.y * 0.5 + 0.6);
+  // Portal glow spilling onto the inner faces.
+  float inner = saturate(1.0 - abs(vWorld.x) / 7.2) * step(vWorld.y, 12.2);
+  col += albedo * vec3(0.2, 1.0, 0.9) * uPortal * inner * 2.0;
 
-export function createTorii(): Part & { pass(): void } {
-  const group = new THREE.Group();
+  float dist = length(uCamPos - vWorld);
+  float fog = 1.0 - exp(-dist / uFogDist);
+  col = mix(col, uFogColor, fog * 0.7);
+  gl_FragColor = vec4(col, 1.0);
+}`;
 
-  const gate = new THREE.Mesh(
-    gateGeometry(),
-    new THREE.ShaderMaterial({
-      uniforms: globals,
-      vertexShader: /* glsl */ `
-        attribute vec4 aColor;
-        varying vec3 vWorld;
-        varying vec3 vNormal;
-        varying vec4 vColor;
-        void main() {
-          vec4 w = modelMatrix * vec4(position, 1.0);
-          vWorld = w.xyz;
-          vNormal = normalize(mat3(modelMatrix) * normal);
-          vColor = aColor;
-          gl_Position = projectionMatrix * viewMatrix * w;
-        }
-      `,
-      fragmentShader: /* glsl */ `
-        ${COMMON}
-        varying vec3 vWorld;
-        varying vec3 vNormal;
-        varying vec4 vColor;
-        void main() {
-          vec3 N = normalize(vNormal);
-          vec3 V = normalize(cameraPosition - vWorld);
-          // Weathered lacquer: faint vertical streaks.
-          float wear = 0.82 + 0.18 * fbm(vWorld.xy * vec2(0.35, 0.05) + vWorld.z * 0.1);
-          vec3 albedo = vColor.rgb * wear;
-          vec3 col = shadeSolid(albedo, N, V, vColor.a);
-          // Warm light from the stone lanterns in front, fading with height.
-          float front = max(dot(N, normalize(vec3(0.0, 0.25, 1.0))), 0.0);
-          col += albedo * vec3(1.0, 0.55, 0.25) * (0.5 * front + 0.12) * exp(-max(vWorld.y, 0.0) * 0.1);
-          gl_FragColor = vec4(applyFog(col, vWorld), 1.0);
-        }
-      `,
-    }),
-  );
-  gate.position.z = GATE_Z;
-  gate.layers.enable(REFLECT_LAYER);
-  group.add(gate);
-
-  const plaque = new THREE.Mesh(
-    new THREE.PlaneGeometry(1.5, 2.2),
-    new THREE.ShaderMaterial({
-      uniforms: { ...globals, uMap: { value: plaqueTexture() } },
-      vertexShader: /* glsl */ `
-        varying vec2 vUv; varying vec3 vWorld;
-        void main() { vUv = uv; vec4 w = modelMatrix * vec4(position, 1.0); vWorld = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }
-      `,
-      fragmentShader: /* glsl */ `
-        ${COMMON}
-        uniform sampler2D uMap;
-        varying vec2 vUv; varying vec3 vWorld;
-        void main() {
-          float a = texture2D(uMap, vUv).a;
-          vec3 base = vec3(0.01, 0.01, 0.016);
-          vec3 gold = vec3(1.0, 0.76, 0.42) * 2.6;
-          gl_FragColor = vec4(applyFog(mix(base, gold, a), vWorld), 1.0);
-        }
-      `,
-    }),
-  );
-  plaque.position.set(0, 15.35, GATE_Z + 0.31);
-  plaque.layers.enable(REFLECT_LAYER);
-  group.add(plaque);
-
-  // Thin teal light strips along the undersides of the beams (as on the
-  // great gate in the reference), breathing slowly.
-  const strips: THREE.BufferGeometry[] = [];
-  for (const dz of [-0.6, 0.6]) {
-    strips.push(bend(new THREE.BoxGeometry(21.6, 0.1, 0.1, 48, 1, 1), 0.005).translate(0, 16.58, dz));
-    strips.push(new THREE.BoxGeometry(19.2, 0.09, 0.09).translate(0, 13.07, dz * 0.62));
-  }
-  for (const side of [-1, 1]) {
-    for (const dz of [-2.7, 2.7]) strips.push(new THREE.BoxGeometry(0.08, 0.08, 5.0).translate(side * 7.6, 9.55, dz * 0.5));
-  }
-  const glowStrips = new THREE.Mesh(
-    mergeGeometries(strips.map((g) => (g.index ? g.toNonIndexed() : g)))!,
-    new THREE.ShaderMaterial({
-      uniforms: globals,
-      vertexShader: /* glsl */ `varying vec3 vWorld; void main(){ vec4 w = modelMatrix * vec4(position, 1.0); vWorld = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`,
-      fragmentShader: /* glsl */ `
-        ${COMMON}
-        varying vec3 vWorld;
-        void main() {
-          float breathe = 0.8 + 0.2 * sin(uTime * 0.9 + vWorld.x * 0.15);
-          vec3 teal = vec3(0.28, 1.0, 0.84) * 2.6 * breathe * (1.0 - 0.6 * uDusk);
-          gl_FragColor = vec4(teal, 1.0);
-        }
-      `,
-    }),
-  );
-  glowStrips.layers.enable(REFLECT_LAYER);
-  group.add(glowStrips);
-
-  const halo = new THREE.Mesh(
-    new THREE.PlaneGeometry(6, 7),
-    new THREE.ShaderMaterial({
-      uniforms: globals,
-      transparent: true,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-      vertexShader: /* glsl */ `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-      fragmentShader: /* glsl */ `
-        ${COMMON}
-        varying vec2 vUv;
-        void main() {
-          vec2 p = (vUv - 0.5) * vec2(1.0, 1.15);
-          float g = exp(-dot(p, p) * 14.0);
-          gl_FragColor = vec4(vec3(1.0, 0.72, 0.36) * g * 0.35 * (1.0 - 0.6 * uDusk), 1.0);
-        }
-      `,
-    }),
-  );
-  halo.position.set(0, 15.35, GATE_Z + 0.25);
-  halo.renderOrder = 9;
-  group.add(halo);
-
-  // The veil across the opening: a sheet of teal light-water (as in the
-  // reference gate). Faint from afar, brightening as you approach; rings
-  // ripple out and the whole surface flashes as you pass through.
-  const veilU = { uNear: { value: 0 }, uPass: { value: 0 } };
-  const veil = new THREE.Mesh(
-    new THREE.PlaneGeometry(GATE_OPENING.halfWidth * 2, GATE_OPENING.height, 1, 1),
-    new THREE.ShaderMaterial({
-      uniforms: { ...globals, ...veilU },
-      transparent: true,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-      side: THREE.DoubleSide,
-      vertexShader: /* glsl */ `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-      fragmentShader: /* glsl */ `
-        ${COMMON}
-        uniform float uNear;
-        uniform float uPass;
-        varying vec2 vUv;
-
-        // Tileable water caustics (a classic iterative warp).
-        float caustic(vec2 uv, float t) {
-          vec2 p = mod(uv * 6.28318, 6.28318) - 250.0;
-          vec2 i = p;
-          float c = 1.0;
-          for (int n = 0; n < 4; n++) {
-            float tt = t * (1.0 - 3.5 / float(n + 1));
-            i = p + vec2(cos(tt - i.x) + sin(tt + i.y), sin(tt - i.y) + cos(tt + i.x));
-            c += 1.0 / length(vec2(p.x / (sin(i.x + tt) / 0.005), p.y / (cos(i.y + tt) / 0.005)));
-          }
-          c /= 4.0;
-          c = 1.17 - pow(c, 1.4);
-          return pow(abs(c), 8.0);
-        }
-
-        void main() {
-          vec2 uv = vUv;
-          vec2 p = (uv - vec2(0.5, 0.38)) * vec2(1.0, 1.1);
-          float r = length(p);
-          float t = uTime * 0.35;
-          float c = caustic(uv * vec2(1.6, 1.7) + vec2(0.0, t * 0.05), t);
-          float c2 = caustic(uv * vec2(2.4, 2.6) + vec2(0.37, -t * 0.03), t * 1.3 + 2.0);
-          float body = 0.35 + 0.65 * fbm(uv * vec2(2.0, 2.4) + vec2(t * 0.05, t * 0.03));
-          float rings = pow(0.5 + 0.5 * sin(r * 40.0 - uTime * 1.4 - uPass * 12.0), 12.0) * exp(-r * 2.4);
-          float edge = smoothstep(0.0, 0.05, uv.x) * smoothstep(1.0, 0.95, uv.x) * smoothstep(0.0, 0.03, uv.y) * smoothstep(1.0, 0.94, uv.y);
-          float rim = (1.0 - smoothstep(0.0, 0.04, min(min(uv.x, 1.0 - uv.x), 1.0 - uv.y))) * 0.6;
-          vec3 teal = vec3(0.16, 0.95, 0.78);
-          float strength = mix(0.05, 0.7, uNear) * (1.0 - 0.7 * uDusk);
-          vec3 col = teal * (body * 0.25 + (c + c2 * 0.6) * 0.9 + rim) * strength;
-          col += teal * rings * (0.08 + uNear * 0.35);
-          col += vec3(0.7, 1.0, 0.95) * uPass * exp(-r * 1.6) * 1.2;
-          gl_FragColor = vec4(col * edge, 1.0);
-        }
-      `,
-    }),
-  );
-  veil.position.set(0, GATE_OPENING.height / 2, GATE_Z);
-  veil.renderOrder = 9;
-  group.add(veil);
-
-  return {
-    object: group,
-    update(ctx: FrameContext) {
-      const d = Math.abs(ctx.camera.position.z - GATE_Z);
-      veilU.uNear.value = 1 - THREE.MathUtils.smoothstep(d, 4, 40);
-      veilU.uPass.value *= Math.exp(-ctx.dt * 1.6);
+export function createToriiMaterial() {
+  return new THREE.ShaderMaterial({
+    vertexShader: vert,
+    fragmentShader: frag,
+    uniforms: {
+      uCamPos: G.uCamPos,
+      uSunDir: G.uSunDir,
+      uSunColor: G.uSunColor,
+      uMoonDir: G.uMoonDir,
+      uMoonColor: G.uMoonColor,
+      uMoon: G.uMoon,
+      uZenith: G.uZenith,
+      uMid: G.uMid,
+      uHorizon: G.uHorizon,
+      uGlow: G.uGlow,
+      uFogColor: G.uFogColor,
+      uHorizonBank: G.uHorizonBank,
+      uAmbTop: G.uAmbTop,
+      uAmbBottom: G.uAmbBottom,
+      uTime: G.uTime,
+      uLanternLight: { value: 0 },
+      uFogDist: { value: 1600 },
+      uPortal: { value: 0 },
+      uWet: { value: 1 },
     },
-    pass() {
-      veilU.uPass.value = 1;
-    },
-  };
+    side: THREE.DoubleSide,
+  });
 }

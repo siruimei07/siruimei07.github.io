@@ -16,24 +16,36 @@ export const identity = {
   homebase: "Toronto",
 };
 
+export const loader = {
+  title: "月読",
+  titleJa: "ツクヨミ",
+  line: "水の向こうへ、月の都へ。",
+  start: "启程",
+  startJa: "しゅっぱつ",
+  quiet: "静音进入",
+  skip: "跳过",
+};
+
 export const hero = {
   kicker: "月読",
-  kickerJa: "鳥居の向こう、月の都へ",
+  kickerJa: "ツクヨミ · 水鏡の鳥居",
   tagline: ["在数据的潮汐里，", "寻找月亮的规律。"],
   taglineJa: "データの潮汐に、月の法則を探して。",
   focus: ["统计", "经济", "量化"],
+  enter: "穿过鸟居",
+  enterJa: "鳥居をくぐる",
   hints: [
     { key: "滚动", text: "穿过鸟居" },
-    { key: "点击夜空", text: "放一朵烟花" },
     { key: "点击水面", text: "泛起涟漪" },
+    { key: "点击夜空", text: "放一朵烟花" },
   ],
 };
 
 export type SectionMeta = { id: string; index: string; zh: string; en: string; ja: string };
 
-// index: traditional numerals — 序 is the prologue before the gate.
+// index: traditional numerals — 序 is the cover in front of the torii.
 export const sections: SectionMeta[] = [
-  { id: "login", index: "序", zh: "入口", en: "Prologue", ja: "鳥居" },
+  { id: "cover", index: "序", zh: "鸟居", en: "Prologue", ja: "鳥居" },
   { id: "profile", index: "壱", zh: "档案", en: "Profile", ja: "プロフィール" },
   { id: "skills", index: "弐", zh: "擅长", en: "Expertise", ja: "得意分野" },
   { id: "works", index: "参", zh: "作品", en: "Works", ja: "作品集" },
@@ -43,7 +55,7 @@ export const sections: SectionMeta[] = [
 export const profile = {
   intro:
     "你好，这里是酒寄彩葉——现实里的 Sirui Mei，在多伦多大学读本科。我着迷于用数字理解世界：统计让噪声开口说话，经济学解释人们为何如此选择，量化则把直觉变成可以被检验的策略。",
-  introJa: "鳥居をくぐってくれて、ありがとう。月の下で、ゆっくりしていってね。",
+  introJa: "鳥居をくぐってくれて、ありがとう。月の都で、ゆっくりしていってね。",
   fields: [
     { k: "ID", v: "酒寄 彩葉" },
     { k: "真名", v: "Sirui Mei" },
@@ -118,11 +130,11 @@ export type Work = {
 export const works: Work[] = [
   {
     repo: "siruimei07.github.io",
-    code: "3D",
+    code: "月",
     title: "TSUKUYOMI",
     zh: "你正在浏览的主页",
     description:
-      "穿过鸟居进入月读的 3D 主页：镜面水、月光、星光鲸鱼与灯笼，three.js 自研 HDR 渲染管线与自适应画质，2K 稳定 60 帧。",
+      "穿过水面上的鸟居进入月読：光之隧道、体积云黄昏、星轨入夜、无人机鲸鱼与月之都。three.js 自研 HDR 管线与自适应画质，目标 2K 稳定 60 帧。",
     stack: ["TypeScript", "three.js", "GLSL"],
     state: "live",
     href: "https://github.com/siruimei07/siruimei07.github.io",
@@ -132,8 +144,7 @@ export const works: Work[] = [
     code: "WPF",
     title: "GUI-for-RePKG",
     zh: "RePKG 图形前端",
-    description:
-      "为 RePKG 打造的可扩展 C# WPF 前端：终末地风格的极繁界面、丰富动效、响应式导航与后端扩展点。",
+    description: "为 RePKG 打造的可扩展 C# WPF 前端：丰富动效、响应式导航与后端扩展点。",
     stack: ["C#", "WPF", "Motion UI"],
     state: "archive",
     href: "https://github.com/siruimei07/GUI-for-RePKG",
@@ -143,20 +154,13 @@ export const works: Work[] = [
 export const contact = {
   title: "写给月亮的信",
   titleJa: "月まで届け、この想い。",
-  lead: "合作、交流，或者只是打个招呼——写下来，让灯笼替你送到月亮上。",
+  lead: "合作、交流，或者只是打个招呼——写下来，让孔明灯替你送到月亮上。",
   placeholder: "写点什么… / 何か書いてね",
-  subject: "来自ツクヨミ的信",
+  subject: "来自月読的信",
+  release: "放飞孔明灯",
+  send: "用邮件寄出",
+  thanks: "灯已升空。谢谢你来到月読。",
 };
-
-// Lines the avatar hologram says when clicked.
-export const avatarLines = [
-  "ようこそ、月読へ。",
-  "今夜は月が綺麗ですね。",
-  "鸟居的那一边，就是月读。",
-  "点一点夜空，会有烟花哦。",
-];
-
-export const moonLines = ["月が綺麗ですね。", "8000 年后，也会看着同一轮月亮。"];
 
 export const credits =
   "Fan-made tribute to Netflix『超かぐや姫！』. 角色「酒寄彩葉」及相关形象版权归原作方所有，本站与官方无关。";
