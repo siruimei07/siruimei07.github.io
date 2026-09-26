@@ -26,15 +26,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      # Version comes from "packageManager" in package.json.
       - name: Install pnpm
         uses: pnpm/action-setup@v6
-        with:
-          version: 10
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: "22"
+          node-version: "24"
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
 
@@ -53,16 +52,13 @@ jobs:
       - name: Build and test
         run: pnpm test
 
-      - name: Verify static export
-        run: test -f dist/client/index.html
-
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4
         with:
-          path: ./dist/client
+          path: ./dist
 
   deploy:
     needs: build

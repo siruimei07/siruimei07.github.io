@@ -1,76 +1,76 @@
-# Sirui Mei｜Summer Profile
+# 酒寄 彩葉 · 月読
 
-Sirui Mei 的 GitHub 风格个人主页。页面采用浅色夏日海岸主题，包含固定个人资料栏、Repositories、Activity、动态贡献热力图，以及透明 GIF 装饰动画。
+Sirui Mei 的 3D 交互个人主页。气氛参考 Netflix《超かぐや姫！》中的虚拟空间「ツクヨミ（月読）」：平静如镜的水面、朱红大鸟居、满月与五重塔、水墨远山、漫天灯笼，以及由星光组成、游过夜空的鲸鱼。整体为和风古典：米白明朝体、深蓝底色、一点朱红。
 
 线上地址：<https://siruimei07.github.io/>
 
+## 进入月读
+
+点「启程」后播放约 12 秒的入场，节奏逐拍对照参考片段（隧道全部为实时程序化着色器）：
+
+1. **光之隧道**（约 5 秒）：黑暗中一点暖光亮起，尘埃与发丝般的光丝迎面掠过；光口胀成气泡般的开口，穿过后进入青色的腔室——一层层膜环掠过、径向拖影、油膜般的薄膜色、右上一扇暖色飞沫；随后玻璃般的水幕从两侧涌来，碎成散景水珠，光变成一轮带光谱光芒的太阳，烧成一片白。
+2. **从白光中浮现**：白光停留片刻，随后约 0.9 秒平滑褪去，鸟居从带粉色的过曝中显现——暗部先出，高光最后收回（亮度曲线按参考片段逐帧对齐）。黄昏：蜜桃色积云、满湖灯笼一直铺到天际。
+3. **入夜与星轨**：天空约 0.3 秒转为深蓝，积云稍后失去夕照；星星像延时摄影一样拉出星轨，随后星轨从尾部淡去、只留星点，月亮升起，页面文字浮现，停在深蓝月夜。
+
+整个过程镜头不动，停在首页构图；点击、滚动或按键会快进，系统开启「减少动态效果」时直接进入月夜。
+
+## 交互
+
+| 操作 | 效果 |
+| --- | --- |
+| 滚动 / ↑↓ / PageUp·PageDown / 右侧导航 | 镜头穿过鸟居，在五个章节间停驻 |
+| 移动鼠标 | 镜头视差、光尘与鱼群避开光标、水面尾波、光点尾迹 |
+| 点击夜空 | 放一朵花火（菊 / 柳 / 环） |
+| 点击水面 | 涟漪与水花 |
+| 点击头像圆窗 | 涟漪、金色光环与一句台词 |
+| 点击月亮 | 月光一亮，升起一朵花火 |
+| 悬停「擅长」卡片 | 对应的提灯（統 / 経 / 量）变亮 |
+| 联络区「放飞灯笼」 | 灯笼从水面升起飞向月亮；「用邮件寄出」把留言带进邮件草稿 |
+| 顶栏 fps 按钮 | 画质：auto → ultra → high → med → low |
+| 顶栏「音」 | 阳音阶的琴、笙一样的持续音与风铃，全部 WebAudio 实时合成 |
+
+## 渲染与性能（2K 稳定 60 帧）
+
+- 自研 HDR 管线（`src/world/post.ts`）：4× MSAA 半精度场景、降分辨率平面反射、13-tap Karis 泛光、月光体积光、ACES 电影色调映射、古典调色、胶片颗粒。
+- 天空（星空、银河、星轨、积云、薄云、月亮、夕阳）与入场隧道全部为程序化着色器；积云由带软合并法线的「球团」拼成，星轨是绕天极的连续弧线；fBm 噪声烘焙进一张 RGBA 纹理。
+- 灯笼、鱼、星光鲸鱼、光尘、花火的动画都在顶点着色器中完成。
+- 自适应画质（`quality.ts` + `gpuTimer.ts`）：用 GPU 计时查询测量真实耗时，超预算降档、余量充足时试探升档；渲染像素上限 2560×1440。
+- 所有着色器针对实际使用的半精度渲染目标预编译，纹理预上传，避免首次出现时卡顿。
+- UI 层不使用 `backdrop-filter`，动画只改 transform / opacity。
+
+RTX 5070 Laptop、2560×1440、ultra 档：隧道每帧 GPU 约 4 ms，场景约 5 ms（60 帧预算 16.7 ms）。
+
 ## 本地运行
 
-需要 Node.js 22.13 或更高版本，以及 pnpm。
+需要 Node.js 22.13+ 与 pnpm（版本见 `package.json` 的 `packageManager`）。
 
 ```powershell
 pnpm install
 pnpm dev
 ```
 
-开发服务器通常位于 `http://localhost:3000/`。
-
-完整验证：
+开发服务器位于 `http://localhost:5173/`。完整校验：
 
 ```powershell
 pnpm run lint
 pnpm test
 ```
 
-`pnpm test` 会生成 GitHub Pages 静态导出，并检查数据契约、贡献年份、首次揭示动画、素材完整性，以及最终 `dist/client` 产物。
+## 修改内容
 
-## GitHub 数据
+所有文案集中在 `src/content.ts`：ID 与真名、各章节标题、简介、擅长领域（统计 / 经济 / 量化，含提灯上的字）、作品、联络文案、头像台词。构建时由 `src/render.ts` 预渲染为静态 HTML。作品列表会合并 `public/data/github.json` 的星标、语言与更新时间。
 
-部署工作流使用仓库自带的 `GITHUB_TOKEN` 获取：
+## GitHub 数据与部署
 
-- GitHub 公开个人资料；
-- 全部公开 owner repositories；
-- 最近公开 Activity events；
-- 从 2025 年到当前年份的 contribution calendar。
+`.github/workflows/pages.yml`：推送到 `main`、手动运行或定时触发 → 同步公开 GitHub 数据 → lint、构建与测试 → 部署 `dist` 到 GitHub Pages（Settings → Pages → Source 选 GitHub Actions）。
 
-同步结果写入 `public/data/github.json`，网站完全静态，不会把 Token 发送给浏览器。浏览器中的 Repositories 和 Activity 仍会尝试读取较新的公开 REST 数据；匿名 API 达到限额时会自动回退到部署时生成的完整快照。
+## 目录
 
-本地没有 Token 时可以安全运行：
+- `src/content.ts`、`src/render.ts`、`src/github.ts`：内容与预渲染。
+- `src/main.ts`：加载与入场流程、滚动→镜头、指针分发、HUD、光标、气泡、联络表单。
+- `src/ui/`：`audio.ts`（生成式音乐与音效）、`effects.ts`（揭示、倾斜、磁吸）。
+- `src/world/`：`World.ts`（主循环与入场时间线）、`tunnel.ts`（光之隧道）、`post.ts`、`quality.ts`、`gpuTimer.ts`、`rig.ts`、`sky.ts`、`water.ts`、`torii.ts`、`scenery.ts`（远山、远岸、五重塔、松岛、石灯笼）、`lanterns.ts`、`koi.ts`、`whales.ts`、`particles.ts`、`fireworks.ts`、`avatar.ts`、`scene.ts`。
 
-```powershell
-pnpm run sync-data
-```
+## 声明
 
-该命令会尝试使用 GitHub 的公开 REST/贡献日历刷新数据；离线或公开 API 暂时不可用时，会验证并保留已提交的快照。设置 `GITHUB_TOKEN` 或 `GH_TOKEN` 后会优先使用 GraphQL contribution calendar。
-
-登录本人账户看到的贡献数可能高于未登录的公开数据，这是私有贡献可见性造成的。若希望公开主页与本站都显示匿名化的私有贡献计数，可在 GitHub 个人资料的 **Contribution settings → Private contributions** 开启显示。工作流还支持可选仓库 Secret `PROFILE_GITHUB_TOKEN`，但只有在明确希望把私有贡献的每日计数发布到这个公开网站时才应使用；Secret 的值不会写入静态产物。
-
-## 贡献日历行为
-
-- `Latest` 以浏览器当天日期作为热力图最右侧。
-- 年份按钮从 2025 自动生成到当前年份；跨年后会自动出现新按钮。
-- 已打开的页面每五分钟重新请求部署快照。
-- 骑行角色仅在当前标签页会话首次进入时扫过热力图，随后停在头像上方；首次切换栏目时离场并由坐坐角色接替，之后不再重复触发。
-- GitHub Pages 的定时 Actions 是“尽力约每五分钟”运行，GitHub 繁忙时可能延迟；它不是严格的实时服务。
-
-## GitHub Pages 部署
-
-`.github/workflows/pages.yml` 已配置以下流程：
-
-1. 推送到 `main`、手动运行或定时触发；
-2. 使用 GitHub API 同步公开数据；
-3. 运行 lint、静态构建和测试；
-4. 上传 `dist/client`；
-5. 部署到 GitHub Pages。
-
-仓库首次推送后，只需在 GitHub 的 **Settings → Pages → Build and deployment → Source** 选择 **GitHub Actions**。以后推送到 `main` 会自动发布；定时工作流会刷新公开 GitHub 数据。
-
-## 主要目录
-
-- `app/`：页面组件、交互和样式。
-- `public/assets/`：头像、背景与十个 GIF 素材。
-- `public/data/github.json`：可离线使用的公开数据快照。
-- `scripts/sync-github-data.mjs`：GitHub 数据同步与严格校验。
-- `scripts/build-static.mjs`：vinext 静态构建及 Windows 收尾校验。
-- `tests/static-export.test.mjs`：GitHub Pages 产物与数据测试。
-- `.github/workflows/pages.yml`：自动同步、构建和部署工作流。
+Fan-made tribute to Netflix『超かぐや姫！』。角色「酒寄彩葉」及相关形象版权归原作方所有，本站与官方无关。
