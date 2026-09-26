@@ -147,20 +147,43 @@ void main() {
   vec2 id;
   float fw;
   float warm = 0.0;
-  if (kind < 0.5 || kind > 2.5 && kind < 4.5) {
-    // Machiya / pagoda / castle tiers: dark timber frame, paper windows.
-    bool plaster = kind > 3.5;
-    wall = plaster ? vec3(0.36, 0.34, 0.31) : vec3(0.05, 0.032, 0.024);
-    float floorH = kind > 2.5 ? vSize.y : 3.6;
-    float m = windows(q - vec2(0.0, 0.8), vec2(1.9, floorH), vec2(0.78, 0.5), id, fw);
-    float lit = step(0.28, hash12(id + vSeed * 91.0));
-    float flick = 0.9 + 0.1 * sin(uTime * 2.0 + hash12(id) * 30.0);
-    vec3 paper = mix(vec3(1.0, 0.6, 0.26), vec3(1.0, 0.78, 0.45), hash12(id + 3.0));
-    warm = m * lit;
-    emit = paper * warm * 2.4 * flick;
-    // Vertical timber lines.
-    float timber = smoothstep(0.92, 0.98, abs(fract(q.x / 0.95) * 2.0 - 1.0)) * (1.0 - smoothstep(0.25, 0.7, fwidth(q.x / 0.95)));
-    wall *= 1.0 - timber * 0.5;
+  if (kind < 0.5) {
+    // Machiya: dark timber; a lattice (koshi) front on the ground floor with
+    // warm light behind it, small shōji windows above.
+    wall = vec3(0.045, 0.03, 0.024);
+    vec3 paper = mix(vec3(1.0, 0.56, 0.24), vec3(1.0, 0.74, 0.42), hash12(vec2(vSeed * 13.0, 1.0)));
+    float flick = 0.92 + 0.08 * sin(uTime * 1.7 + vSeed * 50.0);
+    if (q.y < 3.3) {
+      float seg = floor(q.x / 2.7);
+      float segF = fract(q.x / 2.7);
+      float band = smoothstep(0.35, 0.45, q.y) * smoothstep(2.65, 2.55, q.y) * smoothstep(0.03, 0.08, segF) * smoothstep(0.97, 0.92, segF);
+      float g = q.x / 0.14;
+      float slat = smoothstep(0.18, 0.32, abs(fract(g) - 0.5));
+      slat = mix(slat, 0.55, smoothstep(0.3, 0.8, fwidth(g)));
+      float lit = step(0.32, hash12(vec2(seg, vSeed * 97.0)));
+      warm = band * lit;
+      emit = paper * warm * (0.3 + 0.7 * slat) * 1.9 * flick;
+    } else {
+      float m = windows(q - vec2(0.6, 1.1), vec2(3.6, 3.3), vec2(0.45, 0.32), id, fw);
+      float lit = step(0.45, hash12(id + vSeed * 91.0));
+      // Kumiko: thin frame lines on the shōji.
+      vec2 kg = q / vec2(0.32, 0.28);
+      float kumiko = smoothstep(0.42, 0.48, max(abs(fract(kg.x) - 0.5), abs(fract(kg.y) - 0.5)));
+      kumiko *= 1.0 - smoothstep(0.3, 0.8, max(fwidth(kg.x), fwidth(kg.y)));
+      warm = m * lit;
+      emit = paper * warm * (1.0 - kumiko * 0.6) * 1.5 * flick;
+    }
+    float timber = smoothstep(0.92, 0.98, abs(fract(q.x / 2.7) * 2.0 - 1.0)) * (1.0 - smoothstep(0.25, 0.7, fwidth(q.x / 2.7)));
+    wall *= 1.0 - timber * 0.6;
+  } else if (kind > 2.5 && kind < 4.5) {
+    // Pagoda tiers (vermilion posts, white panels) and castle tiers (white plaster).
+    bool castle = kind > 3.5;
+    float post = step(0.78, fract(q.x / 2.4));
+    wall = castle ? vec3(0.34, 0.33, 0.31) : mix(vec3(0.3, 0.28, 0.25), vec3(0.4, 0.06, 0.035), post);
+    float m = windows(q - vec2(0.0, 0.6), vec2(2.4, vSize.y), vec2(castle ? 0.3 : 0.55, 0.42), id, fw);
+    float lit = step(castle ? 0.2 : 0.35, hash12(id + vSeed * 31.0));
+    warm = m * lit * (1.0 - post);
+    emit = vec3(1.0, 0.64, 0.3) * warm * 1.8;
   } else if (kind < 1.5) {
     // Temple hall: vermilion columns, lattice glowing from inside.
     float col = step(0.8, fract(q.x / 3.2));
@@ -287,7 +310,7 @@ export class CityBuildings {
     for (const b of list) {
       parts.push({ x: b.x, y: b.y - 2, z: b.z, w: b.w, d: b.d, h: b.h + 2, rot: b.rot, kind: b.kind, seed: b.seed });
       if (b.kind !== 2) {
-        const over = b.kind === 1 ? 3.2 : 1.6;
+        const over = b.kind === 1 ? 3.4 : 2.1;
         roofs.push({ x: b.x, y: b.y + b.h, z: b.z, w: b.w + over * 2, d: b.d + over * 2, h: b.roof, rot: b.rot, kind: b.kind, seed: b.seed });
       } else {
         // Tower crown: a slim hip roof, like a modern pagoda cap.

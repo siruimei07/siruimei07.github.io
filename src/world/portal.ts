@@ -21,6 +21,8 @@ void main() {
 export const causticGLSL = /* glsl */ `
 // Cheap animated caustic network (iterated domain warp of a sine lattice).
 float caustic(vec2 p, float t) {
+  // Tiles every TAU; the large offset keeps the divisions well-behaved.
+  p = mod(p, TAU) - 250.0;
   vec2 i = p;
   float c = 1.0;
   float inten = 0.005;
@@ -31,7 +33,7 @@ float caustic(vec2 p, float t) {
   }
   c /= 4.0;
   c = 1.17 - pow(c, 1.4);
-  return pow(abs(c), 8.0);
+  return clamp(pow(abs(c), 8.0), 0.0, 4.0);
 }
 `;
 
@@ -79,8 +81,8 @@ void main() {
   float edge = exp(-min(e.x, e.y) * 1.1);
   float base = 0.35 + 0.65 * smoothstep(0.0, 1.0, uv.y) * 0.4;
   vec3 teal = vec3(0.1, 0.95, 0.82);
-  vec3 col = teal * (0.22 + c * 0.9 + c2 * 0.35 + streak * 0.45 + ring * 1.6) * base;
-  col += vec3(0.75, 1.0, 0.95) * (spark * 2.5 + edge * 1.4);
+  vec3 col = teal * (0.16 + c * 0.55 + c2 * 0.25 + streak * 0.35 + ring * 1.2) * base;
+  col += vec3(0.75, 1.0, 0.95) * (spark * 2.0 + edge * 0.7);
   // Soft fade at the bottom where it meets the water.
   col *= smoothstep(0.0, 0.05, uv.y);
   gl_FragColor = vec4(col * uIntensity, 1.0);

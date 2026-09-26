@@ -72,7 +72,7 @@ void main() {
   vColor = col;
   float tw = 0.75 + 0.25 * sin(uTime * (1.3 + iProps.z * 3.0) + iProps.z * 50.0);
   // Extinction near the horizon.
-  float horizon = smoothstep(-0.01, 0.16, d.y);
+  float horizon = smoothstep(0.02, 0.22, d.y);
   vBright = iProps.x * mix(tw, 1.0, smoothstep(0.0, 0.02, uLen)) * horizon;
 }`;
 
@@ -98,6 +98,7 @@ void main() {
   // Older part of the trail is dimmer.
   float fade = uLen > 0.0005 ? mix(0.3, 1.0, vF * vF) : 1.0;
   float T = uUsePano > 0.5 ? 1.0 : texture(tClouds, gl_FragCoord.xy / uRes).a;
+  T *= T;
   vec3 col = vColor * vBright * core * fade * T * uAlpha;
   gl_FragColor = vec4(col, 1.0);
 }`;

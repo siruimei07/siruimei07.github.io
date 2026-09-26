@@ -50,6 +50,7 @@ uniform vec3 uHorizon;
 uniform vec3 uCityGlow;
 uniform vec3 uMsTint;
 uniform vec3 uCloudFill;
+uniform float uDetail;
 uniform float uBottom;
 uniform float uTop;
 uniform float uCoverage;
@@ -129,6 +130,53 @@ float heapField(vec3 p) {
   return best;
 }
 
+// Same field plus the gradient of the winning turret (km^-1).
+float heapFieldG(vec3 p, out vec3 grad) {
+  float alt = length(p - vec3(0.0, -R, 0.0)) - R;
+  float best = -1.0;
+  grad = vec3(0.0, -1.0, 0.0);
+  for (int i = 0; i < ${MAX_ANCHORS}; i++) {
+    vec4 a = uAnchors[i];
+    if (a.w <= 0.0) continue;
+    vec2 q = p.xz - a.xy;
+    if (dot(q, q) > a.z * a.z * 3.2) continue;
+    float tall = uAnchorType[i];
+    for (int k = 0; k < 11; k++) {
+      vec3 h = hash31(float(i * 17 + k) * 1.37 + 0.71);
+      float ang = h.x * TAU;
+      float rad = sqrt(h.y) * a.z;
+      vec2 c = a.xy + vec2(cos(ang), sin(ang)) * rad;
+      float centreness = 1.0 - rad / a.z;
+      float top = uBottom + (uTop - uBottom) * a.w * tall * (0.35 + 0.65 * centreness) * mix(0.7, 1.0, h.z);
+      float rr = a.z * (0.42 + 0.28 * h.z) * (0.75 + 0.25 * centreness);
+      float domeH = min(rr * 0.9, (top - uBottom) * 0.6);
+      float cy = top - domeH;
+      bool dome = alt > cy;
+      float dy = dome ? (alt - cy) / domeH : max(0.0, (uBottom + 0.15 - alt) / 0.15);
+      vec2 dxz = (p.xz - c) / rr;
+      float v = 1.0 - dot(dxz, dxz) - dy * dy;
+      if (v > best) {
+        best = v;
+        float gy = dome ? -2.0 * dy / domeH : 2.0 * dy / 0.15;
+        grad = vec3(-2.0 * dxz.x / rr, gy, -2.0 * dxz.y / rr);
+      }
+    }
+  }
+  return best;
+}
+
+// Gradient of the billow noise that erodes the heaps (forward differences).
+vec3 billowGrad(vec3 p, float e) {
+  vec3 q = p * (1.0 / 9.0) + uShapeWind;
+  float k = e / 9.0;
+  vec3 w = vec3(0.45, 0.4, 0.15);
+  float b0 = dot(textureLod(tShape, q, 0.0).gba, w);
+  float bx = dot(textureLod(tShape, q + vec3(k, 0.0, 0.0), 0.0).gba, w);
+  float by = dot(textureLod(tShape, q + vec3(0.0, k, 0.0), 0.0).gba, w);
+  float bz = dot(textureLod(tShape, q + vec3(0.0, 0.0, k), 0.0).gba, w);
+  return vec3(bx - b0, by - b0, bz - b0) / e;
+}
+
 float cloudDensity(vec3 p, float h, vec2 wt, bool detail, float lodDist) {
   vec3 q = p * (1.0 / 9.0) + uShapeWind;
   vec4 n = textureLod(tShape, q, 0.0);
@@ -156,22 +204,7 @@ float cloudDensity(vec3 p, float h, vec2 wt, bool detail, float lodDist) {
   vec3 dn = textureLod(tDetail, p * (1.0 / 1.4) + uShapeWind * 3.0, 0.0).rgb;
   float dfbm = dn.r * 0.625 + dn.g * 0.25 + dn.b * 0.125;
   float m = mix(dfbm, 1.0 - dfbm, saturate(h * 4.0));
-  return saturate(remap(base, m * 0.35 * df, 1.0, 0.0, 1.0));
-}
-
-// Low-frequency density used only for surface normals: big, smooth lobes.
-float lobeDensity(vec3 p, vec2 wt) {
-  vec4 n = textureLod(tShape, p * (1.0 / 9.0) + uShapeWind, 0.0);
-  float bg = 0.0;
-  if (wt.x > 0.02) {
-    float h = heightFrac(p);
-    float shape = remap(n.r, n.g - 1.0, 1.0, 0.0, 1.0) * heightGradient(h, wt.y);
-    bg = saturate(remap(shape, 1.0 - wt.x, 1.0, 0.0, 1.0)) * wt.x;
-  }
-  float hv = heapField(p);
-  float bill = n.g * 0.45 + n.b * 0.4 + n.a * 0.15;
-  float heap = smoothstep(-0.1, 0.3, hv - (1.0 - bill) * 0.8 + 0.26);
-  return max(bg, heap);
+  return saturate(remap(base, m * 0.35 * df * uDetail, 1.0, 0.0, 1.0));
 }
 
 float lightDepth(vec3 p, vec3 ld, vec2 wt0) {
@@ -244,14 +277,15 @@ vec4 marchClouds(vec3 ro, vec3 rd, int steps, float jitter, float maxDist) {
       // Hybrid lighting: a surface normal from the density gradient gives the
       // sculpted, painterly lobes of the clip; a light march started just
       // outside the surface adds the large shadows one lobe casts on another.
-      float e = clamp(t * 0.012, 0.18, 0.7);
-      vec3 g = vec3(
-        lobeDensity(p + vec3(e, 0.0, 0.0), wt) - lobeDensity(p - vec3(e, 0.0, 0.0), wt),
-        lobeDensity(p + vec3(0.0, e, 0.0), wt) - lobeDensity(p - vec3(0.0, e, 0.0), wt),
-        lobeDensity(p + vec3(0.0, 0.0, e), wt) - lobeDensity(p - vec3(0.0, 0.0, e), wt));
+      float e = clamp(t * 0.012, 0.18, 0.7) * (sunOn ? 1.0 : 3.0);
+      vec3 gh;
+      float hv = heapFieldG(p, gh);
+      vec3 g = 0.8 * billowGrad(p, e) + (hv > -0.6 ? gh : vec3(0.0, -0.4, 0.0));
       vec3 N = -g / max(length(g), 1e-5);
       // Bias toward "up" and toward the viewer where the gradient is weak.
-      N = normalize(mix(N, normalize(vec3(0.0, 1.0, 0.0) - rd * 0.6), 0.18 + 0.5 * (1.0 - smoothstep(0.02, 0.12, length(g)))));
+      N = normalize(mix(N, normalize(vec3(0.0, 1.0, 0.0) - rd * 0.6), 0.18 + 0.5 * (1.0 - smoothstep(0.1, 0.6, length(g)))));
+      // Moonlight is soft: smooth the billows so the night bank stays calm.
+      if (!sunOn) N = normalize(mix(N, normalize(vec3(0.0, 1.0, 0.0) - rd * 0.8), 0.9));
       vec3 S = vec3(0.0);
       if (sunOn) {
         float ndl = dot(N, uSunDir);
@@ -270,7 +304,7 @@ vec4 marchClouds(vec3 ro, vec3 rd, int steps, float jitter, float maxDist) {
         // Silver lining: thin edges facing the moon glow.
         // Silver lining only on the thin edges right around the moon.
         float rim = pow(saturate(muM), 40.0) * (1.0 - saturate(d * 3.0)) * 3.0;
-        S += moonL * (lit * sh * 0.8 + rim) * (0.7 + 0.3 * phM);
+        S += moonL * (lit * sh * 0.55 + rim) * (0.7 + 0.3 * phM);
       }
       // Sky light on upward faces, water / city light on downward faces.
       float up = N.y * 0.5 + 0.5;
@@ -403,6 +437,7 @@ export class Clouds {
       uCityGlow: G.uCityGlow,
       uMsTint: { value: new THREE.Color(1, 0.62, 0.48) },
       uCloudFill: G.uCloudFill,
+      uDetail: G.uCloudDetail,
       uBottom: { value: 0 },
       uTop: { value: 0 },
       uCoverage: { value: 1 },

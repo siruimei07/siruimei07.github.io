@@ -68,6 +68,8 @@ export class App {
   private frameMs = 16.7;
   private cityPromise: Promise<void> | null = null;
   private wantChapter = -1;
+  /** Debug: 0 freezes the clock (for frame captures). */
+  timeScale = 1;
 
   constructor(private canvas: HTMLCanvasElement) {
     const saved = (() => {
@@ -117,7 +119,13 @@ export class App {
     this.loop();
     ui.progress(1, "准备好了");
     this.mode = "ready";
-    if (reduced || params.get("skip") === "1") {
+    if (params.get("t") !== null) {
+      // Debug: jump straight to a moment of the entry sequence (frozen unless &play).
+      this.start(false);
+      this.introT = Number(params.get("t"));
+      this.introSpeed = params.has("play") ? 1 : 0;
+      this.ui.showSkip(false);
+    } else if (reduced || params.get("skip") === "1") {
       ui.ready(() => this.start(true));
     } else {
       ui.ready(() => this.start(false));
@@ -369,7 +377,7 @@ export class App {
     const now = performance.now();
     const rawDt = (now - this.last) / 1000;
     this.last = now;
-    const dt = Math.min(0.05, rawDt);
+    const dt = Math.min(0.05, rawDt) * this.timeScale;
     this.frameMs = this.frameMs * 0.9 + rawDt * 1000 * 0.1;
     if (this.mode === "loading" || this.mode === "ready") return;
     this.time += dt;
@@ -478,7 +486,7 @@ export class App {
       }
       w.update(dt);
       w.render(pl, this.time);
-      pl.post.exposure = w.atmos.exposure * (1 + 1.5 * b);
+      pl.post.exposure = w.atmos.exposure * (1 + 0.4 * b);
       this.dive.amount = s(t, PASS_APPROACH + 0.25, PASS_SWITCH - 0.1);
       this.dive.white = s(t, PASS_SWITCH - 0.45, PASS_SWITCH);
     } else {

@@ -109,8 +109,8 @@ const KEYS: Key[] = [
     ambBottom: lin(14, 22, 48),
     cloudSun: rgb(0, 0, 0),
     cloudFill: lin(8, 16, 34),
-    cloudAmbTop: lin(20, 42, 82),
-    cloudAmbBottom: lin(8, 18, 42),
+    cloudAmbTop: lin(28, 56, 100),
+    cloudAmbBottom: lin(10, 22, 48),
     fog: lin(24, 42, 76),
     bank: lin(12, 24, 48),
     water: lin(8, 16, 36),
@@ -131,8 +131,8 @@ const KEYS: Key[] = [
     ambBottom: lin(10, 20, 44),
     cloudSun: rgb(0, 0, 0),
     cloudFill: lin(8, 16, 34),
-    cloudAmbTop: lin(20, 44, 84),
-    cloudAmbBottom: lin(8, 18, 42),
+    cloudAmbTop: lin(28, 58, 104),
+    cloudAmbBottom: lin(10, 22, 48),
     fog: lin(16, 34, 64),
     bank: lin(8, 20, 42),
     water: lin(6, 14, 32),
@@ -163,6 +163,7 @@ export const G = {
   uAmbBottom: c3(),
   uCloudSun: c3(),
   uCloudFill: c3(),
+  uCloudDetail: f1(1),
   uCloudAmbTop: c3(),
   uCloudAmbBottom: c3(),
   uFogColor: c3(),
@@ -219,5 +220,7 @@ export function applyAtmos(tod: number, out: AtmosExtra, moonDir: THREE.Vector3 
   G.uMoonDir.value.copy(moonDir);
   G.uMoonColor.value.copy(tmp.setRGB(0.36, 0.44, 0.62)).multiplyScalar(moon);
   G.uStars.value = THREE.MathUtils.lerp(a.stars, b.stars, x);
+  // Night clouds read as calm masses: less fine erosion.
+  G.uCloudDetail.value = 1 - 0.75 * THREE.MathUtils.smoothstep(t, 0.5, 0.95);
   out.exposure = THREE.MathUtils.lerp(a.exposure, b.exposure, x);
 }

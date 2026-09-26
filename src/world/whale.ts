@@ -202,7 +202,11 @@ export class ParticleWhale {
       base.set([p.x, p.y, p.z], i * 3);
       info.set([p.s, p.kind, p.side, p.w], i * 4);
       // Delay grows from head to tail so the whale "draws" itself.
-      rnd.set([rng(), THREE.MathUtils.clamp(p.s * 0.8 + rng() * 0.2, 0, 1), rng(), rng()], i * 4);
+      // Launch pad: the drones start from a neat grid on the lake.
+      const cols = 90;
+      const gx = (i % cols) / (cols - 1);
+      const gz = (Math.floor(i / cols) % 60) / 59;
+      rnd.set([rng(), THREE.MathUtils.clamp(p.s * 0.8 + rng() * 0.2, 0, 1), gx, gz], i * 4);
     });
     geo.setAttribute("iBase", new THREE.InstancedBufferAttribute(base, 3));
     geo.setAttribute("iInfo", new THREE.InstancedBufferAttribute(info, 4));
@@ -216,8 +220,8 @@ export class ParticleWhale {
         uScale: { value: length },
         uWhale: { value: this.matrix },
         uAssemble: { value: 0 },
-        uLaunchCentre: { value: new THREE.Vector3(0, 0, -260) },
-        uLaunchSpread: { value: new THREE.Vector2(700, 420) },
+        uLaunchCentre: { value: new THREE.Vector3(40, 0, -200) },
+        uLaunchSpread: { value: new THREE.Vector2(260, 160) },
         uRes: G.uRes,
         uPx: { value: 1.6 },
         uSwim: { value: 1 },
@@ -235,8 +239,8 @@ export class ParticleWhale {
     // Default path: a slow, wide loop in front of the viewer.
     // Default path: a slow ellipse high over the lake, crossing the view.
     this.path = (t, out) => {
-      const a = t * 0.05 + 2.3;
-      return out.set(150 + Math.sin(a) * 280, 175 + Math.sin(t * 0.09) * 14, -470 + Math.cos(a) * 130);
+      const a = t * 0.045 + 1.2;
+      return out.set(70 + Math.sin(a) * 330, 150 + Math.sin(t * 0.09) * 14, -330 + Math.cos(a) * 85);
     };
   }
 

@@ -32,8 +32,8 @@ const CORNERS = [
   [1, 1],
   [-1, 1],
 ];
-function box(k: Kit, c: THREE.Vector3, h: THREE.Vector3, mat: number, yaw = 0, pitch = 0) {
-  const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(pitch, yaw, 0, "YXZ"));
+function box(k: Kit, c: THREE.Vector3, h: THREE.Vector3, mat: number, yaw = 0, pitch = 0, roll = 0) {
+  const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(pitch, yaw, roll, "YXZ"));
   const p = new THREE.Vector3();
   const nn = new THREE.Vector3();
   for (const [n, t1, t2] of FACES) {
@@ -158,19 +158,38 @@ export function buildStructures() {
     }
   }
 
-  // --- teal light strips on the great gate (scaled torii, see gate.ts)
+  // --- teal light strips on the great gate (the torii of torii.ts, scaled):
+  // down the front of each pillar (following its lean and taper) and along
+  // the edges of the nuki and the shimaki.
   const s = GATE_SCALE;
   const gz = GATE_Z;
-  const strip = (c: THREE.Vector3, h: THREE.Vector3) => box(k, c, h, 5);
+  const base = P.y;
+  const nukiY = 16.25 * 0.76;
   for (const side of [-1, 1]) {
-    const px = side * 6.0 * s;
-    for (const off of [-0.45, 0.45]) {
-      strip(V(px + off * s * 0.9, P.y + 12, gz - 0.62 * s), V(0.07, 12.5, 0.07));
+    // Pillar axis: x(t) = side*6 - side*0.22*t, radius 0.74 -> 0.6 over y -2..16.25.
+    const y0 = 0.3;
+    const y1 = nukiY - 0.6;
+    const at = (y: number) => {
+      const t = (y + 2) / 18.25;
+      return { x: side * (6 - 0.22 * t), r: 0.74 - 0.14 * t };
+    };
+    for (const off of [-0.55, 0.55]) {
+      const a = at(y0);
+      const b = at(y1);
+      const xa = (a.x + off * a.r) * s;
+      const xb = (b.x + off * b.r) * s;
+      const za = gz - Math.sqrt(Math.max(0, 1 - off * off)) * a.r * s - 0.02;
+      const zb = gz - Math.sqrt(Math.max(0, 1 - off * off)) * b.r * s - 0.02;
+      const len = Math.hypot(xb - xa, (y1 - y0) * s);
+      const roll = -Math.atan2(xb - xa, (y1 - y0) * s);
+      const pitch = Math.atan2(za - zb, (y1 - y0) * s);
+      box(k, V((xa + xb) / 2, base + ((y0 + y1) / 2) * s, (za + zb) / 2), V(0.07, len / 2, 0.07), 5, 0, pitch, roll);
     }
   }
-  strip(V(0, 12.35 * s - 0.575 * s + 0.05, gz - 0.37 * s), V(10.6 * s, 0.08, 0.08));
-  strip(V(0, 12.35 * s + 0.575 * s - 0.05, gz - 0.37 * s), V(10.6 * s, 0.08, 0.08));
-  strip(V(0, (16.25 + 0.05) * s, gz - 0.54 * s), V(10.9 * s, 0.09, 0.09));
+  const zn = gz - 0.37 * s - 0.03;
+  box(k, V(0, base + (nukiY - 0.575) * s + 0.06, zn), V(10.6 * s, 0.08, 0.08), 5);
+  box(k, V(0, base + (nukiY + 0.575) * s - 0.06, zn), V(10.6 * s, 0.08, 0.08), 5);
+  box(k, V(0, base + 16.25 * s + 0.1, gz - 0.53 * s - 0.03), V(10.9 * s, 0.09, 0.09), 5);
 
   return { geometry: build(k), lamps };
 }

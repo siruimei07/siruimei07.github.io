@@ -12,7 +12,7 @@ const html = readFileSync(new URL("index.html", dist), "utf8");
 
 test("index.html is pre-rendered with every section", () => {
   assert.ok(!html.includes("<!--app-->"), "placeholder was not replaced");
-  for (const id of ["login", "profile", "skills", "works", "contact"]) {
+  for (const id of ["cover", "profile", "skills", "works", "contact"]) {
     assert.match(html, new RegExp(`id="${id}"`), `missing section #${id}`);
   }
 });

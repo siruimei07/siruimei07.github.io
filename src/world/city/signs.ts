@@ -140,7 +140,7 @@ export class GreatLanterns {
         for (const x of [128, 384]) {
           ctx.save();
           ctx.translate(x, 128);
-          ctx.scale(-1, -1);
+          ctx.scale(1, -1);
           ctx.fillText(d.char, 0, 6);
           ctx.restore();
         }

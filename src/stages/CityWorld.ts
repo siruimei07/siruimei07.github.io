@@ -41,20 +41,21 @@ const CITY_CLOUDS: CloudLayout = {
     { az: 38, dist: 46, radius: 9, strength: 0.65, type: 0.7 },
     { az: -95, dist: 30, radius: 8, strength: 0.8, type: 0.8 },
     { az: 100, dist: 32, radius: 8, strength: 0.8, type: 0.8 },
-    { az: 170, dist: 30, radius: 10, strength: 0.7, type: 0.7 },
   ],
 };
 
 const MOON_DIR = new THREE.Vector3(0.05, Math.sin(THREE.MathUtils.degToRad(23)), -1).normalize();
 
 // Camera stations (World B coordinates).
-const P_ARRIVE_0 = pose(0, 15, 13.5, 0, 20, -60, 58);
-const P_ARRIVE_1 = pose(0, 8.5, -4, -8, 26, -300, 46);
+// Arrival (进入鸟居.mov, 12–15 s): out of the portal we look back at it, pull
+// away until the whole great gate stands revealed, then turn to the city.
+const P_ARRIVE_0 = pose(0, 15, 4, 0, 17, 40, 62);
+const P_ARRIVE_1 = pose(0, 9.5, -36, 0, 24, 12, 50);
 const STATIONS: Pose[] = [
   pose(0, 0, 0, 0, 0, 0), // (cover lives in World A)
-  pose(8, 7.2, -14, -150, 52, -560, 44), // 档案: city on the right
-  pose(-2.5, 9.2, -118, 70, 18, -330, 46), // 擅长: great lanterns over the bridge
-  pose(-12, 16, -318, 130, 46, -560, 48), // 作品: the pagoda above the shore
+  pose(6, 12, -44, -150, 70, -590, 44), // 档案: the hill city on the right
+  pose(-2.5, 9.5, -110, -20, 16, -330, 46), // 擅长: great lanterns over the bridge
+  pose(-14, 17, -290, -14, 40, -600, 48), // 作品: the pagoda above the shore
 ];
 
 type Move = { curve: THREE.CatmullRomCurve3; from: Pose; to: Pose; t0: number; dur: number };
@@ -216,11 +217,39 @@ export class CityWorld {
     this.chapter = 1;
     this.flying = false;
     this.settled = false;
-    this.startMove(P_ARRIVE_0, STATIONS[1], now, 5.2, [P_ARRIVE_1.pos]);
+    this.arrival = { t0: now };
     this.portal.ripple(0.5, 0.45, now, 1.2);
+    this.portal.intensity = 1.2;
+  }
+
+  private arrival: { t0: number } | null = null;
+
+  // Scripted reveal of the gate, then hand over to a normal move.
+  private arrivalPose(now: number, p: Pose) {
+    const t = now - this.arrival!.t0;
+    const ease = (x: number) => x * x * (3 - 2 * x);
+    if (t < 2.8) {
+      const k = ease(Math.min(1, t / 2.8));
+      p.pos.lerpVectors(P_ARRIVE_0.pos, P_ARRIVE_1.pos, k);
+      p.target.lerpVectors(P_ARRIVE_0.target, P_ARRIVE_1.target, k);
+      p.fov = THREE.MathUtils.lerp(P_ARRIVE_0.fov, P_ARRIVE_1.fov, k);
+      p.roll = 0;
+      this.portal.intensity = THREE.MathUtils.lerp(1.2, 0.6, k);
+      return false;
+    }
+    this.arrival = null;
+    this.portal.intensity = 0.6;
+    if (this.chapter === 1) this.startMove(P_ARRIVE_1, STATIONS[1], now, 3.6, [new THREE.Vector3(3, 12, -41)]);
+    else this.goChapter(this.chapter, now);
+    return true;
   }
 
   goChapter(i: number, now: number) {
+    if (this.arrival) {
+      // Still revealing the gate: go there once the reveal ends.
+      this.chapter = i;
+      return;
+    }
     const from = { ...this.pose, pos: this.pose.pos.clone(), target: this.pose.target.clone() };
     this.chapter = i;
     this.settled = false;
@@ -285,7 +314,7 @@ export class CityWorld {
 
   update(dt: number, now: number) {
     applyAtmos(1, this.atmos, MOON_DIR);
-    G.uCityGlow.value.setRGB(0.5, 0.22, 0.08);
+    G.uCityGlow.value.setRGB(0.22, 0.09, 0.035);
     this.floating.update(dt, 2.1);
     this.whale.update(dt);
     this.skyLanterns.update(dt, 1.4);
@@ -296,14 +325,32 @@ export class CityWorld {
 
     // Camera.
     const p = this.pose;
+    if (this.arrival && !this.arrivalPose(now, p)) {
+      this.settled = false;
+      this.setPose(p);
+      this.sakura.update(this.camera, 0.35);
+      return;
+    }
     if (this.move) {
       const m = this.move;
       const k = Math.min(1, (now - m.t0) / m.dur);
       const e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
       p.pos.copy(m.curve.getPoint(e));
-      const tgtFrom = m.from.target;
+      // Turn the view by yaw/pitch (shortest way round) rather than sliding
+      // the look-at point, so the camera never swings up into empty sky.
       const tgtTo = this.flying ? this.flyLook(0) : m.to.target;
-      p.target.lerpVectors(tgtFrom, tgtTo, e);
+      const d0 = new THREE.Vector3().subVectors(m.from.target, m.from.pos).normalize();
+      const d1 = new THREE.Vector3().subVectors(tgtTo, m.to.pos).normalize();
+      const yaw0 = Math.atan2(d0.x, -d0.z);
+      let yaw1 = Math.atan2(d1.x, -d1.z);
+      while (yaw1 - yaw0 > Math.PI) yaw1 -= Math.PI * 2;
+      while (yaw1 - yaw0 < -Math.PI) yaw1 += Math.PI * 2;
+      const pitch0 = Math.asin(THREE.MathUtils.clamp(d0.y, -1, 1));
+      const pitch1 = Math.asin(THREE.MathUtils.clamp(d1.y, -1, 1));
+      const ey = e * e * (3 - 2 * e);
+      const yaw = THREE.MathUtils.lerp(yaw0, yaw1, ey);
+      const pitch = THREE.MathUtils.lerp(pitch0, pitch1, ey);
+      p.target.set(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), -Math.cos(yaw) * Math.cos(pitch)).multiplyScalar(200).add(p.pos);
       p.fov = THREE.MathUtils.lerp(m.from.fov, m.to.fov, e);
       p.roll = 0;
       if (k >= 1) {
@@ -335,7 +382,7 @@ export class CityWorld {
       this.settled = true;
     }
     this.setPose(p);
-    this.sakura.update(this.camera, this.chapter >= 3 ? 1 : 0.35);
+    this.sakura.update(this.camera, this.chapter >= 3 ? 0.8 : 0);
   }
 
   private flyLook(u: number) {

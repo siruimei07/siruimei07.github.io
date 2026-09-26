@@ -54,16 +54,16 @@ vec3 fishPos(float time) {
   vec3 side = normalize(cross(fwd, vec3(0.0, 1.0, 0.0)));
   vec3 up = cross(side, fwd);
   // Swirl the cross-section; breathe.
-  float ang = time * 0.35 + iA.y * 0.08 + iB.x * 6.0;
+  float ang = time * 0.06 + iA.y * 0.05 + iB.x * 6.0;
   vec2 cs = vec2(iA.z * S2.w, iA.w * S2.w * 0.5);
   cs = mat2(cos(ang), -sin(ang), sin(ang), cos(ang)) * cs * (0.85 + 0.15 * sin(time * 0.7 + iB.x * 20.0));
-  vec3 wig = vec3(sin(time * 1.9 + iB.x * 40.0), sin(time * 1.3 + iB.x * 17.0), 0.0) * 0.6;
+  vec3 wig = vec3(sin(time * 1.9 + iB.x * 40.0), sin(time * 1.3 + iB.x * 17.0), 0.0) * 0.25;
   return c + side * (S2.x + cs.x + wig.x) + up * (S2.y + cs.y + wig.y) + fwd * iA.y * 0.0;
 }
 
 void main() {
   float f = aSeg / float(${SEG});
-  float lag = f * 0.16 * iB.y;
+  float lag = f * 0.22 * iB.y;
   vec3 p = fishPos(uTime - lag);
   vec3 pn = fishPos(uTime - lag - 0.02);
   vec4 c = projectionMatrix * viewMatrix * vec4(p, 1.0);
@@ -75,7 +75,7 @@ void main() {
   vec2 n = vec2(-t.y, t.x);
   // Body width: fat just behind the head, thin tail.
   float body = sin(3.14159 * pow(1.0 - f, 0.7)) * 0.9 + 0.1;
-  float wpx = max(0.9, 0.22 * iB.y * uRes.y * projectionMatrix[1][1] * 0.5 / c.w) * body;
+  float wpx = max(0.7, 0.075 * iB.y * uRes.y * projectionMatrix[1][1] * 0.5 / c.w) * body;
   a += n * aSide * wpx;
   gl_Position = vec4(a / (0.5 * uRes) * c.w, c.z, c.w);
   vF = f;

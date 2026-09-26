@@ -11,9 +11,9 @@ import * as THREE from "three";
 
 export const PLATFORM = { x0: -26, x1: 26, z0: -20, z1: 16, y: 2.2 };
 export const GATE_Z = 12;
-export const BRIDGE = { z0: -20, z1: -330, width: 9, y0: 2.2, rise: 4.2 };
-export const SHORE_Z = -330;
-export const MESA = { x: 0, z: -960, r: 95, h: 172 };
+export const BRIDGE = { z0: -20, z1: -300, width: 9, y0: 2.2, rise: 4.0 };
+export const SHORE_Z = -300;
+export const MESA = { x: 0, z: -800, r: 105, h: 205 };
 
 export function mulberry32(seed: number) {
   let a = seed >>> 0;
@@ -47,15 +47,15 @@ function vnoise2(x: number, z: number, seed = 0) {
 export function terrainHeight(x: number, z: number) {
   if (z > SHORE_Z + 6) return -4;
   // Distance up the slope from the shore.
-  const up = sat((SHORE_Z - z) / 640);
+  const up = sat((SHORE_Z - z) / 500);
   // Main mound toward the mesa + side ridges; flatter near the shore.
   const dx = x - MESA.x;
   const dz = z - MESA.z;
   const rMesa = Math.hypot(dx, dz * 1.1);
-  const mound = MESA.h * Math.pow(sat(1 - (rMesa - MESA.r) / 560), 1.6);
+  const mound = MESA.h * Math.pow(sat(1 - (rMesa - MESA.r) / 470), 1.45);
   const top = rMesa < MESA.r ? MESA.h : mound;
-  const ridgeL = 95 * Math.exp(-Math.pow((x + 420) / 190, 2)) * Math.pow(up, 1.2);
-  const ridgeR = 80 * Math.exp(-Math.pow((x - 460) / 170, 2)) * Math.pow(up, 1.1);
+  const ridgeL = 120 * Math.exp(-Math.pow((x + 400) / 200, 2)) * Math.pow(up, 1.1);
+  const ridgeR = 105 * Math.exp(-Math.pow((x - 430) / 180, 2)) * Math.pow(up, 1.05);
   let h = Math.max(top, ridgeL, ridgeR, 6 + up * 30);
   // Terraces: the town steps up the hill in levels.
   const terr = 9;
@@ -69,17 +69,17 @@ export function terrainHeight(x: number, z: number) {
 
 // The low flight through the city (closed loop) — the final chapter.
 export const FLY_POINTS: [number, number, number][] = [
-  [0, 16, -300],
-  [-40, 24, -380],
-  [-110, 30, -430],
-  [-170, 40, -500],
-  [-150, 56, -600],
-  [-60, 70, -660],
-  [40, 72, -640],
-  [110, 62, -560],
-  [150, 48, -470],
-  [110, 34, -400],
-  [50, 22, -350],
+  [0, 20, -275],
+  [-40, 28, -345],
+  [-105, 38, -395],
+  [-160, 52, -455],
+  [-140, 76, -545],
+  [-60, 96, -600],
+  [40, 98, -585],
+  [110, 84, -515],
+  [150, 62, -435],
+  [110, 42, -365],
+  [50, 26, -310],
 ];
 export const flyCurve = new THREE.CatmullRomCurve3(
   FLY_POINTS.map(([x, y, z]) => new THREE.Vector3(x, y, z)),
@@ -124,9 +124,9 @@ export type Landmarks = {
 };
 
 export const LANDMARKS: Landmarks = {
-  pagoda: new THREE.Vector3(70, 0, -520),
-  hall: new THREE.Vector3(-70, 0, -470),
-  castle: new THREE.Vector3(0, 0, -960),
+  pagoda: new THREE.Vector3(62, 0, -468),
+  hall: new THREE.Vector3(-72, 0, -430),
+  castle: new THREE.Vector3(0, 0, -800),
 };
 for (const k of Object.keys(LANDMARKS) as (keyof Landmarks)[]) {
   const p = LANDMARKS[k];
@@ -137,7 +137,7 @@ export function placeBuildings(density: number, seed = 42): Building[] {
   const rng = mulberry32(seed);
   const out: Building[] = [];
   const step = 15 / Math.sqrt(Math.max(0.35, density));
-  for (let z = SHORE_Z - 30; z > -1180; z -= step) {
+  for (let z = SHORE_Z - 26; z > -1080; z -= step) {
     for (let x = -620; x < 620; x += step) {
       const jx = x + (rng() - 0.5) * step * 0.7;
       const jz = z + (rng() - 0.5) * step * 0.7;
@@ -148,26 +148,28 @@ export function placeBuildings(density: number, seed = 42): Building[] {
       // Keep clear around landmarks.
       if (Math.hypot(jx - LANDMARKS.pagoda.x, jz - LANDMARKS.pagoda.z) < 30) continue;
       if (Math.hypot(jx - LANDMARKS.hall.x, jz - LANDMARKS.hall.z) < 42) continue;
-      // Thin out toward the edges and the far hills.
+      // Thin out toward the edges and the far hills; leave groves (dark
+      // patches of forest) between neighbourhoods.
       const edge = Math.abs(jx) / 620;
-      const far = (SHORE_Z - jz) / 850;
-      if (rng() < edge * edge * 0.8 + far * 0.25) continue;
+      const far = (SHORE_Z - jz) / 780;
+      if (rng() < edge * edge * 0.8 + far * 0.3) continue;
+      const grove = vnoise2(jx * 0.012, jz * 0.012, 9);
+      if (grove < 0.34 && sd > 26) continue;
       const y = terrainHeight(jx, jz);
-      // Towers cluster on the left, mid-hill (the "virtual" skyline).
-      const towerZone = Math.exp(-Math.pow((jx + 300) / 150, 2) - Math.pow((jz + 720) / 170, 2));
-      const isTower = rng() < towerZone * 0.75;
+      const isTower = rng() < 0.012 && sd > 30;
       const isHall = !isTower && rng() < 0.05;
       const seedB = rng();
       if (isTower) {
-        const w = 14 + rng() * 10;
-        out.push({ x: jx, z: jz, y, w, d: w * (0.8 + rng() * 0.4), h: 40 + Math.pow(rng(), 1.5) * 110, rot: 0, kind: 2, roof: 0, seed: seedB });
+        // A tall watch-tower / tiered hall, the odd landmark on the skyline.
+        const w = 10 + rng() * 4;
+        out.push({ x: jx, z: jz, y, w, d: w, h: 16 + rng() * 10, rot: rng() * 0.6, kind: 1, roof: 7, seed: seedB });
       } else if (isHall) {
         const w = 18 + rng() * 10;
         out.push({ x: jx, z: jz, y, w, d: w * 0.7, h: 7 + rng() * 3, rot: (rng() - 0.5) * 0.3, kind: 1, roof: 7 + rng() * 3, seed: seedB });
       } else {
         const w = 8 + rng() * 5;
-        const floors = 1 + Math.floor(rng() * 2.6);
-        out.push({ x: jx, z: jz, y, w, d: 7 + rng() * 5, h: floors * 3.6 + 1, rot: (rng() - 0.5) * 0.25, kind: 0, roof: 2.6 + rng() * 1.4, seed: seedB });
+        const floors = rng() < 0.6 ? 2 : rng() < 0.7 ? 1 : 3;
+        out.push({ x: jx, z: jz, y, w, d: 7 + rng() * 5, h: floors * 3.3 + 0.6, rot: (rng() - 0.5) * 0.25, kind: 0, roof: 3.0 + rng() * 1.6, seed: seedB });
       }
     }
   }
@@ -179,16 +181,16 @@ export function placeSakura(count: number, seed = 7) {
   const rng = mulberry32(seed);
   const pts: THREE.Vector4[] = [];
   const clusters = [
-    [-40, -345, 60],
-    [60, -350, 50],
-    [-150, -400, 40],
-    [140, -420, 45],
-    [20, -470, 35],
-    [-90, -560, 40],
-    [110, -610, 35],
-    [-30, -700, 40],
-    [200, -520, 40],
-    [-220, -470, 40],
+    [-45, -318, 55],
+    [60, -322, 45],
+    [-150, -370, 40],
+    [140, -385, 45],
+    [20, -430, 30],
+    [-95, -510, 40],
+    [110, -560, 35],
+    [-30, -640, 40],
+    [205, -470, 40],
+    [-225, -430, 40],
   ];
   let guard = 0;
   while (pts.length < count && guard++ < count * 30) {

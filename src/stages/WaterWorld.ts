@@ -168,7 +168,7 @@ export class WaterWorld {
   update(dt: number) {
     applyAtmos(this.tod, this.atmos);
     // Lanterns read brighter as the sky darkens.
-    this.lanterns.update(dt, THREE.MathUtils.lerp(1.9, 2.1, this.tod));
+    this.lanterns.update(dt, THREE.MathUtils.lerp(1.9, 1.25, this.tod));
     this.toriiMaterial.uniforms.uLanternLight.value = THREE.MathUtils.lerp(0.05, 0.22, this.tod);
     // Clouds drift; faster during the time-lapse.
     this.cloudTime += dt * this.windSpeed;
