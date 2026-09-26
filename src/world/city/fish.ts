@@ -104,6 +104,13 @@ export class LightFish {
   readonly mesh: THREE.Mesh;
   readonly material: THREE.ShaderMaterial;
 
+  private s1: THREE.Vector4[] = [];
+
+  /** Move a school to a loop position (for the school that escorts the camera). */
+  setPhase(i: number, phase: number) {
+    this.s1[i].y = phase;
+  }
+
   constructor(loops: THREE.Vector3[][], schools: FishSchool[], scale: number) {
     const rng = mulberry32(17);
     const pts: THREE.Vector3[] = [];
@@ -139,7 +146,7 @@ export class LightFish {
     geo.setAttribute("iA", new THREE.InstancedBufferAttribute(new Float32Array(A), 4));
     geo.setAttribute("iB", new THREE.InstancedBufferAttribute(new Float32Array(B), 4));
     geo.instanceCount = A.length / 4;
-    const s1 = Array.from({ length: 8 }, () => new THREE.Vector4());
+    const s1 = (this.s1 = Array.from({ length: 8 }, () => new THREE.Vector4()));
     const s2 = Array.from({ length: 8 }, () => new THREE.Vector4());
     schools.forEach((sc, i) => {
       s1[i].set(sc.loop, sc.phase, sc.speed, 1);

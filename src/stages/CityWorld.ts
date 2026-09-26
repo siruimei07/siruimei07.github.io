@@ -168,8 +168,9 @@ export class CityWorld {
     this.scene.add(this.skyLanterns.mesh);
     this.scene.add(this.fireworks.mesh);
 
-    // Light-fish: a loop above the flight path and a loop over the bridge.
-    const upper = FLY_POINTS.map(([x, y, z]) => new THREE.Vector3(x * 1.1, y + 22, z));
+    // Light-fish: the flight loop itself (one school escorts the camera, the
+    // others roam it higher up) and a loop over the bridge.
+    const upper = FLY_POINTS.map(([x, y, z]) => new THREE.Vector3(x, y, z));
     const bridgeLoop = [
       [-30, 16, -60],
       [-12, 20, -150],
@@ -181,9 +182,9 @@ export class CityWorld {
     this.fish = new LightFish(
       [upper, bridgeLoop],
       [
-        { loop: 0, phase: 0.0, speed: 0.012, lateral: 0, vertical: 0, length: 60, width: 8, count: 180 },
-        { loop: 0, phase: 0.35, speed: 0.014, lateral: 14, vertical: 6, length: 40, width: 6, count: 120 },
-        { loop: 0, phase: 0.62, speed: 0.011, lateral: -12, vertical: -4, length: 50, width: 7, count: 150 },
+        { loop: 0, phase: 0.0, speed: 0, lateral: 7, vertical: 5, length: 46, width: 5, count: 170 },
+        { loop: 0, phase: 0.35, speed: 0.012, lateral: 14, vertical: 26, length: 40, width: 6, count: 120 },
+        { loop: 0, phase: 0.62, speed: 0.011, lateral: -12, vertical: 20, length: 50, width: 7, count: 150 },
         { loop: 1, phase: 0.0, speed: 0.022, lateral: 0, vertical: 0, length: 36, width: 5, count: 130 },
         { loop: 1, phase: 0.5, speed: 0.019, lateral: 6, vertical: 4, length: 26, width: 4, count: 90 },
       ],
@@ -322,6 +323,8 @@ export class CityWorld {
     this.portal.update();
     this.great.update(dt, now);
     this.stars.head += dt * 0.0005;
+    // The escort school keeps pace a little ahead of the flying camera.
+    this.fish.setPhase(0, this.flying ? (this.flyU + 0.028 + Math.sin(now * 0.15) * 0.006) % 1 : 0.25);
 
     // Camera.
     const p = this.pose;
