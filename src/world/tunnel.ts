@@ -145,8 +145,8 @@ export function createTunnel() {
         float rr = length(dd);
         float edgeN = fbm(vec2(an * 4.0, V * 0.25)) - 0.5;
         float hairN = fbm(vec2(an * 64.0, V * 0.15)) - 0.5;
-        float re = rCore * (1.0 + edgeN * 0.4 * (1.0 - wS * 0.8) + hairN * 0.3 * (1.0 - wB));
-        float disc = smoothstep(re + uPx * 2.0 + re * 0.3 * smoothstep(5.22, 5.42, V), re * 0.88, rr);
+        float re = rCore * (1.0 + edgeN * mix(0.4 * (1.0 - wS * 0.8), 0.3, smoothstep(5.25, 5.4, V)) + hairN * 0.3 * (1.0 - wB));
+        float disc = smoothstep(re + uPx * 2.0 + re * 0.45 * smoothstep(5.22, 5.42, V), re * 0.85, rr);
         vec3 coreCol = mix(vec3(1.0, 0.68, 0.28), vec3(0.95, 0.94, 0.88), smoothstep(1.2, 1.75, V));
         float bubbleK = smoothstep(1.35, 1.7, V) * (1.0 - wB);
         coreCol = mix(coreCol, vec3(0.92, 0.88, 0.76), bubbleK);
@@ -274,33 +274,45 @@ export function createTunnel() {
           float spec = pow(max(dot(N, normalize(L + vec3(0.0, 0.0, 1.0))), 0.0), 50.0);
           float fres = pow(1.0 - N.z, 2.0);
           float cr = 1.0 - abs(2.0 * fbm(q * 2.4 + w * 1.5 + 6.1) - 1.0);
-          float crinkle = pow(cr, 16.0) * smoothstep(0.4, 0.65, fbm(q * 0.9 + 2.2));
-          vec3 glass = vec3(0.02, 0.075, 0.08) * (0.5 + 1.1 * streakG) + vec3(0.02, 0.07, 0.075) * max(dot(N, L), 0.0);
-          glass += vec3(0.8, 0.97, 0.97) * (pow(spec, 1.6) * 2.5 + pow(fres, 2.5) * 0.9 + crinkle * 1.2);
+          float cr2 = 1.0 - abs(2.0 * fbm(q * 6.5 + w * 2.5 + 3.3) - 1.0);
+          float crinkle = pow(cr, 16.0) * smoothstep(0.42, 0.68, fbm(q * 0.9 + 2.2)) + pow(cr2, 24.0) * 0.45;
+          vec3 glass = vec3(0.015, 0.06, 0.066) * (0.45 + 0.6 * streakG) + vec3(0.02, 0.07, 0.075) * max(dot(N, L), 0.0);
+          glass += vec3(0.8, 0.97, 0.97) * (pow(spec, 2.0) * 1.8 + pow(fres, 2.5) * 0.8 + crinkle * 1.1);
           float foam = smoothstep(0.68, 0.78, fbm(q * 0.7 + w + 9.1)) * smoothstep(4.3, 4.6, V);
           glass = mix(glass, vec3(0.78, 0.86, 0.87) * (0.8 + 0.5 * cr), foam * 0.85);
           col = mix(col, glass + col * 0.35, sheet * wL);
           col += vec3(0.85, 1.0, 1.0) * isoLine(S, thr + 0.006, 1.3) * 0.9 * wL;
           // Between the sheets: a web of bright droplets on the dark.
-          float net = pow(1.0 - abs(2.0 * fbm(q * 4.0 + w * 2.0 + 1.9) - 1.0), 24.0) * smoothstep(0.4, 0.7, fbm(q * 1.3 + 7.7));
-          col += vec3(0.7, 0.9, 0.9) * net * (1.0 - sheet) * smoothstep(4.4, 4.85, V) * wL * 0.7;
+          float net = pow(1.0 - abs(2.0 * fbm(q * 4.0 + w * 2.0 + 1.9) - 1.0), 24.0) * smoothstep(0.45, 0.75, fbm(q * 1.3 + 7.7));
+          vec2 dg = q * 22.0;
+          vec2 dc = floor(dg);
+          float dh = hash12(dc);
+          vec2 doff = vec2(hash12(dc + 1.3), hash12(dc + 5.9)) - 0.5;
+          float drop = step(0.78, dh) * smoothstep(0.22, 0.04, length(fract(dg) - 0.5 - doff * 0.5));
+          float dropAA = mix(drop, 0.22 * 0.05, smoothstep(0.4, 1.0, fwidth(dg.x)));
+          col += vec3(0.7, 0.9, 0.9) * (net * 0.5 + dropAA * 1.4) * (1.0 - sheet) * smoothstep(4.3, 4.75, V) * wL;
         }
 
-        // ── Breaking out: bokeh droplets, splashes and spectral rays.
-        if (wS > 0.0) {
+        {
           // Torn fragments of the sheets flying past: bright, glossy shards.
-          float wF = smoothstep(5.08, 5.2, V) * (1.0 - smoothstep(5.28, 5.38, V));
+          float wF = smoothstep(4.38, 4.55, V) * (1.0 - smoothstep(5.28, 5.38, V));
+          // Before the break-out they burst round the light only.
+          float near = mix(smoothstep(0.6, 0.22, r), 1.0, smoothstep(5.0, 5.15, V));
           if (wF > 0.0) {
-            vec2 q = rot(0.6) * d / exp((V - 5.0) * 2.2);
-            float Fr = fbm(vec2(an * 5.0, lr * 0.6 - (V - 5.0) * 1.2) + fbm(q * 1.4) * 0.3) + exp(-r * 2.2) * 0.14 - 0.08;
+            vec2 q = rot(0.6) * d / exp((V - 4.4) * 1.6);
+            float Fr = fbm(vec2(an * 5.0, lr * 0.6 - (V - 4.4) * 1.2) + fbm(q * 1.4) * 0.3) + exp(-r * 2.2) * 0.14 - 0.08;
             float frag = smoothstep(0.62, 0.63, Fr) * smoothstep(rCore * 1.02, rCore * 1.25, r);
             float hf = smoothstep(0.62, 0.67, Fr);
             vec2 gf = vec2(dFdx(hf), dFdy(hf)) / uPx * 0.05;
             vec3 Nf = normalize(vec3(-gf, 1.0));
             float sf = pow(max(dot(Nf, normalize(vec3(-0.3, 0.4, 1.0))), 0.0), 30.0);
             vec3 shard = mix(vec3(0.1, 0.24, 0.25), vec3(0.8, 0.9, 0.9), smoothstep(0.62, 0.72, Fr)) * 1.3 + vec3(0.95, 1.0, 1.0) * (sf * 2.5 + pow(1.0 - Nf.z, 1.5) * 2.0);
-            col = mix(col, shard, frag * wF);
+            col = mix(col, shard, frag * wF * near);
           }
+        }
+
+        // ── Breaking out: bokeh droplets, splashes and spectral rays.
+        if (wS > 0.0) {
           float scroll = travel * 0.8;
           float b = bokeh(an, lr, r, scroll, 40.0, 4.0, 0.3, 3.0) + bokeh(an, lr, r, scroll * 1.2, 28.0, 3.0, 0.25, 9.0);
           col += vec3(1.0, 0.88, 0.8) * b * 1.1 * wS * smoothstep(0.02, 0.15, r - rCore);

@@ -5,7 +5,8 @@ import * as THREE from "three";
 export const globals = {
   uTime: { value: 0 },
   uNoise: { value: null as THREE.Texture | null },
-  uMoonDir: { value: new THREE.Vector3(0, Math.sin(0.2), -Math.cos(0.2)).normalize() },
+  // High over the far city, small and bright (as in the reference films).
+  uMoonDir: { value: new THREE.Vector3(0, Math.sin(0.34), -Math.cos(0.34)).normalize() },
   // Moonlight as it falls on things: cool silver. (The disc itself is ivory.)
   uMoonColor: { value: new THREE.Color(0.7, 0.79, 0.95) },
   uFogHorizon: { value: new THREE.Color(0.008, 0.034, 0.066) },
@@ -79,6 +80,12 @@ float hash13(vec3 p3) { p3 = fract(p3 * 0.1031); p3 += dot(p3, p3.zyx + 31.32); 
 // texture, so fbm costs a single fetch.
 float fbm(vec2 uv) { return dot(texture2D(uNoise, uv), vec4(0.5333, 0.2667, 0.1333, 0.0667)); }
 
+// Warm pink-amber light of the far city, low over the horizon behind the gate.
+vec3 cityGlow(vec3 dir) {
+  float az = atan(dir.x, -dir.z);
+  return vec3(0.55, 0.2, 0.15) * 0.085 * exp(-max(dir.y, 0.0) * 9.0) * exp(-pow(az / 0.85, 2.0)) * (1.0 - 0.75 * uDusk);
+}
+
 // Night air: deep blue, brighter and slightly silver toward the moon.
 vec3 fogTint(vec3 dir) {
   float up = clamp(dir.y, -0.1, 1.0);
@@ -87,6 +94,8 @@ vec3 fogTint(vec3 dir) {
   c += uMoonColor * (pow(m, 8.0) * 0.012 + pow(m, 60.0) * 0.06) * uMoonK;
   float sn = max(dot(dir, uSunDir), 0.0);
   c += uSunColor * (pow(sn, 5.0) * 0.35 + pow(sn, 40.0) * 0.8) * uDusk;
+  // The city across the lake warms the haze low on the horizon.
+  c += cityGlow(dir);
   c += uFlash * 0.18;
   return c;
 }

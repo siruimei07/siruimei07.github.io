@@ -99,6 +99,17 @@ export class Water {
                     + textureLod(tReflect, ruv + smear, lod + 0.5).rgb * 0.25
                     + textureLod(tReflect, ruv - smear, lod + 0.5).rgb * 0.25;
 
+          // Bright lights (lanterns, the city, the moon) stretch into long
+          // vertical streaks on the calm surface.
+          vec3 streak = vec3(0.0);
+          for (int i = 1; i <= 6; i++) {
+            float o = float(i) * 0.012 * atten + 0.002;
+            vec3 up1 = textureLod(tReflect, ruv + vec2(0.0, o), lod + 1.0).rgb;
+            vec3 dn1 = textureLod(tReflect, ruv - vec2(0.0, o), lod + 1.0).rgb;
+            streak += (max(up1 - 0.3, 0.0) + max(dn1 - 0.3, 0.0)) * (1.0 - float(i) / 7.0);
+          }
+          refl += streak * 0.16;
+
           vec3 deep = vec3(0.002, 0.004, 0.009) + uFlash * 0.04;
           vec3 col = mix(deep, refl, clamp(fresnel * 1.1 + 0.18, 0.0, 1.0));
 

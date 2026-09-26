@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { COMMON, globals, REFLECT_LAYER } from "./globals.ts";
 import { mulberry32 } from "./noise.ts";
 
-export const MOON_RADIUS = THREE.MathUtils.degToRad(6.2); // angular radius
+export const MOON_RADIUS = THREE.MathUtils.degToRad(1.75); // angular radius
 
 // The maria are painted as the mochi-pounding moon rabbit (月の兎), softened
 // and broken up with blotches so it reads as lunar terrain first.
@@ -146,8 +146,8 @@ export function createSky() {
         const float SEG = 0.05;
         float pxPsi = max(fwidth(psi), 1e-6);
         float pxPhi = max(fwidth(phi), 1e-6);
-        float len = max(min(uTrail, 3.2) * 0.07, pxPhi * 1.5);
-        float dens = 0.24 * sin(psi);
+        float len = max(min(uTrail, 4.2) * 0.058, pxPhi * 1.5);
+        float dens = 0.09 * sin(psi);
         vec3 acc = vec3(0.0);
         for (int layer = 0; layer < 2; layer++) {
           float off = float(layer) * 0.5;
@@ -238,6 +238,7 @@ export function createSky() {
         float skyDusk = smoothstep(0.55, 1.0, uDusk);
         float cloudDusk = smoothstep(0.15, 0.8, uDusk);
         vec3 col = mix(nightCol, duskCol, skyDusk);
+        col += cityGlow(dir) * smoothstep(-0.02, 0.02, up);
 
         float moonHide = 1.0 - smoothstep(0.9, 0.995, md);
         float skyMask = smoothstep(0.0, 0.18, up) * night;
@@ -266,7 +267,7 @@ export function createSky() {
 
         // The moon rises into view only once the sky has darkened.
         float moonK = uMoonK * (1.0 + uMoonPulse);
-        col += vec3(0.85, 0.88, 0.95) * (pow(mg, 18.0) * 0.02 + pow(mg, 160.0) * 0.1 + pow(mg, 1400.0) * 0.45) * moonK;
+        col += vec3(0.85, 0.9, 0.98) * (pow(mg, 18.0) * 0.025 + pow(mg, 160.0) * 0.09 + pow(mg, 900.0) * 0.22 + pow(mg, 4000.0) * 0.9) * moonK;
         float ang = acos(clamp(md, -1.0, 1.0));
         float haloR = asin(uMoonSin) * 3.1;
         col += vec3(0.7, 0.78, 0.9) * exp(-pow((ang - haloR) / 0.012, 2.0)) * 0.012 * uMoonK * (1.0 + uMoonPulse * 3.0);
@@ -280,8 +281,29 @@ export function createSky() {
           float detail = fbm(p * 0.7 + 0.13) * 0.6 + fbm(p * 2.3 + 0.7) * 0.4;
           float alb = 0.95 - m.r * 0.4 + m.g * 0.3 - (detail - 0.5) * 0.3;
           float limb = mix(0.6, 1.0, pow(z, 0.45));
-          vec3 moonCol = vec3(1.0, 0.93, 0.8) * alb * limb * 1.65 * moonK;
+          vec3 moonCol = vec3(1.0, 0.96, 0.9) * alb * limb * 2.8 * moonK;
           col = mix(col, moonCol + col * 0.4, disc * uMoonK);
+        }
+
+        // A moonlit cloud deck: soft dark masses with silver edges where they
+        // face the moon, parting in a clear patch around it.
+        if (up > 0.03) {
+          vec2 base = dir.xz / (up + 0.2) * 0.4;
+          vec2 drift = vec2(uTime * 0.0035, uTime * 0.0012);
+          vec2 cq = base + drift;
+          float d1 = fbm(cq) * 0.72 + fbm(cq * 2.6 + 1.3) * 0.38;
+          vec2 moonQ = uMoonDir.xz / (uMoonDir.y + 0.2) * 0.4;
+          vec2 toward = normalize(moonQ - base + 1e-4);
+          float d2 = fbm(cq + toward * 0.06) * 0.72 + fbm((cq + toward * 0.06) * 2.6 + 1.3) * 0.38;
+          float clear = 1.0 - 0.9 * exp(-pow(acos(clamp(md, -1.0, 1.0)) / 0.13, 2.0));
+          float dens = smoothstep(0.5, 0.74, d1) * clear * smoothstep(0.03, 0.16, up);
+          if (dens > 0.001) {
+            float rim = clamp((d1 - d2) * 9.0, 0.0, 1.0);
+            float near = pow(mg, 5.0);
+            vec3 nightDeck = vec3(0.008, 0.024, 0.044) + vec3(0.1, 0.15, 0.2) * rim * (0.25 + 2.5 * near) * uMoonK + vec3(0.05, 0.07, 0.09) * near * uMoonK;
+            vec3 duskDeck = mix(vec3(0.5, 0.32, 0.48), vec3(1.05, 0.66, 0.6), rim);
+            col = mix(col, mix(nightDeck, duskDeck, cloudDusk), dens * mix(0.82, 0.35, cloudDusk));
+          }
         }
 
         // Thin, high wisps.

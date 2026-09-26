@@ -27,7 +27,8 @@ function sectionHead(i: number, id: string) {
 }
 
 function loader() {
-  return `<div class="loader" id="loader">
+  return `<p class="skip-hint" aria-hidden="true">轻触或滚动 · 快进</p>
+<div class="loader" id="loader">
   <div class="loader__core">
     <p class="loader__status"><span id="loader-text">即将启程…</span><b id="loader-pct">0%</b></p>
     <div class="loader__line" aria-hidden="true"><i id="loader-bar"></i></div>

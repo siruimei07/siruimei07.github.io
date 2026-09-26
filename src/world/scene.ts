@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { createAvatar } from "./avatar.ts";
+import { createCity } from "./city.ts";
 import { Fireworks } from "./fireworks.ts";
 import { globals } from "./globals.ts";
 import { createKoi } from "./koi.ts";
@@ -33,6 +34,7 @@ export function buildScene(world: World, avatarTexture: THREE.Texture, skillChar
 
   world.add(torii);
   world.add(createScenery());
+  world.add(createCity());
   world.add(createLanterns());
   world.add(createLanternField());
   world.add(skillLanterns);

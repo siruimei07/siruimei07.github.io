@@ -4,8 +4,8 @@ import { COMMON, globals, REFLECT_LAYER } from "./globals.ts";
 import { mulberry32 } from "./noise.ts";
 import type { Part } from "./World.ts";
 
-// Everything static around the torii: ink-wash mountains, the far shore with
-// its village and pagoda, pine islands and stone lanterns.
+// Everything static around the torii: far ink-wash ranges, pine islands and
+// stone lanterns. (The far shore is the city, see city.ts.)
 
 export const ISLANDS = [
   { x: -46, z: -74, r: 11, pines: 3, lantern: true },
@@ -19,7 +19,6 @@ const STONE = new THREE.Color(0.075, 0.075, 0.08);
 const ROCK = new THREE.Color(0.03, 0.032, 0.038);
 const PINE = new THREE.Color(0.01, 0.022, 0.016);
 const BARK = new THREE.Color(0.035, 0.022, 0.018);
-const DARK = new THREE.Color(0.022, 0.022, 0.03);
 
 type Tagged = THREE.BufferGeometry;
 
@@ -116,21 +115,6 @@ function island(_rnd: () => number, x: number, z: number, r: number): Tagged {
   return tag(geo, ROCK, 0.04);
 }
 
-function pagoda(): THREE.BufferGeometry {
-  const parts: THREE.BufferGeometry[] = [];
-  let y = 0;
-  for (let i = 0; i < 5; i++) {
-    const w = 22 - i * 2.6;
-    const h = 7.5 - i * 0.4;
-    parts.push(new THREE.BoxGeometry(w * 0.62, h, w * 0.62).translate(0, y + h / 2, 0));
-    parts.push(new THREE.ConeGeometry(w * 0.86, 4.2, 4, 1).rotateY(Math.PI / 4).translate(0, y + h + 1.2, 0));
-    y += h + 2.6;
-  }
-  parts.push(new THREE.CylinderGeometry(0.35, 0.6, 18, 8).translate(0, y + 9, 0));
-  for (let r = 0; r < 9; r++) parts.push(new THREE.CylinderGeometry(1.4, 1.4, 0.35, 12).translate(0, y + 3 + r * 1.4, 0));
-  return mergeGeometries(parts.map((p) => tag(p, DARK, 0.05)))!;
-}
-
 const SOLID_VERT = /* glsl */ `
   attribute vec4 aColor;
   attribute vec4 aLamp;
@@ -197,92 +181,8 @@ export function createScenery(): Part {
     if (isl.lantern) lanternAt(isl.x + isl.r * 0.35, isl.z + isl.r * 0.3, 1.2, rnd());
   }
 
-  // Far shore: a low strip of land across the moon side.
-  const shore: THREE.BufferGeometry[] = [];
-  const moonDir = globals.uMoonDir.value;
-  const moonAz = Math.atan2(moonDir.z, moonDir.x);
-  for (let i = 0; i < 70; i++) {
-    const a = moonAz + (i / 69 - 0.5) * 2.4;
-    const r = 860 + Math.sin(i * 1.7) * 40;
-    const w = 90;
-    shore.push(new THREE.BoxGeometry(w, 4 + Math.abs(Math.sin(i * 0.9)) * 5, 60).rotateY(-a + Math.PI / 2).translate(Math.cos(a) * r, 1, Math.sin(a) * r));
-  }
-  solids.push(...shore.map((s) => tag(s, DARK, 0.02)));
-
-  const pag = pagoda();
-  const pd = 930;
-  pag.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(moonDir.x * pd, 2, moonDir.z * pd), new THREE.Quaternion(), new THREE.Vector3(3, 3, 3)));
-  solids.push(pag);
-
   const solid = new THREE.Mesh(mergeGeometries(solids)!, new THREE.ShaderMaterial({ uniforms: globals, vertexShader: SOLID_VERT, fragmentShader: SOLID_FRAG }));
   solid.frustumCulled = false;
-
-  // Village on the far shore: dark houses under hip roofs, a few warm windows.
-  const H = 110;
-  const box = new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0);
-  const roof = new THREE.ConeGeometry(0.74, 1, 4, 1).rotateY(Math.PI / 4).translate(0, 0.5, 0);
-  const houseInfo = new Float32Array(H * 4);
-  const housePos = new Float32Array(H * 4);
-  for (let i = 0; i < H; i++) {
-    let a = moonAz + (rnd() - 0.5) * 2.2;
-    if (Math.abs(a - moonAz) < 0.05) a += 0.08 * Math.sign(a - moonAz || 1);
-    const r = 830 + rnd() * 80;
-    const w = 8 + rnd() * 12;
-    const h = 5 + rnd() * rnd() * 14;
-    housePos.set([Math.cos(a) * r, Math.sin(a) * r, rnd() * Math.PI, 5], i * 4);
-    houseInfo.set([w, h, w * (0.7 + rnd() * 0.5), rnd()], i * 4);
-  }
-  const houseVert = (isRoof: boolean) => /* glsl */ `
-    attribute vec4 aPos;
-    attribute vec4 aInfo;
-    varying vec3 vWorld; varying vec3 vNormal; varying vec3 vLocal; varying vec4 vInfo;
-    void main() {
-      float c = cos(aPos.z), s = sin(aPos.z);
-      mat2 rot = mat2(c, -s, s, c);
-      vec3 sz = aInfo.xyz;
-      ${isRoof ? "sz = vec3(aInfo.x * 1.35, 3.0 + aInfo.w * 3.0, aInfo.z * 1.35);" : ""}
-      vec3 p = position * sz;
-      p.xz = rot * p.xz;
-      vec3 w = vec3(aPos.x, aPos.w + ${isRoof ? "aInfo.y" : "0.0"}, aPos.y) + p;
-      vec3 n = normal; n.xz = rot * n.xz;
-      vWorld = w; vNormal = n; vLocal = position; vInfo = aInfo;
-      gl_Position = projectionMatrix * viewMatrix * vec4(w, 1.0);
-    }
-  `;
-  const houseFrag = (isRoof: boolean) => /* glsl */ `
-    ${COMMON}
-    varying vec3 vWorld; varying vec3 vNormal; varying vec3 vLocal; varying vec4 vInfo;
-    void main() {
-      vec3 N = normalize(vNormal);
-      vec3 V = normalize(cameraPosition - vWorld);
-      vec3 col = shadeSolid(vec3(${isRoof ? "0.018, 0.018, 0.024" : "0.03, 0.028, 0.032"}), N, V, 0.05) * 0.8;
-      ${
-        isRoof
-          ? ""
-          : `if (abs(N.y) < 0.5) {
-        vec2 f = vec2(abs(N.x) > 0.5 ? vLocal.z * vInfo.z : vLocal.x * vInfo.x, vLocal.y * vInfo.y);
-        vec2 cell = floor(f / vec2(3.0, 3.2));
-        vec2 inCell = fract(f / vec2(3.0, 3.2));
-        float win = step(0.25, inCell.x) * step(inCell.x, 0.75) * step(0.3, inCell.y) * step(inCell.y, 0.7);
-        float lit = step(0.86, hash12(cell + vInfo.w * 31.0 + N.xz * 7.0));
-        col += vec3(1.0, 0.6, 0.28) * win * lit * 1.4;
-      }`
-      }
-      gl_FragColor = vec4(applyFog(col, vWorld), 1.0);
-    }
-  `;
-  const instanced = (base: THREE.BufferGeometry, isRoof: boolean) => {
-    const g = new THREE.InstancedBufferGeometry();
-    g.setIndex(base.index);
-    g.setAttribute("position", base.attributes.position);
-    g.setAttribute("normal", base.attributes.normal);
-    g.setAttribute("aPos", new THREE.InstancedBufferAttribute(housePos, 4));
-    g.setAttribute("aInfo", new THREE.InstancedBufferAttribute(houseInfo, 4));
-    g.instanceCount = H;
-    const m = new THREE.Mesh(g, new THREE.ShaderMaterial({ uniforms: globals, vertexShader: houseVert(isRoof), fragmentShader: houseFrag(isRoof) }));
-    m.frustumCulled = false;
-    return m;
-  };
 
   // Ink-wash ridges: each layer darkens toward its crest, dissolves into mist
   // at its base, and the fog pushes farther layers back.
@@ -332,9 +232,10 @@ export function createScenery(): Part {
     m.frustumCulled = false;
     return m;
   };
-  const ridges = [ridge(1450, 105, 5, 1.0), ridge(2050, 175, 9, 1.4), ridge(2800, 280, 13, 1.8)];
+  // (The city of Tsukuyomi now fills the near shore; only the far ranges remain.)
+  const ridges = [ridge(2300, 210, 9, 1.4), ridge(3000, 330, 13, 1.8)];
 
-  for (const m of [solid, instanced(box, false), instanced(roof, true), ...ridges]) {
+  for (const m of [solid, ...ridges]) {
     m.layers.enable(REFLECT_LAYER);
     group.add(m);
   }

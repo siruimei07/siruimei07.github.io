@@ -4,25 +4,30 @@ import { GpuTimer } from "./gpuTimer.ts";
 import { createNoiseTexture } from "./noise.ts";
 import { PostPipeline, type PostParams } from "./post.ts";
 import { guessTier, PIXEL_BUDGET, QualityGovernor, TIERS, type Tier } from "./quality.ts";
-import { CameraRig, type Pose } from "./rig.ts";
+import { blendIntroPose, CameraRig, type Pose } from "./rig.ts";
 import { createSky, createStars, MOON_RADIUS } from "./sky.ts";
 import { createTunnel } from "./tunnel.ts";
 import { Water } from "./water.ts";
 
-// Entry sequence, in seconds after "启程". It follows the reference clip beat
-// for beat (clip time = intro time + CLIP_OFFSET): black, a light appears, the
-// dive through the tunnel, white-out, the gate emerges from the glare at dusk,
-// then night falls under streaking stars and the trails settle into the
-// moonlit sky. The camera never moves: it waits at the hero framing.
+// Entry sequence, in seconds after "启程". The dive follows the reference clip
+// beat for beat (clip time = intro time + CLIP_OFFSET); everything after the
+// white-out is paced slower and softer: the gate surfaces from the glare at
+// dusk, night falls, stars streak and settle, the moon rises — all with the
+// gate dead centre — and only then does the camera glide to the first
+// section, carrying the gate to the right to make room for the copy.
 export const CLIP_OFFSET = 0.42;
 export const INTRO = {
   white: 5.05, // the tunnel has burned to white
-  clear: 6.07, // the gate has emerged from the glare
-  dusk: 8.75, // night starts to fall
-  night: 9.35, // the sky is dark
-  trails: 11.2, // star trails at full length; they start to settle
-  reveal: 10.2, // page copy fades in
-  end: 12.4,
+  clear: 6.95, // the gate has emerged from the glare
+  dusk: 9.8, // night starts to fall
+  night: 11.8, // the sky is dark
+  trailsStart: 10.4, // stars begin to streak
+  trails: 14.2, // trails at full length; their tails start to fade
+  settled: 16.4, // only still stars remain
+  moon: [14.8, 17.2], // the moon rises
+  move: [16.2, 21.0], // the camera glides to section 0
+  reveal: 18.3, // page copy fades in
+  end: 21.0,
 };
 
 const NIGHT_HORIZON = new THREE.Color(0.008, 0.034, 0.066);
@@ -78,6 +83,7 @@ export class World {
   private introT = -1;
   private introSpeed = 1;
   private tunnel = createTunnel();
+  private introPoseOut: Pose = { pos: new THREE.Vector3(), target: new THREE.Vector3(), fov: 44, shift: 0 };
   private exposure = 1.25;
   private height = 1;
   private cssW = 1;
@@ -229,7 +235,7 @@ export class World {
 
   // Fast-forward the entry sequence (any click, scroll or key during it).
   skipIntro() {
-    if (!this.introDone) this.introSpeed = 7;
+    if (!this.introDone) this.introSpeed = 9;
   }
 
   get introDone() {
@@ -261,7 +267,7 @@ export class World {
   isMoonAt(ndc = this.pointer) {
     if (globals.uMoonK.value < 0.5) return false;
     const r = this.ray(ndc);
-    return r.direction.dot(globals.uMoonDir.value) > Math.cos(MOON_RADIUS);
+    return r.direction.dot(globals.uMoonDir.value) > Math.cos(MOON_RADIUS * 2.2);
   }
 
   start() {
@@ -308,8 +314,8 @@ export class World {
     const t = this.clock;
     globals.uTime.value = t;
 
-    // Camera: scroll rig, cursor parallax and a slow drift.
-    const pose = this.rig.update(dt);
+    // Camera: scroll rig (or the entry framing), cursor parallax, slow drift.
+    let pose = this.rig.update(dt);
     const intro = this.introT >= 0 && this.introT < INTRO.end;
     if (intro) {
       const prev = this.introT;
@@ -319,8 +325,12 @@ export class World {
     const tt = this.introT;
     const inTunnel = intro && tt < INTRO.white;
     const ss = THREE.MathUtils.smoothstep;
+    if (intro) {
+      const k = THREE.MathUtils.smootherstep(tt, INTRO.move[0], INTRO.move[1]);
+      pose = blendIntroPose(k, this.rig.introPose, pose, this.introPoseOut);
+    }
 
-    // Time of day: dusk on arrival, then night falls fast (as in the clip).
+    // Time of day: dusk on arrival, then night falls slowly and softly.
     const dusk = tt < 0 || this.reduced ? 0 : 1 - ss(tt, INTRO.dusk, INTRO.night);
     globals.uDusk.value = dusk;
     // Dusk air is hazier: the far hills melt into the pink horizon.
@@ -328,18 +338,18 @@ export class World {
     // Star trails: they begin as night falls and lengthen like a long
     // exposure; then the tails fade from the back, leaving still stars.
     const trailsOn = tt >= 0 && !this.reduced && tt < INTRO.end;
-    globals.uTrail.value = trailsOn ? Math.max(0, tt - (INTRO.dusk + 0.15)) : 0;
-    globals.uTrailFade.value = trailsOn ? ss(tt, INTRO.dusk + 0.1, INTRO.dusk + 0.6) * (1 - ss(tt, INTRO.end - 0.6, INTRO.end)) : 0;
-    globals.uTrailTail.value = trailsOn ? ss(tt, INTRO.trails, INTRO.end - 0.3) : 0;
+    globals.uTrail.value = trailsOn ? Math.max(0, tt - INTRO.trailsStart) : 0;
+    globals.uTrailFade.value = trailsOn ? ss(tt, INTRO.trailsStart - 0.2, INTRO.trailsStart + 1.2) * (1 - ss(tt, INTRO.settled - 1.0, INTRO.settled)) : 0;
+    globals.uTrailTail.value = trailsOn ? ss(tt, INTRO.trails, INTRO.settled - 0.4) : 0;
     // No moon at dusk or behind the trails; it rises as they settle.
-    const moonK = tt < 0 || this.reduced ? 1 : ss(tt, INTRO.trails - 0.2, INTRO.end);
+    const moonK = tt < 0 || this.reduced ? 1 : ss(tt, INTRO.moon[0], INTRO.moon[1]);
     globals.uMoonK.value = moonK;
-    globals.uReveal.value = tt < 0 || this.reduced || !intro ? 1 : ss(tt, INTRO.reveal - 0.1, INTRO.reveal + 0.9);
+    globals.uReveal.value = tt < 0 || this.reduced || !intro ? 1 : ss(tt, INTRO.reveal - 0.2, INTRO.reveal + 1.4);
     const elev = THREE.MathUtils.lerp(-0.16, 0.07, dusk);
     globals.uSunDir.value.set(0.34, Math.sin(elev), 0.94).normalize();
     globals.uFogHorizon.value.copy(NIGHT_HORIZON).lerp(DUSK_HORIZON, dusk);
     globals.uFogHigh.value.copy(NIGHT_HIGH).lerp(DUSK_HIGH, dusk);
-    this.smoothPointer.lerp(this.pointer, 1 - Math.exp(-dt * 3));
+    this.smoothPointer.lerp(this.pointer, 1 - Math.exp(-dt * 1.8));
     const sway = this.reduced ? 0 : 1;
     const px = this.smoothPointer.x * sway;
     const py = this.smoothPointer.y * sway;
@@ -347,7 +357,7 @@ export class World {
     pose.pos.add(tmpV);
     pose.target.add(tmpV.set(px * 3.5, py * 2.0, 0));
     const speed = Math.abs(this.rig.velocity);
-    pose.fov += Math.min(speed * 3, 3);
+    pose.fov += Math.min(speed * 2, 2);
     this.applyPose(pose);
 
     // Cursor ray for particles and fish.
@@ -407,7 +417,7 @@ export class World {
       // One smooth curve, as in the clip: the white holds a moment, then
       // lifts over ~0.75 s with soft ends; beneath it the scene starts over-
       // exposed and settles, so the gate surfaces from the glare.
-      const g = 1 - ss(tt, INTRO.white + 0.14, INTRO.clear);
+      const g = 1 - ss(tt, INTRO.white + 0.3, INTRO.clear);
       flash = Math.pow(g, 1.3);
       over = 1 + 5 * g * g;
       sat = 1.07 + 0.55 * g;

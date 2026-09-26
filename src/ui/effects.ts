@@ -44,7 +44,7 @@ export function setupReveals(reduced: boolean, onSectionEnter?: (el: Element) =>
   const groups = new Map<Element | null, number>();
   for (const el of items) {
     const n = groups.get(el.parentElement) ?? 0;
-    el.style.setProperty("--d", `${Math.min(n, 8) * 90}ms`);
+    el.style.setProperty("--d", `${Math.min(n, 8) * 160}ms`);
     groups.set(el.parentElement, n + 1);
   }
   const io = new IntersectionObserver(
@@ -68,10 +68,12 @@ export function setupReveals(reduced: boolean, onSectionEnter?: (el: Element) =>
   return {
     // The hero reveals on login rather than on load.
     revealNow(root: ParentNode) {
-      for (const el of root.querySelectorAll<HTMLElement>("[data-reveal]")) {
+      // Line by line, unhurried.
+      [...root.querySelectorAll<HTMLElement>("[data-reveal]")].forEach((el, i) => {
+        el.style.setProperty("--d", `${i * 220}ms`);
         el.classList.add("is-in");
         io.unobserve(el);
-      }
+      });
       if (!reduced) for (const t of root.querySelectorAll<HTMLElement>("[data-scramble]")) setTimeout(() => scramble(t, 1200), 500);
     },
   };

@@ -21,6 +21,8 @@
   --font-latin: "Cormorant Garamond", "Garamond", "Georgia", serif;
   --font-body: "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans SC", "Hiragino Sans GB", system-ui, sans-serif;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  /* Gentle in and out, for scene-scale changes. */
+  --ease-soft: cubic-bezier(0.45, 0.05, 0.25, 1);
   --gutter: clamp(16px, 5vw, 88px);
 }
 
@@ -217,6 +219,31 @@ img {
 html.is-intro,
 html.is-intro body {
   overflow: hidden;
+}
+
+/* A quiet hint while the (long) entry plays. */
+.skip-hint {
+  position: fixed;
+  left: 50%;
+  bottom: 26px;
+  z-index: 70;
+  margin: 0;
+  transform: translateX(-50%);
+  font: 500 12px/1 var(--font-jp);
+  letter-spacing: 0.4em;
+  text-indent: 0.4em;
+  color: rgba(236, 229, 214, 0.5);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1.2s var(--ease-soft);
+}
+html.is-intro .skip-hint {
+  opacity: 1;
+  transition-delay: 2.5s;
+}
+html.is-live .skip-hint {
+  opacity: 0;
+  transition-delay: 0s;
 }
 
 /* ───────────────── Buttons & chips ───────────────── */
@@ -615,8 +642,8 @@ main {
 
 [data-reveal] {
   opacity: 0;
-  transform: translateY(18px);
-  transition: opacity 1.4s var(--ease), transform 1.4s var(--ease);
+  transform: translateY(22px);
+  transition: opacity 2.2s var(--ease-soft), transform 2.4s var(--ease-soft);
   transition-delay: var(--d, 0ms);
 }
 [data-reveal].is-in {

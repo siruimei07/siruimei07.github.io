@@ -154,7 +154,7 @@ export function createTorii(): Part & { pass(): void } {
         void main() {
           float a = texture2D(uMap, vUv).a;
           vec3 base = vec3(0.01, 0.01, 0.016);
-          vec3 gold = vec3(1.0, 0.76, 0.42) * 1.3;
+          vec3 gold = vec3(1.0, 0.76, 0.42) * 2.6;
           gl_FragColor = vec4(applyFog(mix(base, gold, a), vWorld), 1.0);
         }
       `,
@@ -164,8 +164,61 @@ export function createTorii(): Part & { pass(): void } {
   plaque.layers.enable(REFLECT_LAYER);
   group.add(plaque);
 
-  // The veil across the opening: almost invisible from afar, golden ripples
-  // as you approach, a soft flash as you pass through.
+  // Thin teal light strips along the undersides of the beams (as on the
+  // great gate in the reference), breathing slowly.
+  const strips: THREE.BufferGeometry[] = [];
+  for (const dz of [-0.6, 0.6]) {
+    strips.push(bend(new THREE.BoxGeometry(21.6, 0.1, 0.1, 48, 1, 1), 0.005).translate(0, 16.58, dz));
+    strips.push(new THREE.BoxGeometry(19.2, 0.09, 0.09).translate(0, 13.07, dz * 0.62));
+  }
+  for (const side of [-1, 1]) {
+    for (const dz of [-2.7, 2.7]) strips.push(new THREE.BoxGeometry(0.08, 0.08, 5.0).translate(side * 7.6, 9.55, dz * 0.5));
+  }
+  const glowStrips = new THREE.Mesh(
+    mergeGeometries(strips.map((g) => (g.index ? g.toNonIndexed() : g)))!,
+    new THREE.ShaderMaterial({
+      uniforms: globals,
+      vertexShader: /* glsl */ `varying vec3 vWorld; void main(){ vec4 w = modelMatrix * vec4(position, 1.0); vWorld = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`,
+      fragmentShader: /* glsl */ `
+        ${COMMON}
+        varying vec3 vWorld;
+        void main() {
+          float breathe = 0.8 + 0.2 * sin(uTime * 0.9 + vWorld.x * 0.15);
+          vec3 teal = vec3(0.28, 1.0, 0.84) * 2.6 * breathe * (1.0 - 0.6 * uDusk);
+          gl_FragColor = vec4(teal, 1.0);
+        }
+      `,
+    }),
+  );
+  glowStrips.layers.enable(REFLECT_LAYER);
+  group.add(glowStrips);
+
+  const halo = new THREE.Mesh(
+    new THREE.PlaneGeometry(6, 7),
+    new THREE.ShaderMaterial({
+      uniforms: globals,
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      vertexShader: /* glsl */ `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+      fragmentShader: /* glsl */ `
+        ${COMMON}
+        varying vec2 vUv;
+        void main() {
+          vec2 p = (vUv - 0.5) * vec2(1.0, 1.15);
+          float g = exp(-dot(p, p) * 14.0);
+          gl_FragColor = vec4(vec3(1.0, 0.72, 0.36) * g * 0.35 * (1.0 - 0.6 * uDusk), 1.0);
+        }
+      `,
+    }),
+  );
+  halo.position.set(0, 15.35, GATE_Z + 0.25);
+  halo.renderOrder = 9;
+  group.add(halo);
+
+  // The veil across the opening: a sheet of teal light-water (as in the
+  // reference gate). Faint from afar, brightening as you approach; rings
+  // ripple out and the whole surface flashes as you pass through.
   const veilU = { uNear: { value: 0 }, uPass: { value: 0 } };
   const veil = new THREE.Mesh(
     new THREE.PlaneGeometry(GATE_OPENING.halfWidth * 2, GATE_OPENING.height, 1, 1),
@@ -181,15 +234,39 @@ export function createTorii(): Part & { pass(): void } {
         uniform float uNear;
         uniform float uPass;
         varying vec2 vUv;
+
+        // Tileable water caustics (a classic iterative warp).
+        float caustic(vec2 uv, float t) {
+          vec2 p = mod(uv * 6.28318, 6.28318) - 250.0;
+          vec2 i = p;
+          float c = 1.0;
+          for (int n = 0; n < 4; n++) {
+            float tt = t * (1.0 - 3.5 / float(n + 1));
+            i = p + vec2(cos(tt - i.x) + sin(tt + i.y), sin(tt - i.y) + cos(tt + i.x));
+            c += 1.0 / length(vec2(p.x / (sin(i.x + tt) / 0.005), p.y / (cos(i.y + tt) / 0.005)));
+          }
+          c /= 4.0;
+          c = 1.17 - pow(c, 1.4);
+          return pow(abs(c), 8.0);
+        }
+
         void main() {
-          vec2 p = (vUv - vec2(0.5, 0.38)) * vec2(1.0, 1.1);
+          vec2 uv = vUv;
+          vec2 p = (uv - vec2(0.5, 0.38)) * vec2(1.0, 1.1);
           float r = length(p);
-          float rings = pow(0.5 + 0.5 * sin(r * 46.0 - uTime * 1.6 - uPass * 12.0), 10.0) * exp(-r * 2.6);
-          float film = fbm(vUv * vec2(1.5, 2.0) + vec2(0.0, uTime * 0.02));
-          float edge = smoothstep(0.0, 0.06, vUv.x) * smoothstep(1.0, 0.94, vUv.x) * smoothstep(0.0, 0.04, vUv.y) * smoothstep(1.0, 0.9, vUv.y);
-          vec3 gold = vec3(1.0, 0.82, 0.55);
-          float k = rings * (0.015 + uNear * 0.22) + film * 0.006 * (0.3 + uNear) + uPass * exp(-r * 2.2) * 0.9;
-          gl_FragColor = vec4(gold * k * edge, 1.0);
+          float t = uTime * 0.35;
+          float c = caustic(uv * vec2(1.6, 1.7) + vec2(0.0, t * 0.05), t);
+          float c2 = caustic(uv * vec2(2.4, 2.6) + vec2(0.37, -t * 0.03), t * 1.3 + 2.0);
+          float body = 0.35 + 0.65 * fbm(uv * vec2(2.0, 2.4) + vec2(t * 0.05, t * 0.03));
+          float rings = pow(0.5 + 0.5 * sin(r * 40.0 - uTime * 1.4 - uPass * 12.0), 12.0) * exp(-r * 2.4);
+          float edge = smoothstep(0.0, 0.05, uv.x) * smoothstep(1.0, 0.95, uv.x) * smoothstep(0.0, 0.03, uv.y) * smoothstep(1.0, 0.94, uv.y);
+          float rim = (1.0 - smoothstep(0.0, 0.04, min(min(uv.x, 1.0 - uv.x), 1.0 - uv.y))) * 0.6;
+          vec3 teal = vec3(0.16, 0.95, 0.78);
+          float strength = mix(0.05, 0.7, uNear) * (1.0 - 0.7 * uDusk);
+          vec3 col = teal * (body * 0.25 + (c + c2 * 0.6) * 0.9 + rim) * strength;
+          col += teal * rings * (0.08 + uNear * 0.35);
+          col += vec3(0.7, 1.0, 0.95) * uPass * exp(-r * 1.6) * 1.2;
+          gl_FragColor = vec4(col * edge, 1.0);
         }
       `,
     }),
