@@ -476,6 +476,22 @@ kbd:first-child {
   color: var(--ice);
 }
 
+.title__who {
+  margin: 0.4rem 0 1rem;
+  font: 700 1rem/1.6 var(--f-body);
+  color: var(--ice);
+}
+
+.js .title__who {
+  position: absolute;
+  left: 4.6vw;
+  top: 27.4vh;
+  margin: 0;
+  font: 800 clamp(12px, 0.95vw, 28px) / 1.4 var(--f-body);
+  letter-spacing: 0.08em;
+  text-shadow: 0 1px 8px rgba(3, 10, 38, 0.95);
+}
+
 .title__press {
   margin: 0;
 }
@@ -835,27 +851,245 @@ kbd:first-child {
   paint-order: stroke;
 }
 
-.js .menu__wallet {
-  position: absolute;
-  left: 8vw;
-  top: 3.6vh;
+/* Yachiyo's film band is drawn by WebGL; this is its caption. */
+.menu__cap {
+  display: none;
+}
+
+.js .menu__cap {
   display: flex;
   flex-direction: column;
-  min-width: 13vw;
-  padding: 0.5vh 0.9vw 0.6vh;
-  border: 0.16vw solid var(--ink);
+  position: absolute;
+  left: 8.4vw;
+  bottom: 5.2vh;
+  margin: 0;
+  padding: 0.5vh 1.1vw 0.6vh 0.9vw;
+  background: var(--ink);
+  color: var(--white);
+  transform: rotate(-4deg) skewX(-10deg);
+  transform-origin: 0 100%;
+  box-shadow: 0.35vw 0.35vw 0 var(--red);
+  pointer-events: none;
+}
+
+.menu__cap b {
+  font: 900 clamp(14px, 1.35vw, 40px) / 1.2 var(--f-mincho);
+  letter-spacing: 0.16em;
+}
+
+.menu__cap span {
+  font: 800 clamp(10px, 0.72vw, 22px) / 1.4 var(--f-mincho);
+  color: var(--ice);
+  letter-spacing: 0.3em;
+}
+
+.menu__cap small {
+  font: italic 800 clamp(9px, 0.56vw, 17px) / 1.4 var(--f-display);
+  letter-spacing: 0.24em;
+  color: var(--cyan);
+}
+
+/* ---------------------------------------------------------------- portrait (P3R frame) */
+
+.portrait {
+  position: relative;
+  margin: 0;
+  display: block;
+  width: 7rem;
+  aspect-ratio: 1;
+  isolation: isolate;
+}
+
+.portrait__bg {
+  position: absolute;
+  inset: -6% -10% -8% -6%;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(201, 244, 255, 0.35) 0 1.5px, transparent 2.2px) 0 0 / 9px 9px,
+    linear-gradient(160deg, var(--azure), var(--royal) 55%, var(--deep));
+  clip-path: polygon(10% 0, 100% 4%, 92% 100%, 0 94%);
+}
+
+.portrait__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  clip-path: polygon(8% 2%, 100% 0, 94% 100%, 0 97%);
+  filter: drop-shadow(0 0 0 transparent);
+  background: var(--deep);
+}
+
+/* the white frame and the red corner, drawn over the picture */
+.portrait::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(8% 2%, 100% 0, 94% 100%, 0 97%, 0 97%, 3.4% 93.6%, 90.6% 96.4%, 96% 3.6%, 10.4% 5.4%, 3.4% 93.6%, 0 97%);
+  background: var(--white);
+  pointer-events: none;
+}
+
+.portrait::before {
+  content: "";
+  position: absolute;
+  right: -5%;
+  top: -7%;
+  width: 34%;
+  height: 16%;
+  z-index: 2;
+  background: var(--red);
+  clip-path: polygon(14% 0, 100% 0, 86% 100%, 0 100%);
+  pointer-events: none;
+}
+
+.portrait__tag {
+  position: absolute;
+  left: -4%;
+  bottom: -6%;
+  z-index: 3;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5em;
+  padding: 0.25em 0.9em;
+  background: var(--ink);
+  color: var(--white);
+  font: 900 clamp(10px, 0.72vw, 22px) / 1.3 var(--f-display);
+  letter-spacing: 0.14em;
+  transform: skewX(-12deg);
+  box-shadow: 0.2vw 0.2vw 0 var(--red);
+}
+
+.portrait__tag b {
+  color: var(--yellow);
+  font-style: italic;
+}
+
+/* ---------------------------------------------------------------- the party card (who am I) */
+
+.me {
+  display: none;
+}
+
+.js .me {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 1.1vw;
+  position: absolute;
+  right: 3vw;
+  bottom: 8.4vh;
+  width: min(34vw, 640px);
+  padding: 1.6vh 1.6vw 1.6vh 1.3vw;
   background: var(--white);
   color: var(--ink);
-  box-shadow: 0.25vw 0.25vw 0 var(--ink);
+  clip-path: polygon(2.2% 0, 100% 0, 97.8% 100%, 0 100%);
+  box-shadow: 0.4vw 0.4vw 0 rgba(3, 10, 38, 0.85);
 }
 
-.menu__wallet b {
-  font: 800 clamp(16px, 1.45vw, 44px) / 1.1 var(--f-display);
-  letter-spacing: -0.01em;
+.me__label {
+  position: absolute;
+  right: 2.4vw;
+  top: -0.2vh;
+  margin: 0;
+  font: italic 900 clamp(22px, 2.4vw, 72px) / 1 var(--f-display);
+  letter-spacing: -0.04em;
+  color: transparent;
+  -webkit-text-stroke: 1.5px rgba(5, 6, 12, 0.14);
+  pointer-events: none;
 }
 
-.menu__wallet small {
-  font: italic 700 clamp(9px, 0.6vw, 18px) / 1.3 var(--f-display);
+.me .portrait--card {
+  width: clamp(64px, 6.2vw, 190px);
+}
+
+.me__body {
+  display: grid;
+  gap: 0.35vh;
+  min-width: 0;
+}
+
+.me__name {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.1em 0.2em;
+  font: 900 clamp(18px, 1.75vw, 52px) / 1.15 var(--f-body);
+  letter-spacing: 0.06em;
+}
+
+.me__name rt {
+  font: 700 0.3em/1 var(--f-body);
+  letter-spacing: 0.18em;
+  color: var(--royal);
+}
+
+.me__name small {
+  margin-left: 0.5em;
+  font: 800 0.46em/1 var(--f-display);
+  letter-spacing: 0.14em;
+  color: var(--royal);
+}
+
+.me__role {
+  margin: 0;
+  font: 800 clamp(11px, 0.78vw, 23px) / 1.4 var(--f-display);
+  letter-spacing: 0.06em;
+}
+
+.me__tags {
+  display: flex;
+  gap: 0.4em;
+  margin: 0.2vh 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.me__tags li {
+  padding: 0.05em 0.8em;
+  background: var(--ink);
+  color: var(--white);
+  font: 900 clamp(11px, 0.78vw, 23px) / 1.5 var(--f-body);
+  letter-spacing: 0.16em;
+  transform: skewX(-12deg);
+}
+
+.me__tags li:first-child {
+  background: var(--red);
+}
+
+.me__links {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4em 1em;
+  margin: 0.4vh 0 0;
+  font: 900 clamp(11px, 0.8vw, 24px) / 1.3 var(--f-display);
+}
+
+.me__links a {
+  color: var(--royal);
+  text-decoration: none;
+  border-bottom: 2px solid currentColor;
+}
+
+.me__links a:hover,
+.me__links a:focus-visible {
+  color: var(--red);
+  outline: none;
+}
+
+.me__stat {
+  margin-left: auto;
+  font: 700 0.85em/1 var(--f-body);
+  color: #3a4466;
+}
+
+.me__stat b {
+  margin-right: 0.3em;
+  font: italic 900 1.4em/1 var(--f-display);
+  color: var(--ink);
 }
 
 .menu__list {
@@ -866,9 +1100,9 @@ kbd:first-child {
 
 .js .menu__list {
   position: absolute;
-  left: 36.5vw;
-  top: 17vh;
-  width: 38vw;
+  left: 43vw;
+  top: 11vh;
+  width: 40vw;
 }
 
 .js .menu__list li {
@@ -994,7 +1228,7 @@ kbd:first-child {
 .js .menu__desc {
   position: absolute;
   right: 3.4vw;
-  bottom: 9.6vh;
+  bottom: 29vh;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -1023,10 +1257,20 @@ kbd:first-child {
   background: currentColor;
 }
 
+.menu__desc em {
+  padding: 0.15em 0.6em;
+  background: var(--ice);
+  color: var(--ink);
+  font: 900 1.05em/1.2 var(--f-mincho);
+  font-style: normal;
+  letter-spacing: 0.14em;
+  transform: skewX(-10deg);
+}
+
 .js .keys {
   position: absolute;
   right: 3.4vw;
-  bottom: 4.6vh;
+  bottom: 2.6vh;
   margin: 0;
   font: 700 clamp(11px, 0.8vw, 24px) / 1 var(--f-body);
   color: var(--white);
@@ -1043,7 +1287,7 @@ kbd:first-child {
   animation: strip-in 0.45s var(--snap) both;
 }
 
-.js .menu.is-entering :is(.menu__wallet, .menu__desc, .keys) {
+.js .menu.is-entering :is(.me, .menu__cap, .menu__desc, .keys) {
   animation: fade-up 0.5s var(--out) both 0.35s;
 }
 
@@ -1073,9 +1317,191 @@ kbd:first-child {
   translate: 4vw 0;
 }
 
-.js .menu.is-leaving :is(.menu__strip, .menu__wallet, .menu__desc, .keys) {
+.js .menu.is-leaving :is(.menu__strip, .me, .menu__cap, .menu__desc, .keys) {
   transition: opacity 0.25s;
   opacity: 0;
+}
+
+/* ---------------------------------------------------------------- tab bar (switch screens directly) */
+
+.tabbar {
+  display: none;
+}
+
+.js .tabbar {
+  display: flex;
+  align-items: stretch;
+  position: fixed;
+  left: 4.4vw;
+  top: 2.6vh;
+  z-index: 30;
+  gap: 0.3vw;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-1.5em);
+  transition: opacity 0.35s var(--out), transform 0.45s var(--out), visibility 0.35s;
+  font-family: var(--f-display);
+}
+
+.js .tabbar.is-on {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+}
+
+.tabbar__list {
+  display: flex;
+  gap: 0.25vw;
+}
+
+.tabbar a,
+.tabbar__step {
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0.45vh 0.9vw 0.5vh;
+  cursor: pointer;
+  background: rgba(3, 10, 38, 0.72);
+  color: var(--ice);
+  font: italic 900 clamp(11px, 0.82vw, 25px) / 1.1 var(--f-display);
+  letter-spacing: 0.04em;
+  transform: skewX(-14deg);
+  box-shadow: inset 0 0 0 1px rgba(90, 215, 255, 0.3);
+  transition: background 0.15s, color 0.15s, transform 0.2s var(--swing);
+}
+
+.tabbar a > *,
+.tabbar__step > * {
+  transform: skewX(14deg);
+}
+
+.tabbar a small {
+  font: 700 0.72em/1.2 var(--f-body);
+  font-style: normal;
+  letter-spacing: 0.14em;
+  opacity: 0.75;
+}
+
+.tabbar__step {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.4em;
+  background: var(--white);
+  color: var(--ink);
+  font-style: normal;
+}
+
+.tabbar__step kbd {
+  margin: 0;
+  background: var(--ink);
+  color: var(--white);
+}
+
+.tabbar a:hover,
+.tabbar a:focus-visible,
+.tabbar__step:hover,
+.tabbar__step:focus-visible {
+  background: var(--cyan);
+  color: var(--ink);
+}
+
+.tabbar a.is-on {
+  background: var(--white);
+  color: var(--ink);
+  box-shadow: 0.22vw 0.22vw 0 var(--red);
+  transform: skewX(-14deg) translateY(0.35vh);
+}
+
+.tabbar a.is-on span {
+  color: var(--red);
+}
+
+/* ---------------------------------------------------------------- location caption */
+
+.where {
+  display: none;
+}
+
+.js .where {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7em;
+  position: absolute;
+  right: 3.4vw;
+  bottom: 8vh;
+  margin: 0;
+  font-family: var(--f-display);
+  text-shadow: 0 1px 8px rgba(3, 10, 38, 0.9);
+  pointer-events: none;
+}
+
+.where i {
+  padding: 0.1em 0.6em;
+  background: var(--white);
+  color: var(--ink);
+  font: italic 900 clamp(9px, 0.56vw, 17px) / 1.4 var(--f-display);
+  letter-spacing: 0.24em;
+  text-shadow: none;
+  transform: skewX(-12deg);
+}
+
+.where b {
+  font: 900 clamp(15px, 1.2vw, 36px) / 1 var(--f-mincho);
+  letter-spacing: 0.2em;
+}
+
+.where span {
+  font: 800 clamp(9px, 0.6vw, 18px) / 1 var(--f-display);
+  letter-spacing: 0.26em;
+  color: var(--ice);
+}
+
+.js .title .where {
+  bottom: auto;
+  top: 16vh;
+}
+
+/* ---------------------------------------------------------------- P3R swipe (screen → screen) */
+
+.swipe {
+  display: none;
+}
+
+.js .swipe {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  pointer-events: none;
+  visibility: hidden;
+  overflow: hidden;
+}
+
+.js .swipe.is-on {
+  visibility: visible;
+}
+
+.swipe i,
+.swipe b {
+  position: absolute;
+  top: -40vh;
+  bottom: -40vh;
+  width: 150vw;
+  left: -25vw;
+  transform: translateX(-160vw) skewX(-24deg);
+}
+
+.swipe i {
+  background: var(--white);
+}
+
+.swipe b {
+  background:
+    repeating-linear-gradient(90deg, transparent 0 5.2vw, rgba(90, 215, 255, 0.28) 5.2vw 5.6vw),
+    linear-gradient(90deg, var(--royal), var(--blue) 60%, var(--azure));
+  margin-left: 2.2vw;
 }
 
 /* ---------------------------------------------------------------- screens: shared */
@@ -1124,7 +1550,7 @@ kbd:first-child {
 .js .screen__head {
   position: absolute;
   left: 5vw;
-  top: 5.5vh;
+  top: 9.5vh;
 }
 
 .js .screen__head h2 span {
@@ -1255,7 +1681,7 @@ kbd:first-child {
 }
 
 /* screen entrance: panels slide in on a stagger */
-.js .screen.is-entering :is(.screen__head, .panel, .nameplate, .skill-list, .tabs, .quests, .cal, .link-list, .cards, .config) {
+.js .screen.is-entering :is(.screen__head, .panel, .idcard, .skill-list, .tabs, .quests, .cal, .today, .heat, .link-list, .cards, .config, .where) {
   animation: slide-in 0.55s var(--out) both;
 }
 
@@ -1272,15 +1698,36 @@ kbd:first-child {
 
 /* ---------------------------------------------------------------- PROFILE */
 
-.nameplate {
+.idcard {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 1.5rem;
   margin-bottom: 1.5rem;
 }
 
-.js .nameplate {
+.js .idcard {
   position: absolute;
-  left: 5vw;
-  bottom: 13vh;
-  z-index: 1;
+  left: 5.4vw;
+  top: 22.5vh;
+  width: 50vw;
+  gap: 2.4vw;
+  margin: 0;
+}
+
+.portrait--profile {
+  width: clamp(112px, 11.5vw, 360px);
+}
+
+.idcard__text .chips {
+  margin-top: 1vh;
+}
+
+.idcard__role {
+  margin: 0.8vh 0 0;
+  font: 800 clamp(12px, 0.9vw, 27px) / 1.4 var(--f-display);
+  letter-spacing: 0.08em;
+  color: var(--ice);
 }
 
 .nameplate__arcana {
@@ -1304,7 +1751,7 @@ kbd:first-child {
 
 .nameplate__name {
   margin: 0;
-  font: 900 clamp(44px, 6vw, 180px) / 1 var(--f-body);
+  font: 900 clamp(40px, 4.6vw, 138px) / 1 var(--f-body);
   letter-spacing: 0.04em;
   text-shadow: 0.05em 0.05em 0 var(--ink);
 }
@@ -1331,27 +1778,36 @@ kbd:first-child {
 }
 
 .js .panel--profile {
-  right: 3.4vw;
-  top: 16vh;
-  width: 44vw;
-  max-height: 72vh;
+  left: 5vw;
+  top: 50vh;
+  width: 52vw;
+  max-height: 44vh;
   overflow: auto;
-  padding: 2.4vh 2.2vw 2.6vh;
+  padding: 2.6vh 2.2vw 2.6vh;
+  display: grid;
+  grid-template-columns: 1.08fr 1fr;
+  column-gap: 2.2vw;
+  align-items: stretch;
 }
 
-.profile__avatar {
-  float: right;
-  width: 5.2vw;
-  min-width: 64px;
-  height: auto;
-  margin: 0 0 0.6rem 1rem;
-  border: 3px solid var(--white);
-  transform: rotate(4deg);
-  box-shadow: 0.3vw 0.3vw 0 var(--red);
+.js .profile__about {
+  display: flex;
+  flex-direction: column;
 }
 
-.js .profile__avatar {
-  display: none;
+.js .profile__about .profile__links {
+  margin-top: auto;
+}
+
+.js .panel--profile .fields {
+  grid-template-columns: 1fr;
+}
+
+.profile__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin: 0.6rem 0 0;
 }
 
 .profile__intro {
@@ -1456,9 +1912,10 @@ kbd:first-child {
 .js .skill-list {
   position: absolute;
   left: 5vw;
-  top: 25vh;
-  width: 33vw;
-  gap: 1.4vh;
+  top: 23vh;
+  width: 52vw;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1vw;
 }
 
 .skill-row {
@@ -1523,11 +1980,11 @@ kbd:first-child {
 }
 
 .js .panel--skill {
-  left: 42vw;
-  top: 21vh;
-  width: 50vw;
-  min-height: 46vh;
-  padding: 5vh 3.2vw;
+  left: 5vw;
+  top: 36vh;
+  width: 52vw;
+  min-height: 48vh;
+  padding: 4.4vh 3vw;
 }
 
 .skill-card + .skill-card {
@@ -1648,7 +2105,7 @@ kbd:first-child {
   left: 5vw;
   top: 28vh;
   width: 52vw;
-  max-height: 56vh;
+  max-height: 24vh;
   overflow: auto;
   gap: 1vh;
   padding-right: 1vw;
@@ -1752,11 +2209,13 @@ kbd:first-child {
 
 .js .panel--quest {
   display: block;
-  right: 3.4vw;
-  top: 21vh;
-  width: 36vw;
-  padding: 4vh 2.4vw;
-  font: 500 clamp(14px, 1.05vw, 32px) / 1.85 var(--f-body);
+  left: 5vw;
+  top: 54vh;
+  width: 52vw;
+  max-height: 32vh;
+  overflow: auto;
+  padding: 3vh 2.4vw;
+  font: 500 clamp(14px, 1.02vw, 31px) / 1.8 var(--f-body);
 }
 
 .js .panel--quest.is-flash {
@@ -1804,16 +2263,16 @@ kbd:first-child {
 .js .screen--works .stats {
   position: absolute;
   left: 5vw;
-  bottom: 10vh;
+  bottom: 4.6vh;
   margin: 0;
 }
 
 .js .screen--works .more {
   position: absolute;
-  left: 5vw;
-  bottom: 5vh;
+  left: 36vw;
+  bottom: 4.6vh;
   margin: 0;
-  font: 700 clamp(12px, 0.85vw, 26px) / 1 var(--f-body);
+  font: 700 clamp(12px, 0.85vw, 26px) / 1.5 var(--f-body);
 }
 
 /* ---------------------------------------------------------------- CALENDAR */
@@ -1825,9 +2284,309 @@ kbd:first-child {
 .js .cal {
   display: block;
   position: absolute;
+  left: 30.5vw;
+  top: 19.5vh;
+  width: 26vw;
+}
+
+/* today: the moon tonight, big */
+.today {
+  display: none;
+}
+
+.js .today {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas: "moon date" "moon name" "moon meta";
+  align-items: center;
+  column-gap: 1.2vw;
+  position: absolute;
   left: 5vw;
-  top: 19vh;
-  width: 54vw;
+  top: 21vh;
+  width: 24vw;
+}
+
+.today__moon {
+  grid-area: moon;
+  width: clamp(64px, 6.6vw, 200px);
+  filter: drop-shadow(0 0 1.2vw rgba(255, 226, 58, 0.35));
+}
+
+.today__moon .moon-dark {
+  fill: #1b2250;
+}
+
+.today__moon .moon-ring {
+  fill: none;
+  stroke: var(--white);
+  stroke-width: 3;
+}
+
+.today__date {
+  grid-area: date;
+  margin: 0;
+  font: 900 clamp(26px, 2.6vw, 78px) / 1 var(--f-display);
+  letter-spacing: -0.02em;
+  text-shadow: 0.05em 0.05em 0 var(--ink);
+}
+
+.today__date small {
+  margin-left: 0.4em;
+  padding: 0.05em 0.45em;
+  background: var(--red);
+  font: italic 900 0.36em/1.3 var(--f-display);
+  letter-spacing: 0.16em;
+  vertical-align: 0.5em;
+  text-shadow: none;
+}
+
+.today__name {
+  grid-area: name;
+  margin: 0.4vh 0 0;
+  font: 900 clamp(16px, 1.35vw, 40px) / 1.2 var(--f-mincho);
+  letter-spacing: 0.18em;
+}
+
+.today__name small {
+  margin-left: 0.6em;
+  font: 800 0.55em/1 var(--f-display);
+  letter-spacing: 0.12em;
+  color: var(--ice);
+}
+
+.today__meta {
+  grid-area: meta;
+  margin: 0.4vh 0 0;
+  font: 700 clamp(11px, 0.78vw, 23px) / 1.5 var(--f-body);
+  color: var(--ice);
+}
+
+.today__meta b {
+  color: var(--yellow);
+  font: 900 1.3em/1 var(--f-display);
+}
+
+/* the year of activity, GitHub-style, in P3R blues with the full moons marked */
+.heat {
+  margin: 2rem 0;
+}
+
+.js .heat {
+  position: absolute;
+  left: 5vw;
+  bottom: 5.5vh;
+  margin: 0;
+  padding: 1.6vh 1.4vw 1.4vh;
+  background: linear-gradient(160deg, rgba(6, 20, 70, 0.9), rgba(3, 10, 38, 0.88));
+  box-shadow: inset 0 0 0 1px rgba(90, 215, 255, 0.28);
+  clip-path: polygon(0 0, calc(100% - 1.6vw) 0, 100% 1.6vw, 100% 100%, 1.6vw 100%, 0 calc(100% - 1.6vw));
+  --cell: min(1.02vw, 2vh);
+  --gap: 0.18vw;
+}
+
+.heat__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2vw;
+  margin-bottom: 1vh;
+}
+
+.heat__head h3 {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 0.7em;
+  font: italic 900 clamp(16px, 1.3vw, 39px) / 1 var(--f-display);
+}
+
+.heat__head h3 small {
+  font: 700 0.55em/1 var(--f-body);
+  font-style: normal;
+  letter-spacing: 0.2em;
+  color: var(--ice);
+}
+
+.heat__stats {
+  display: flex;
+  gap: 1.6vw;
+  margin: 0;
+}
+
+.heat__stats div {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: flex-end;
+}
+
+.heat__stats dt {
+  font: 700 clamp(9px, 0.6vw, 18px) / 1.3 var(--f-body);
+  letter-spacing: 0.14em;
+  color: var(--ice);
+}
+
+.heat__stats dd {
+  margin: 0;
+  font: italic 900 clamp(16px, 1.3vw, 39px) / 1 var(--f-display);
+  color: var(--yellow);
+}
+
+.heat__stats dd small {
+  margin-left: 0.3em;
+  font: 800 0.4em/1 var(--f-display);
+  letter-spacing: 0.1em;
+  color: var(--ice);
+}
+
+.heat__stats dd i {
+  margin-left: 0.3em;
+  font: 800 0.5em/1 var(--f-display);
+  color: var(--white);
+}
+
+.heat__body {
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-template-areas: ". months" "days grid";
+  column-gap: 0.5vw;
+  row-gap: 0.4vh;
+}
+
+.heat__months {
+  grid-area: months;
+  display: grid;
+  grid-template-columns: repeat(53, var(--cell, 12px));
+  column-gap: var(--gap, 3px);
+  font: 800 clamp(8px, 0.52vw, 16px) / 1 var(--f-display);
+  letter-spacing: 0.08em;
+  color: var(--ice);
+}
+
+.heat__months span {
+  grid-column: var(--c);
+  grid-row: 1;
+  white-space: nowrap;
+}
+
+.heat__days {
+  grid-area: days;
+  display: grid;
+  grid-template-rows: repeat(7, var(--cell, 12px));
+  row-gap: var(--gap, 3px);
+  font: 800 clamp(8px, 0.5vw, 15px) / 1 var(--f-display);
+  color: var(--ice);
+  align-items: center;
+}
+
+.heat__grid {
+  grid-area: grid;
+  display: grid;
+  grid-template-columns: repeat(53, var(--cell, 12px));
+  grid-template-rows: repeat(7, var(--cell, 12px));
+  gap: var(--gap, 3px);
+}
+
+.heat__c,
+.heat__legend i {
+  display: block;
+  width: var(--cell, 12px);
+  height: var(--cell, 12px);
+  background: rgba(201, 244, 255, 0.07);
+  box-shadow: inset 0 0 0 1px rgba(90, 215, 255, 0.1);
+}
+
+.heat__c {
+  position: relative;
+  grid-column: var(--c);
+  grid-row: var(--r);
+  cursor: pointer;
+  transition: transform 0.12s var(--swing);
+}
+
+[data-l="1"] {
+  --lv: #1640c8;
+}
+
+[data-l="2"] {
+  --lv: #1f6ef0;
+}
+
+[data-l="3"] {
+  --lv: #4cc4ff;
+}
+
+[data-l="4"] {
+  --lv: #c9f4ff;
+}
+
+.heat__c:not([data-l="0"]),
+.heat__legend i:not([data-l="0"]) {
+  background: var(--lv);
+}
+
+.heat__c[data-l="4"] {
+  box-shadow: 0 0 0.5vw rgba(90, 215, 255, 0.75);
+}
+
+.heat__c.is-future {
+  visibility: hidden;
+}
+
+/* full moon: a small yellow dot in the corner */
+.heat__c.is-full::after {
+  content: "";
+  position: absolute;
+  right: -18%;
+  top: -18%;
+  width: 46%;
+  height: 46%;
+  border-radius: 50%;
+  background: var(--yellow);
+  box-shadow: 0 0 4px rgba(255, 226, 58, 0.8);
+}
+
+.heat__c.is-today {
+  outline: 2px solid var(--red);
+  outline-offset: 1px;
+}
+
+.heat__c.is-sel,
+.heat__c:hover {
+  transform: scale(1.6);
+  z-index: 2;
+  outline: 2px solid var(--white);
+}
+
+.heat__legend {
+  display: flex;
+  align-items: center;
+  gap: 0.25vw;
+  margin: 1vh 0 0;
+  font: 700 clamp(9px, 0.6vw, 18px) / 1 var(--f-body);
+  color: var(--ice);
+}
+
+.heat__legend span {
+  margin: 0 0.3vw;
+}
+
+.heat__legend em {
+  position: relative;
+  margin-left: 1.4vw;
+  padding-left: 1.1em;
+  font-style: normal;
+}
+
+.heat__legend em::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 0.7em;
+  height: 0.7em;
+  margin-top: -0.35em;
+  border-radius: 50%;
+  background: var(--yellow);
 }
 
 .cal__head {
@@ -1915,7 +2674,7 @@ kbd:first-child {
   position: relative;
   display: grid;
   grid-template-rows: auto 1fr;
-  height: 7.4vh;
+  height: 5.2vh;
   padding: 0.5vh 0.5vw;
   cursor: pointer;
   background: rgba(4, 14, 52, 0.84);
@@ -1928,7 +2687,7 @@ kbd:first-child {
 }
 
 .cal__cell b {
-  font: 900 clamp(14px, 1.2vw, 36px) / 1 var(--f-display);
+  font: 900 clamp(13px, 0.98vw, 30px) / 1 var(--f-display);
 }
 
 .cal__cell.is-sun b {
@@ -1941,10 +2700,10 @@ kbd:first-child {
 
 .cal__cell svg {
   position: absolute;
-  right: 0.45vw;
-  top: 0.55vh;
-  width: 1.25vw;
-  min-width: 14px;
+  right: 0.35vw;
+  bottom: 1.1vh;
+  width: 0.95vw;
+  min-width: 12px;
 }
 
 .cal__cell .moon-dark {
@@ -2006,10 +2765,10 @@ kbd:first-child {
 }
 
 .js .panel--day {
-  right: 3.4vw;
-  top: 21vh;
-  width: 30vw;
-  padding: 3.4vh 2vw;
+  left: 5vw;
+  top: 40vh;
+  width: 23.5vw;
+  padding: 2.2vh 1.6vw;
 }
 
 .day__date {
@@ -2074,11 +2833,8 @@ kbd:first-child {
   letter-spacing: 0.1em;
 }
 
-.js .screen--calendar .stats {
-  position: absolute;
-  left: 5vw;
-  bottom: 5vh;
-  margin: 0;
+.js .screen--calendar .where {
+  bottom: 30vh;
 }
 
 /* ---------------------------------------------------------------- SOCIAL LINK */
@@ -2094,8 +2850,8 @@ kbd:first-child {
 .js .link-list {
   position: absolute;
   left: 5vw;
-  top: 22vh;
-  width: 38vw;
+  top: 23vh;
+  width: 30vw;
   gap: 1.4vh;
 }
 
@@ -2177,10 +2933,10 @@ kbd:first-child {
 .js .cards {
   display: block;
   position: absolute;
-  left: 46vw;
-  top: 18vh;
-  width: 19vw;
-  height: 62vh;
+  left: 38vw;
+  top: 21vh;
+  width: 18vw;
+  height: 60vh;
   perspective: 1200px;
 }
 
@@ -2267,10 +3023,10 @@ kbd:first-child {
 }
 
 .js .letter {
-  right: 3.4vw;
-  top: 18vh;
-  width: 27vw;
-  padding: 3vh 1.8vw;
+  left: 5vw;
+  top: 45vh;
+  width: 30vw;
+  padding: 2.6vh 1.8vw;
 }
 
 .letter h3 {
@@ -2431,10 +3187,10 @@ kbd:first-child {
 }
 
 .js .panel--about {
-  right: 3.4vw;
-  top: 22vh;
-  width: 33vw;
-  padding: 3.4vh 2vw;
+  left: 5vw;
+  top: 58vh;
+  width: 52vw;
+  padding: 3vh 2vw;
   font: 500 clamp(13px, 0.88vw, 26px) / 1.8 var(--f-body);
 }
 
@@ -2541,10 +3297,138 @@ kbd:first-child {
     display: flex !important;
   }
 
-  .js .menu__wallet {
+  .js .me {
+    left: 14vw;
+    right: 3vw;
+    bottom: 2.4vh;
+    width: auto;
+  }
+
+  .js .menu__cap {
+    display: none;
+  }
+
+  .js .title__who {
+    top: 25vh;
+    left: 6vw;
+    right: 6vw;
+    font-size: 3.2vw;
+  }
+
+  /* phones: the tabs become a dock at the bottom */
+  .js .tabbar {
+    left: 0;
+    right: 0;
     top: auto;
-    bottom: 3vh;
-    left: 16vw;
+    bottom: 0;
+    gap: 0;
+    padding: 1vh 2vw calc(1vh + env(safe-area-inset-bottom));
+    background: rgba(3, 10, 38, 0.92);
+    box-shadow: 0 -2px 0 var(--white);
+    transform: translateY(1.5em);
+  }
+
+  .js .tabbar__list {
+    flex: 1;
+    justify-content: space-between;
+    gap: 1vw;
+    overflow-x: auto;
+  }
+
+  .js .tabbar a {
+    flex: none;
+    padding: 0.8vh 2.4vw;
+    font-size: 2.9vw;
+  }
+
+  .js .tabbar a small {
+    display: none;
+  }
+
+  .js .tabbar__step {
+    display: none;
+  }
+
+  .js .screen {
+    padding-bottom: 16vh;
+  }
+
+  .js .back {
+    bottom: 9vh;
+  }
+
+  .js .me {
+    padding: 1.4vh 3vw;
+    gap: 3vw;
+  }
+
+  .js .me .portrait--card {
+    width: 17vw;
+  }
+
+  .js .me__name {
+    font-size: 5vw;
+  }
+
+  .js .me__role,
+  .js .me__links {
+    font-size: 2.8vw;
+  }
+
+  .js .me__tags li {
+    font-size: 2.8vw;
+  }
+
+  .js .idcard {
+    grid-template-columns: 30vw 1fr;
+    gap: 4vw;
+  }
+
+  .js .portrait--profile {
+    width: 30vw;
+  }
+
+  .js .nameplate__name {
+    font-size: 9.5vw;
+  }
+
+  .js .nameplate__roman {
+    flex-wrap: wrap;
+    gap: 0.3em 1em;
+    font-size: 2.6vw;
+    letter-spacing: 0.2em;
+  }
+
+  .js .idcard__role {
+    font-size: 2.9vw;
+  }
+
+  .js .cal__month b {
+    font-size: 12vw;
+  }
+
+  .js .cal__head {
+    gap: 4vw;
+  }
+
+  .js .cal__month {
+    margin-right: 2vw;
+  }
+
+  .js .cal__month span {
+    font-size: 3.6vw;
+  }
+
+  .js .today__moon {
+    width: 20vw;
+  }
+
+  .js .today__date {
+    font-size: 7vw;
+  }
+
+  .js .where {
+    display: none;
   }
 
   .js .title__sub {
@@ -2596,7 +3480,7 @@ kbd:first-child {
   .js .menu__list {
     left: 17vw;
     top: auto;
-    bottom: 17vh;
+    bottom: 29vh;
     width: 80vw;
   }
 
@@ -2609,7 +3493,7 @@ kbd:first-child {
   }
 
   .js .menu__desc {
-    bottom: 9vh;
+    bottom: 22.5vh;
     right: 5vw;
   }
 
@@ -2624,17 +3508,18 @@ kbd:first-child {
 
   .js .screen__head,
   .js .panel,
-  .js .nameplate,
+  .js .idcard,
   .js .skill-list,
   .js .tabs,
   .js .quests,
   .js .cal,
+  .js .today,
+  .js .heat,
   .js .link-list,
   .js .cards,
   .js .config,
   .js .screen--works .stats,
-  .js .screen--works .more,
-  .js .screen--calendar .stats {
+  .js .screen--works .more {
     position: relative;
     inset: auto;
     width: auto;
@@ -2647,8 +3532,23 @@ kbd:first-child {
     margin-bottom: 1vh;
   }
 
-  .js .nameplate {
-    margin-top: 32vh;
+  .js .skill-list {
+    grid-template-columns: 1fr;
+  }
+
+  .js .panel--profile {
+    display: block;
+  }
+
+  .js .heat {
+    overflow-x: auto;
+    --cell: 2.4vw;
+    --gap: 0.5vw;
+  }
+
+  .js .heat__head {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .js .quest__detail {
@@ -2795,9 +3695,13 @@ html:not(.js) .menu__list small {
 html:not(.js) .mw--red,
 html:not(.js) .menu__cursor,
 html:not(.js) .menu__desc,
-html:not(.js) .keys,
-html:not(.js) .menu__wallet {
+html:not(.js) .keys {
   display: none;
+}
+
+html:not(.js) .idcard .portrait,
+html:not(.js) .portrait--profile {
+  width: 9rem;
 }
 
 html:not(.js) .quest {

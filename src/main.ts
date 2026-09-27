@@ -9,7 +9,6 @@ import "@fontsource/noto-sans-sc/700.css";
 import "@fontsource/noto-sans-sc/900.css";
 import "@fontsource/shippori-mincho-b1/800.css";
 import "./styles/main.css";
-import { App } from "./app/App";
 
 const canvas = document.getElementById("gl") as HTMLCanvasElement | null;
 const gl2 = !!canvas && !!document.createElement("canvas").getContext("webgl2");
@@ -22,9 +21,14 @@ const fallback = () => {
 
 if (!canvas || !gl2) {
   fallback();
+} else if (new URLSearchParams(location.search).has("scene")) {
+  // authoring view of a single scene (see app/Viewer.ts)
+  import("./app/Viewer").then((m) => m.startViewer(canvas)).catch((e) => console.error(e));
 } else {
-  new App(canvas).init().catch((e) => {
-    console.error(e);
-    fallback();
-  });
+  import("./app/App")
+    .then(({ App }) => new App(canvas).init())
+    .catch((e) => {
+      console.error(e);
+      fallback();
+    });
 }

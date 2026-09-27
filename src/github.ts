@@ -96,6 +96,35 @@ export function heatmap(data: GitHubSnapshot | null): HeatCell[][] {
   return weeks;
 }
 
+export type HeatStats = { total: number; active: number; longest: number; current: number; best: { date: string; count: number } | null };
+
+/** Totals and streaks over the heatmap's past days. */
+export function heatStats(weeks: HeatCell[][]): HeatStats {
+  const days = weeks.flat().filter((c) => !c.future);
+  let total = 0;
+  let active = 0;
+  let longest = 0;
+  let run = 0;
+  let best: HeatStats["best"] = null;
+  for (const c of days) {
+    total += c.count;
+    if (c.count > 0) {
+      active++;
+      run++;
+      longest = Math.max(longest, run);
+      if (!best || c.count > best.count) best = { date: c.date, count: c.count };
+    } else run = 0;
+  }
+  // the current streak may end yesterday (today can still be empty)
+  let current = 0;
+  for (let i = days.length - 1; i >= 0; i--) {
+    if (days[i].count > 0) current++;
+    else if (i === days.length - 1) continue;
+    else break;
+  }
+  return { total, active, longest, current, best };
+}
+
 function dayNumber(isoDate: string): number {
   return Math.floor(Date.parse(`${isoDate}T00:00:00Z`) / 86_400_000);
 }

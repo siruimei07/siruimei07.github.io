@@ -13,6 +13,7 @@ export class Menu {
   private cursor = $<SVGSVGElement>("[data-cursor]", this.root)!;
   private desc = $(".menu__desc [data-desc]", this.root);
   private descEn = $(".menu__desc [data-desc-en]", this.root);
+  private descPlace = $(".menu__desc [data-desc-place]", this.root);
   private index = $("[data-menu-index]", this.root);
   private cx = new Spring(0, 24);
   private cy = new Spring(0, 24);
@@ -71,6 +72,7 @@ export class Menu {
     const a = this.items[i];
     if (this.desc) this.desc.textContent = a.dataset.info ?? "";
     if (this.descEn) this.descEn.textContent = a.dataset.infoEn ?? "";
+    if (this.descPlace) this.descPlace.textContent = a.dataset.place ?? "";
     if (this.index) this.index.textContent = String(i + 1).padStart(2, "0");
     if (changed) this.twitch = 1;
     if (!silent) this.onSelect(this.id(i), i);

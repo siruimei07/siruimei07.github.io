@@ -16,8 +16,8 @@ export class Daybreak {
   private skip = false;
   private bandDeg = 18;
 
-  /** Build and play; resolves when today has landed (the exit keeps running). */
-  play(now = new Date(), reduced = false): Promise<void> {
+  /** Build and play; resolves when today has landed (the exit keeps running). `short` walks faster (seen before). */
+  play(now = new Date(), reduced = false, short = false): Promise<void> {
     const r = this.root;
     r.innerHTML = "";
     const W = innerWidth;
@@ -81,12 +81,13 @@ export class Daybreak {
     const T_SCROLL = 1.55;
     const T_LAND = 1.65;
     const T_END = 2.45;
+    const speed = short ? 1.8 : 1;
     let t0 = performance.now();
     return new Promise((resolve) => {
       let landed = false;
       const frame = (nowMs: number) => {
-        if (this.skip && !landed) t0 = Math.min(t0, nowMs - T_END * 1000);
-        const t = (nowMs - t0) / 1000;
+        if (this.skip && !landed) t0 = Math.min(t0, nowMs - (T_END * 1000) / speed);
+        const t = ((nowMs - t0) / 1000) * speed;
         // band + line draw in
         const bk = ease.outExpo(clamp01(t / 0.45));
         band.style.transform = `rotate(${this.bandDeg}deg) scaleX(${bk})`;
@@ -168,6 +169,11 @@ export class Daybreak {
       r.innerHTML = "";
     });
     return { covered, done };
+  }
+
+  /** Jump to the landing (a key press or a click during the walk). */
+  skipNow() {
+    this.skip = true;
   }
 
   cancel() {

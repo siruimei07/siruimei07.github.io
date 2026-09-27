@@ -9,10 +9,11 @@ import { fxShared } from "./toon";
 //   1. gbuf   — MSAA, two targets: shaded colour (HDR) + aux (view normal, view depth, ink id)
 //   2. ink    — screen-space lines from depth / normal / id discontinuities → lit
 //   3. fx     — additive and transparent effects into lit (they depth-test against aux)
+//   (1–3 run once per scene; while two scenes cross, a mix pass blends them)
 //   4. bloom  — 13-tap down / tent up chain
-//   5. composite → screen: P3R grade, the "sea of the heart" water treatment, the
-//      avatar layer, flood / blot masks, flash, grain.
-//   6. overlay — confetti and other display-space geometry, straight to the screen.
+//   5. composite → screen: P3R grade, the "sea of the heart" water treatment,
+//      Yachiyo's film band, flood / blot masks, flash, grain.
+//   6. overlay — fish, confetti and other display-space geometry, straight to the screen.
 
 const inkFrag = /* glsl */ `
 ${common}
@@ -29,6 +30,7 @@ uniform float uCrease;
 uniform vec3 uRimCol;
 uniform vec3 uMoonScreen; // px, px, 1 if in front of the camera
 uniform float uRimWidth;
+uniform float uGain;
 uniform float uDebug;
 varying vec2 vUv;
 
@@ -37,6 +39,7 @@ float inkId(float w) { return floor(w + 0.01); }
 
 void main() {
   vec4 col = texture2D(tColor, vUv);
+  col.rgb *= uGain;
   vec4 c = texture2D(tAux, vUv);
   if (uDebug > 0.5) {
     if (uDebug < 1.5) { gl_FragColor = vec4(vec3(fract(c.z / 50.0)), 1.0); return; }
@@ -132,7 +135,7 @@ ${tonemap}
 uniform sampler2D tLit;
 uniform sampler2D tBloom;
 uniform sampler2D tSoft;
-uniform sampler2D tAvatar;
+uniform sampler2D tHero;
 uniform vec2 uRes;
 uniform float uTime;
 uniform float uStepTime;
@@ -153,10 +156,15 @@ uniform float uGrain;
 uniform float uDark;
 uniform float uCalm;      // 0 menu … 1 screens: more blur, darker, quieter caustics
 uniform vec3 uFocus;      // emblem centre (uv) + radius: the sea hushes behind the fish
-// Avatar layer (display space): inverse affine from pixels to avatar uv.
-uniform float uAvatar;
-uniform mat3 uAvatarInv;
-uniform float uAvatarWave;
+// Yachiyo's film band (display space): inverse affine from pixels to frame uv
+// (0…1, y up). The video stacks colour (top half) over her pop-out alpha.
+uniform float uHero;
+uniform mat3 uHeroInv;
+uniform vec4 uHeroBand;   // band v bottom, v top, border (uv y), border (uv x)
+uniform vec2 uHeroShadow; // px offset of the hard shadow
+uniform vec3 uHeroShadowCol;
+uniform float uHeroWave;
+uniform float uHeroSeam;  // 1 → 0 after the loop wraps
 uniform vec3 uRampA;
 uniform vec3 uRampB;
 uniform vec3 uRampC;
@@ -207,6 +215,18 @@ vec3 display(vec3 hdr) {
   return linearToSrgb(neutralTonemap(max(hdr, 0.0)));
 }
 
+// Window of the film band plus its border (b = border in uv units).
+float heroWindow(vec2 h, vec2 b, vec2 aa) {
+  vec4 B = uHeroBand;
+  return smoothstep(B.x - b.y - aa.y, B.x - b.y + aa.y, h.y) * smoothstep(B.y + b.y + aa.y, B.y + b.y - aa.y, h.y)
+       * smoothstep(-b.x - aa.x, -b.x + aa.x, h.x) * smoothstep(1.0 + b.x + aa.x, 1.0 + b.x - aa.x, h.x);
+}
+
+float heroPop(vec2 h) {
+  float in01 = step(0.0, h.x) * step(h.x, 1.0) * step(0.0, h.y) * step(h.y, 1.0);
+  return texture2D(tHero, vec2(h.x, h.y * 0.5)).r * in01;
+}
+
 void main() {
   vec2 px = gl_FragCoord.xy;
   vec2 uv = vUv;
@@ -218,12 +238,23 @@ void main() {
   float water = max(uWater, flooded);
 
   // Blot (P3R sub-menu transition): wobbly disc around uBlot.xy.
+  // Mode 1: the sea zooms inside it. Mode 2: the water drains inside it (the
+  // scene surfaces in full colour) behind a foam rim.
   float blotIn = 0.0;
+  float foam = 0.0;
   if (uBlotMode > 0.5) {
     vec2 d = px - uBlot.xy;
     float ang = atan(d.y, d.x);
     float r = uBlot.z * (1.0 + uBlot.w * (0.06 * sin(ang * 5.0 + uTime * 2.0) + 0.035 * sin(ang * 9.0 - uTime * 3.0)));
-    blotIn = smoothstep(r + 1.5, r - 1.5, length(d));
+    float dist = length(d);
+    blotIn = smoothstep(r + 1.5, r - 1.5, dist);
+    if (uBlotMode > 1.5) {
+      water *= 1.0 - blotIn;
+      float e = dist - r;
+      foam = exp(-e * e / 18.0) + smoothstep(0.0, 26.0, e) * smoothstep(60.0, 26.0, e) * 0.25;
+      foam *= step(1.0, uBlot.z);
+      blotIn = 0.0;
+    }
   }
 
   vec2 wob = vec2(sin(uv.y * 21.0 + uTime * 1.3) + sin(uv.y * 47.0 - uTime * 2.1) * 0.35, cos(uv.x * 17.0 + uTime * 1.1)) * 0.0022 * water;
@@ -276,6 +307,7 @@ void main() {
       sea = mix(sea, zoom, blotIn);
     }
     col = mix(col, sea, max(water, blotIn));
+    col = mix(col, vec3(0.9, 0.99, 1.0), clamp(foam, 0.0, 1.0) * 0.9);
     // the flood line itself: a bright wavy meniscus with a darker lip below
     if (uFlood > 0.0 && uFlood < 1.0) {
       float dl = px.y - floodEdge;
@@ -286,34 +318,32 @@ void main() {
     }
   }
 
-  // Avatar (P3R-style protagonist): flat white / cyan / navy / ink, see-through mids.
-  if (uAvatar > 0.0) {
-    vec3 ap = uAvatarInv * vec3(px, 1.0);
-    vec2 auv = ap.xy;
-    auv.x += sin(auv.y * 9.0 + uTime * 1.6) * 0.006 * uAvatarWave;
-    auv.y += sin(auv.x * 7.0 + uTime * 1.2) * 0.004 * uAvatarWave;
-    if (auv.x > 0.0 && auv.x < 1.0 && auv.y > 0.0 && auv.y < 1.0) {
-      // a light 5-tap blur hides the source's compression blocks before posterising
-      vec2 at = vec2(1.6 / 768.0);
-      vec4 a = texture2D(tAvatar, auv) * 0.28
-        + (texture2D(tAvatar, auv + vec2(at.x, 0.0)) + texture2D(tAvatar, auv - vec2(at.x, 0.0)) + texture2D(tAvatar, auv + vec2(0.0, at.y)) + texture2D(tAvatar, auv - vec2(0.0, at.y))) * 0.12
-        + (texture2D(tAvatar, auv + at) + texture2D(tAvatar, auv - at) + texture2D(tAvatar, auv + vec2(at.x, -at.y)) + texture2D(tAvatar, auv + vec2(-at.x, at.y))) * 0.06;
-      a.a *= smoothstep(0.0, 0.16, auv.y);
-      if (a.a > 0.004) {
-        float al = luma(a.rgb);
-        // five flat tones with 0.02-wide seams (no speckle on noisy source pixels)
-        vec3 flatC = vec3(0.02, 0.03, 0.08);
-        flatC = mix(flatC, uRampB, smoothstep(0.16, 0.19, al));
-        flatC = mix(flatC, uRampD, smoothstep(0.33, 0.36, al));
-        flatC = mix(flatC, mix(uRampE, vec3(1.0), 0.35), smoothstep(0.51, 0.54, al));
-        flatC = mix(flatC, vec3(1.0), smoothstep(0.73, 0.76, al));
-        // Hoodie / mid-dark cloth reads as a window onto the sea behind.
-        float window = smoothstep(0.2, 0.26, al) * smoothstep(0.36, 0.3, al) * step(a.r, a.g * 1.25 + 0.05);
-        vec3 through = mix(col, uRampE, 0.18);
-        flatC = mix(flatC, through, window * 0.9);
-        col = mix(col, flatC, a.a * uAvatar);
-      }
-    }
+  // Yachiyo walks through the eras inside a letterboxed film band; her
+  // umbrella and feet break out over its white border, as in the film.
+  if (uHero > 0.0) {
+    vec2 h = (uHeroInv * vec3(px, 1.0)).xy;
+    vec2 hs = (uHeroInv * vec3(px - uHeroShadow, 1.0)).xy;
+    float sway = uHeroWave * (sin(h.y * 7.0 + uTime * 1.3) * 0.0022 + sin(h.y * 23.0 - uTime * 2.1) * 0.0007);
+    h.x += sway;
+    hs.x += sway;
+    vec2 aa = fwidth(h) * 0.75 + 1e-5;
+    vec2 bw = uHeroBand.wz;
+    float band = heroWindow(h, vec2(0.0), aa);
+    float win = heroWindow(h, bw, aa);
+    float popA = heroPop(h) * (1.0 - band);
+    // hard P3R shadow under the window and her
+    float shadow = max(heroWindow(hs, bw, aa), heroPop(hs));
+    col = mix(col, uHeroShadowCol, shadow * 0.88 * uHero);
+    col = mix(col, vec3(1.0), (win - band) * uHero);
+    // the film; at the loop seam the band shivers and flashes like a cut
+    vec2 fh = h;
+    fh.x += uHeroSeam * band * 0.012 * sin(h.y * 90.0 + uTime * 60.0);
+    vec3 film = texture2D(tHero, vec2(fh.x, 0.5 + fh.y * 0.5)).rgb;
+    // outside the band the colour was stored premultiplied by the pop alpha
+    vec3 popCol = film / max(heroPop(h), 0.08);
+    film = mix(popCol, film, band);
+    film = mix(film, vec3(0.9, 0.97, 1.0), uHeroSeam * 0.55 * band);
+    col = mix(col, film, clamp(band + popA, 0.0, 1.0) * uHero);
   }
 
   // Dark Hour (00:00–01:00 local): the sickly green of the hidden hour.
@@ -348,11 +378,13 @@ export type PostParams = {
   dark: number;
   calm: number;
   focus: THREE.Vector3;
-  avatar: number;
-  avatarWave: number;
-  avatarInv: THREE.Matrix3;
-  inkWidth: number;
-  inkFade: THREE.Vector2;
+  /** Yachiyo's film band: opacity, pixel → frame-uv transform, borders, loop-seam pulse. */
+  hero: number;
+  heroInv: THREE.Matrix3;
+  heroBorder: THREE.Vector2;
+  heroShadow: THREE.Vector2;
+  heroWave: number;
+  heroSeam: number;
 };
 
 export function defaultPost(): PostParams {
@@ -373,18 +405,31 @@ export function defaultPost(): PostParams {
     dark: 0,
     calm: 0,
     focus: new THREE.Vector3(),
-    avatar: 0,
-    avatarWave: 1,
-    avatarInv: new THREE.Matrix3(),
-    inkWidth: 1.4,
-    inkFade: new THREE.Vector2(260, 900),
+    hero: 0,
+    heroInv: new THREE.Matrix3(),
+    heroBorder: new THREE.Vector2(0.012, 0.01),
+    heroShadow: new THREE.Vector2(14, -14),
+    heroWave: 1,
+    heroSeam: 0,
   };
 }
 
 // P3R sea ramp: abyss → royal → azure → cyan → foam.
 export const RAMP = [0x061446, 0x0f34b8, 0x1f6ef0, 0x4cc4ff, 0xc9f4ff].map((h) => new THREE.Color(h));
 
+/** Where the letterboxed band sits in the hero video frame (v, bottom → top). */
+export const HERO_BAND = new THREE.Vector2(0.087, 0.9037);
+
 const _v = new THREE.Vector3();
+
+/** Per-scene look: multiplies / overrides for the ink pass and the grade. */
+export type FrameLook = {
+  exposure?: number;
+  bloom?: number;
+  inkFade?: [number, number];
+  inkWidth?: number;
+  rim?: THREE.Color;
+};
 
 export type Frame = {
   camera: THREE.Camera;
@@ -394,7 +439,55 @@ export type Frame = {
   fx?: THREE.Scene;
   overlay?: THREE.Scene;
   overlayCamera?: THREE.Camera;
+  /** Runs right before this frame's scene is drawn (per-scene lighting). */
+  before?: () => void;
+  look?: FrameLook;
 };
+
+/** How two scenes cross: 0 = ripple from a point, 1 = ink dissolve. */
+export type Mix = { k: number; mode: 0 | 1; center: THREE.Vector2 };
+
+const mixFrag = /* glsl */ `
+${common}
+uniform sampler2D tA;
+uniform sampler2D tB;
+uniform float uK;
+uniform int uMode;
+uniform vec2 uCenter; // px (GL, y up)
+uniform vec2 uRes;
+uniform float uTime;
+varying vec2 vUv;
+
+void main() {
+  vec2 px = gl_FragCoord.xy;
+  float m;
+  vec2 off = vec2(0.0);
+  float edge = 0.0;
+  if (uMode == 0) {
+    // a wobbly ring runs out from the cursor; the water bends at its front
+    vec2 d = px - uCenter;
+    float r = length(d);
+    float ang = atan(d.y, d.x);
+    float maxR = length(max(uCenter, uRes - uCenter)) * 1.08;
+    float R = uK * maxR * (1.0 + 0.045 * sin(ang * 6.0 + uTime * 3.0) + 0.025 * sin(ang * 11.0 - uTime * 2.0));
+    float x = r - R;
+    m = smoothstep(3.0, -3.0, x);
+    float band = exp(-x * x / (2.0 * 55.0 * 55.0));
+    off = (d / max(r, 1.0)) * band * 26.0 * (1.0 - uK);
+    edge = exp(-x * x / (2.0 * 4.0 * 4.0)) * (1.0 - uK) * 0.9;
+  } else {
+    // ink: a noisy front sweeping across with a bright lip
+    float n = fbm2(px / uRes.y * 5.0 + 3.1, 4);
+    float g = (px.x / uRes.x) * 0.55 + (px.y / uRes.y) * 0.25 + n * 0.5;
+    float x = g - (uK * 1.6 - 0.3);
+    m = smoothstep(0.02, -0.02, x);
+    edge = exp(-x * x / (2.0 * 0.012 * 0.012)) * 0.8;
+  }
+  vec3 a = texture2D(tA, vUv + off / uRes).rgb;
+  vec3 b = texture2D(tB, vUv - off / uRes * 0.6).rgb;
+  vec3 c = mix(a, b, m) + vec3(0.85, 0.95, 1.2) * edge;
+  gl_FragColor = vec4(c, 1.0);
+}`;
 
 export class Pipeline {
   readonly renderer: THREE.WebGLRenderer;
@@ -404,18 +497,24 @@ export class Pipeline {
   height = 1;
   gbuf!: THREE.WebGLRenderTarget;
   lit!: THREE.WebGLRenderTarget;
+  /** Per-scene lit buffers while two scenes cross (allocated on first use). */
+  private litA: THREE.WebGLRenderTarget | null = null;
+  private litB: THREE.WebGLRenderTarget | null = null;
   private down: THREE.WebGLRenderTarget[] = [];
   private up: THREE.WebGLRenderTarget[] = [];
   private inkPass: FullscreenPass;
+  private mixPass: FullscreenPass;
   private downPass: FullscreenPass;
   private upPass: FullscreenPass;
   private composite: FullscreenPass;
   private tier: Tier;
   readonly post = defaultPost();
-  avatarTexture: THREE.Texture | null = null;
+  /** Yachiyo's film (video or poster), colour stacked over pop-out alpha. */
+  heroTexture: THREE.Texture | null = null;
   /** Display-space copy of a frame (for the title shatter). */
   capture: THREE.WebGLRenderTarget | null = null;
   time = 0;
+  private bloomNow = 1;
 
   constructor(canvas: HTMLCanvasElement, tier: Tier) {
     this.tier = tier;
@@ -449,7 +548,19 @@ export class Pipeline {
         uRimCol: { value: new THREE.Color(0.62, 0.8, 1.0) },
         uMoonScreen: { value: new THREE.Vector3() },
         uRimWidth: { value: 3 },
+        uGain: { value: 1 },
         uDebug: { value: Number(new URLSearchParams(location.search).get("dbg") ?? 0) },
+      }),
+    );
+    this.mixPass = new FullscreenPass(
+      passMaterial(mixFrag, {
+        tA: { value: null },
+        tB: { value: null },
+        uK: { value: 0 },
+        uMode: { value: 0 },
+        uCenter: { value: new THREE.Vector2() },
+        uRes: { value: new THREE.Vector2() },
+        uTime: { value: 0 },
       }),
     );
     this.downPass = new FullscreenPass(passMaterial(downFrag, { tSrc: { value: null }, uTexel: { value: new THREE.Vector2() }, uKaris: { value: 0 } }));
@@ -459,7 +570,7 @@ export class Pipeline {
         tLit: { value: null },
         tBloom: { value: null },
         tSoft: { value: null },
-        tAvatar: { value: null },
+        tHero: { value: null },
         uRes: { value: new THREE.Vector2() },
         uTime: { value: 0 },
         uStepTime: { value: 0 },
@@ -480,9 +591,13 @@ export class Pipeline {
         uDark: { value: 0 },
         uCalm: { value: 0 },
         uFocus: { value: new THREE.Vector3() },
-        uAvatar: { value: 0 },
-        uAvatarInv: { value: new THREE.Matrix3() },
-        uAvatarWave: { value: 1 },
+        uHero: { value: 0 },
+        uHeroInv: { value: new THREE.Matrix3() },
+        uHeroBand: { value: new THREE.Vector4(HERO_BAND.x, HERO_BAND.y, 0.012, 0.01) },
+        uHeroShadow: { value: new THREE.Vector2() },
+        uHeroShadowCol: { value: new THREE.Color(0.02, 0.04, 0.16) },
+        uHeroWave: { value: 1 },
+        uHeroSeam: { value: 0 },
         uRampA: { value: RAMP[0] },
         uRampB: { value: RAMP[1] },
         uRampC: { value: RAMP[2] },
@@ -521,6 +636,9 @@ export class Pipeline {
   private allocate(w: number, h: number) {
     this.gbuf?.dispose();
     this.lit?.dispose();
+    this.litA?.dispose();
+    this.litB?.dispose();
+    this.litA = this.litB = null;
     for (const rt of [...this.down, ...this.up]) rt.dispose();
     this.gbuf = this.makeGbuf(w, h);
     this.lit = hdrTarget(w, h);
@@ -603,12 +721,20 @@ export class Pipeline {
     for (const [scene, camera] of layers) r.render(scene, camera);
   }
 
-  render(f: Frame, target: THREE.WebGLRenderTarget | null = null) {
+  /** Warm up every program a scene uses (without drawing it to the screen). */
+  async compile(f: Frame) {
+    f.before?.();
+    this.renderer.setRenderTarget(this.gbuf);
+    await this.renderer.compileAsync(f.opaque, f.camera);
+    if (f.fx) await this.renderer.compileAsync(f.fx, f.camera);
+  }
+
+  /** G-buffer → ink (+ rim) → fx, into `out`. */
+  private scene(f: Frame, out: THREE.WebGLRenderTarget) {
     const r = this.renderer;
     const t = this.timer;
-    t.beginFrame();
-    fxShared.uRes.value.set(this.width, this.height);
-
+    f.before?.();
+    const look = f.look ?? {};
     t.begin("scene");
     r.setRenderTarget(this.gbuf);
     r.clear(false, true, false);
@@ -620,8 +746,10 @@ export class Pipeline {
     im.tColor.value = this.gbuf.textures[0];
     im.tAux.value = this.gbuf.textures[1];
     im.uTexel.value.set(1 / this.width, 1 / this.height);
-    im.uWidth.value = this.post.inkWidth * Math.max(1.0, this.height / 1000);
-    im.uInkFade.value.copy(this.post.inkFade);
+    im.uWidth.value = (look.inkWidth ?? 1.4) * Math.max(1.0, this.height / 1000);
+    im.uInkFade.value.set(...(look.inkFade ?? [260, 900]));
+    im.uRimCol.value.copy(look.rim ?? RIM);
+    im.uGain.value = look.exposure ?? 1;
     im.uRes.value.set(this.width, this.height);
     im.uRimWidth.value = 3.2 * Math.max(1, this.height / 1000);
     // where the moon sits on screen (the rims face it)
@@ -630,18 +758,54 @@ export class Pipeline {
       _v.copy(f.lightDir).multiplyScalar(1000).add(cam.position).project(cam);
       const front = _v.z < 1;
       im.uMoonScreen.value.set((_v.x * 0.5 + 0.5) * this.width, (_v.y * 0.5 + 0.5) * this.height, front ? 1 : 0);
-    }
-    this.inkPass.render(r, this.lit);
+    } else im.uMoonScreen.value.set(0, 0, 0);
+    this.inkPass.render(r, out);
     t.end();
 
-    if (f.fx) {
+    if (f.fx && f.fx.children.length) {
       t.begin("fx");
       fxShared.tAux.value = this.gbuf.textures[1];
-      r.setRenderTarget(this.lit);
+      r.setRenderTarget(out);
       r.render(f.fx, f.camera);
       t.end();
     }
+  }
 
+  render(f: Frame, target: THREE.WebGLRenderTarget | null = null) {
+    this.timer.beginFrame();
+    fxShared.uRes.value.set(this.width, this.height);
+    this.scene(f, this.lit);
+    this.bloomNow = f.look?.bloom ?? 1;
+    this.finish(f, target);
+  }
+
+  /** Two scenes at once: `a` fades out, `b` in, by `mix.k` (0 → 1). */
+  renderMix(a: Frame, b: Frame, mix: Mix) {
+    this.timer.beginFrame();
+    fxShared.uRes.value.set(this.width, this.height);
+    if (!this.litA) this.litA = hdrTarget(this.width, this.height);
+    if (!this.litB) this.litB = hdrTarget(this.width, this.height);
+    this.scene(a, this.litA);
+    this.scene(b, this.litB);
+    const t = this.timer;
+    t.begin("mix");
+    const m = this.mixPass.material.uniforms;
+    m.tA.value = this.litA.texture;
+    m.tB.value = this.litB.texture;
+    m.uK.value = mix.k;
+    m.uMode.value = mix.mode;
+    m.uCenter.value.copy(mix.center);
+    m.uRes.value.set(this.width, this.height);
+    m.uTime.value = this.time;
+    this.mixPass.render(this.renderer, this.lit);
+    t.end();
+    this.bloomNow = THREE.MathUtils.lerp(a.look?.bloom ?? 1, b.look?.bloom ?? 1, mix.k);
+    this.finish(b, null);
+  }
+
+  private finish(f: Frame, target: THREE.WebGLRenderTarget | null) {
+    const r = this.renderer;
+    const t = this.timer;
     t.begin("post");
     const bloomTex = this.bloom();
     const u = this.composite.material.uniforms;
@@ -649,12 +813,12 @@ export class Pipeline {
     u.tLit.value = this.lit.texture;
     u.tBloom.value = bloomTex;
     u.tSoft.value = (this.up[1] ?? this.up[0]).texture;
-    u.tAvatar.value = this.avatarTexture;
+    u.tHero.value = this.heroTexture;
     u.uRes.value.set(this.width, this.height);
     u.uTime.value = this.time;
     u.uStepTime.value = Math.floor(this.time * 9) / 9;
     u.uExposure.value = p.exposure;
-    u.uBloom.value = p.bloom;
+    u.uBloom.value = p.bloom * this.bloomNow;
     u.uBloomNorm.value = 1 / Math.max(1, this.down.length);
     u.uMono.value = p.mono;
     u.uWater.value = p.water;
@@ -670,11 +834,16 @@ export class Pipeline {
     u.uDark.value = p.dark;
     u.uCalm.value = p.calm;
     u.uFocus.value.copy(p.focus);
-    u.uAvatar.value = this.avatarTexture ? p.avatar : 0;
-    u.uAvatarInv.value.copy(p.avatarInv);
-    u.uAvatarWave.value = p.avatarWave;
+    u.uHero.value = this.heroTexture ? p.hero : 0;
+    u.uHeroInv.value.copy(p.heroInv);
+    u.uHeroBand.value.set(HERO_BAND.x, HERO_BAND.y, p.heroBorder.x, p.heroBorder.y);
+    u.uHeroShadow.value.copy(p.heroShadow);
+    u.uHeroWave.value = p.heroWave;
+    u.uHeroSeam.value = p.heroSeam;
     this.composite.render(r, target);
     if (f.overlay && !target) r.render(f.overlay, f.overlayCamera ?? f.camera);
     t.end();
   }
 }
+
+const RIM = new THREE.Color(0.62, 0.8, 1.0);

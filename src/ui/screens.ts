@@ -116,11 +116,60 @@ export function worksCtl(): ScreenCtl {
 export function calendarCtl(data: GitHubSnapshot | null): ScreenCtl {
   const root = $("#calendar")!;
   const grid = $("[data-cal-grid]", root)!;
+  const heat = $$<HTMLElement>("[data-heat-grid] .heat__c", root);
+  const heatByDate = new Map(heat.map((c) => [c.dataset.date!, c]));
   const byDate = new Map((data?.contributions ?? []).map((c) => [c.date, c]));
   const today = new Date();
   let view = new Date(today.getFullYear(), today.getMonth(), 1);
   let sel = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+  // Today: tonight's moon, big.
+  const fillToday = () => {
+    const now = new Date();
+    const m = moonAt(now);
+    const name = moonName(now);
+    const toFull = daysToFull(now);
+    $<SVGPathElement>("[data-today-icon] .moon-lit", root)?.setAttribute("d", moonLitPath(m.phase, 44));
+    const set = (s: string, html: string) => {
+      const e = $(s, root);
+      if (e) e.innerHTML = html;
+    };
+    set("[data-today-date]", `${now.getMonth() + 1}/${now.getDate()}<small>${WEEKDAYS_EN[now.getDay()].toUpperCase()} · ${calendarText.today}</small>`);
+    set("[data-today-name]", `${name.ja}<small>${name.en}</small>`);
+    set(
+      "[data-today-meta]",
+      `${calendarText.age} <b>${m.age.toFixed(1)}</b> · ${calendarText.lit} <b>${Math.round(m.illumination * 100)}%</b> · ${toFull === 0 ? `${calendarText.fullTonight} ☾` : `${calendarText.toFull} <b>${toFull}</b> ${calendarText.days}`}`,
+    );
+    heatByDate.get(iso(now))?.classList.add("is-today");
+  };
+  fillToday();
+
+  const markHeat = (d: Date) => {
+    heat.forEach((c) => c.classList.remove("is-sel"));
+    heatByDate.get(iso(d))?.classList.add("is-sel");
+  };
+
+  // The heatmap picks a day too.
+  const pickDate = (d: Date) => {
+    sel = d;
+    if (d.getMonth() !== view.getMonth() || d.getFullYear() !== view.getFullYear()) view = new Date(d.getFullYear(), d.getMonth(), 1);
+    render();
+  };
+  heat.forEach((c) => {
+    if (c.classList.contains("is-future")) return;
+    const [yy, mm, dd] = c.dataset.date!.split("-").map(Number);
+    const d = new Date(yy, mm - 1, dd);
+    c.addEventListener("click", () => pickDate(d));
+    c.addEventListener("pointerenter", () => {
+      detail(d);
+      markHeat(d);
+    });
+  });
+  $("[data-heat-grid]", root)?.addEventListener("pointerleave", () => {
+    detail(sel);
+    markHeat(sel);
+  });
 
   const detail = (d: Date) => {
     const m = moonAt(new Date(d.getFullYear(), d.getMonth(), d.getDate(), 21));
@@ -175,12 +224,14 @@ export function calendarCtl(data: GitHubSnapshot | null): ScreenCtl {
         sel = d;
         $$(".cal__cell", grid).forEach((x) => x.classList.toggle("is-sel", x === b));
         detail(d);
+        markHeat(d);
       };
       b.addEventListener("click", pick);
       b.addEventListener("pointerenter", pick);
       b.addEventListener("focus", pick);
     });
     detail(sel);
+    markHeat(sel);
   };
   const shift = (k: number) => {
     view = new Date(view.getFullYear(), view.getMonth() + k, 1);
@@ -205,8 +256,10 @@ export function calendarCtl(data: GitHubSnapshot | null): ScreenCtl {
       return false;
     },
     enter() {
-      view = new Date(today.getFullYear(), today.getMonth(), 1);
-      sel = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const now = new Date();
+      view = new Date(now.getFullYear(), now.getMonth(), 1);
+      sel = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      fillToday();
       render();
     },
   };

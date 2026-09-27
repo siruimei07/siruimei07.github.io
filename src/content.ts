@@ -14,7 +14,52 @@ export const identity = {
   affiliation: { zh: "多伦多大学", en: "University of Toronto" },
   status: { zh: "本科在读", en: "Undergraduate" },
   homebase: "Toronto",
+  /** One line that says who this is, everywhere a visitor lands. */
+  oneLiner: "多伦多大学本科生，用统计、经济与量化理解世界。",
+  oneLinerEn: "Undergraduate at the University of Toronto — statistics, economics & quant.",
 };
+
+/** The "party" card on the menu: who you are looking at, at a glance. */
+export const card = {
+  label: "PARTY",
+  role: "University of Toronto · Undergraduate",
+  focus: ["统计", "经济", "量化"],
+  stat: "近一年提交",
+  links: [
+    { id: "github", label: "GitHub", href: "https://github.com/siruimei07" },
+    { id: "mail", label: "Mail", href: "mailto:sirui.mei07@gmail.com" },
+  ],
+};
+
+/** Caption of Yachiyo's film band on the menu. */
+export const heroCaption = {
+  name: "月見ヤチヨ",
+  line: "八千年の月見",
+  en: "8000 YEARS · TSUKUYOMI",
+};
+
+export const tabs = { prev: "Q", next: "E", label: "切换页面" };
+
+/** Where each scene is (shown as the location caption). */
+export const places = {
+  bridge: { ja: "月見橋", en: "MOONVIEW BRIDGE" },
+  stage: { ja: "月読の舞台", en: "THE STAGE" },
+  pagoda: { ja: "五重塔の路地", en: "PAGODA LANE" },
+  avenue: { ja: "大通り", en: "GRAND AVENUE" },
+  susuki: { ja: "月見の野", en: "MOON-VIEWING FIELD" },
+  street: { ja: "電柱の坂", en: "THE GAMING POLE" },
+  bamboo: { ja: "竹取の竹林", en: "THE BAMBOO GROVE" },
+} as const;
+
+/** Which scene stands behind each menu entry. */
+export const sceneOf = {
+  profile: "stage",
+  skills: "pagoda",
+  works: "avenue",
+  calendar: "susuki",
+  contact: "street",
+  system: "bamboo",
+} as const;
 
 export const boot = {
   loading: "NOW LOADING",
@@ -42,20 +87,18 @@ export type MenuItem = {
   label: string;
   zh: string;
   ja: string;
-  /** Bottom-right description (P3R: "View/Change Personas" + "Command"). */
+  /** Bottom-right description (P3R: "View/Change Personas" + "Command"): what is inside, plainly. */
   desc: string;
   descEn: string;
-  /** What the fish school draws while this entry is selected. */
-  emblem: string;
 };
 
 export const menu: MenuItem[] = [
-  { id: "profile", label: "PROFILE", zh: "档案", ja: "プロフィール", desc: "查看个人档案", descEn: "View Status", emblem: "leaf" },
-  { id: "skills", label: "SKILL", zh: "擅长", ja: "スキル", desc: "统计 · 经济 · 量化", descEn: "Expertise", emblem: "σ" },
-  { id: "works", label: "WORKS", zh: "作品", ja: "クエスト", desc: "作品与公开仓库", descEn: "Requests", emblem: "</>" },
-  { id: "calendar", label: "CALENDAR", zh: "日历", ja: "カレンダー", desc: "月相与提交记录", descEn: "Moon & Activity", emblem: "moon" },
-  { id: "contact", label: "SOCIAL LINK", zh: "联络", ja: "コミュ", desc: "写给月亮的信", descEn: "Contact", emblem: "✉" },
-  { id: "system", label: "SYSTEM", zh: "设置", ja: "システム", desc: "画质 · 动效 · 关于本站", descEn: "Config", emblem: "gear" },
+  { id: "profile", label: "PROFILE", zh: "档案", ja: "プロフィール", desc: "我是谁：简介、学校与方向", descEn: "About me" },
+  { id: "skills", label: "SKILL", zh: "擅长", ja: "スキル", desc: "擅长：统计 · 经济 · 量化", descEn: "What I do" },
+  { id: "works", label: "WORKS", zh: "作品", ja: "クエスト", desc: "做过的东西：作品与公开仓库", descEn: "Projects" },
+  { id: "calendar", label: "CALENDAR", zh: "日历", ja: "カレンダー", desc: "今夜的月亮与一年的提交", descEn: "Moon & activity" },
+  { id: "contact", label: "SOCIAL LINK", zh: "联络", ja: "コミュ", desc: "联系我：邮箱与 GitHub", descEn: "Contact" },
+  { id: "system", label: "SYSTEM", zh: "设置", ja: "システム", desc: "画质 · 动效 · 关于本站", descEn: "Settings & credits" },
 ];
 
 export const profile = {
@@ -142,7 +185,7 @@ export const works: Work[] = [
     title: "TSUKUYOMI",
     zh: "你正在浏览的主页",
     description:
-      "三渲二的月下坡道：程序化建模的街区、七色的游戏电线杆与满月，自研 toon 管线（MSAA G-buffer、屏幕空间描线与边缘光），P3R 风格的菜单与转场。目标 2K 稳定 60 帧。",
+      "七个各自独立建模的三渲二场景——通往ツクヨミ的月见桥、山顶舞台、五重塔小路、大通、月见之野、游戏电线杆的街道与竹林；自研 toon 管线（MSAA G-buffer、屏幕空间描线与边缘光），P3R 风格的菜单、涟漪转场与水下调色。目标 2K 稳定 60 帧。",
     stack: ["TypeScript", "three.js", "GLSL"],
     state: "live",
     href: "https://github.com/siruimei07/siruimei07.github.io",
@@ -182,6 +225,14 @@ export const calendarText = {
   none: "这一天没有提交记录。",
   legend: "贡献",
   kaguya: "辉夜姬在八月十五的满月之夜回到了月亮上。",
+  heat: "ACTIVITY",
+  heatZh: "近一年的提交",
+  less: "少",
+  more: "多",
+  fullMark: "满月",
+  stats: { total: "提交", active: "活跃天数", streak: "最长连续", current: "当前连续", best: "最多的一天" },
+  age: "月龄",
+  lit: "照明",
 };
 
 export type Link = { id: "mail" | "github"; arcana: string; num: string; zh: string; label: string; value: string; href: string; rank: string };
@@ -206,9 +257,9 @@ export const system = {
   fps: { label: "FPS", zh: "帧率显示", options: [["off", "OFF", "关"], ["on", "ON", "开"]] as [string, string, string][] },
   toTitle: { label: "RETURN TO TITLE", zh: "返回标题画面" },
   about: { label: "CREDITS", zh: "关于本站" },
-  tech: "three.js 自研三渲二管线：MSAA 多目标 G-buffer → 屏幕空间描线与边缘光 → 泛光 → P3R 水下调色合成；场景全部程序化生成，GPU 计时驱动自适应画质。",
+  tech: "three.js 自研三渲二管线：MSAA 多目标 G-buffer → 屏幕空间描线与边缘光 → 泛光 → P3R 水下调色合成。七个场景（月见桥、舞台、五重塔、大通、月见之野、电线杆街、竹林）各自独立程序化建模，涟漪转场切换；GPU 计时驱动自适应画质。",
   source: "本站源码",
 };
 
 export const credits =
-  "Fan-made tribute to Netflix『超かぐや姫！』, styled after ATLUS『ペルソナ3 リロード』. 角色「酒寄彩葉」及相关形象、作品名称版权归原作方所有，本站与官方无关。";
+  "Fan-made tribute to Netflix『超かぐや姫！』, styled after ATLUS『ペルソナ3 リロード』. 菜单中月見ヤチヨ的片段截取自《超かぐや姫！》；角色「酒寄彩葉」「月見ヤチヨ」及相关形象、作品名称版权归原作方所有，本站与官方无关。";

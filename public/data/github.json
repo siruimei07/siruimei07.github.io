@@ -1,19 +1,19 @@
 {
-  "generatedAt": "2026-08-06T04:16:57.521Z",
+  "generatedAt": "2026-09-27T02:03:50.930Z",
   "profile": {
     "login": "siruimei07",
     "name": "Sirui Mei",
-    "avatar_url": "/assets/avatar.jpg",
+    "avatar_url": "https://avatars.githubusercontent.com/u/231767182?v=4",
     "html_url": "https://github.com/siruimei07",
-    "bio": "Undergraduate student at University of Toronto",
+    "bio": "Undergraduate student of University of Toronto",
     "location": null,
     "followers": 5,
-    "following": 5,
+    "following": 6,
     "public_repos": 1
   },
   "repositories": [
     {
-      "id": -1,
+      "id": 1321932098,
       "name": "GUI-for-RePKG",
       "full_name": "siruimei07/GUI-for-RePKG",
       "html_url": "https://github.com/siruimei07/GUI-for-RePKG",
@@ -21,21 +21,3542 @@
       "homepage": null,
       "language": "C#",
       "stargazers_count": 4,
-      "forks_count": null,
+      "forks_count": 0,
       "topics": [],
-      "updated_at": null,
+      "updated_at": "2026-09-05T17:00:01Z",
       "visibility": "public",
       "archived": false,
       "fork": false
     }
   ],
-  "events": [],
+  "events": [
+    {
+      "id": "15617760894",
+      "type": "WatchEvent",
+      "created_at": "2026-09-23T20:27:38Z",
+      "repo": {
+        "name": "Mak5er/AirCard"
+      },
+      "payload": {
+        "action": "started"
+      }
+    },
+    {
+      "id": "14930597577",
+      "type": "WatchEvent",
+      "created_at": "2026-09-13T02:37:26Z",
+      "repo": {
+        "name": "LaoFeng-mouse/flyingmouse-format"
+      },
+      "payload": {
+        "action": "started"
+      }
+    },
+    {
+      "id": "19431328612",
+      "type": "PushEvent",
+      "created_at": "2026-08-30T14:16:51Z",
+      "repo": {
+        "name": "siruimei07/GUI-for-RePKG"
+      },
+      "payload": {
+        "repository_id": 1321932098,
+        "push_id": 41831027872,
+        "ref": "refs/heads/main",
+        "head": "a649a01439612ab673837934c05902c7d9f58eaa",
+        "before": "ab5123d71b1fce58177f2439fd9a228209a3bf72"
+      }
+    },
+    {
+      "id": "19333368001",
+      "type": "PushEvent",
+      "created_at": "2026-08-28T21:16:55Z",
+      "repo": {
+        "name": "siruimei07/GUI-for-RePKG"
+      },
+      "payload": {
+        "repository_id": 1321932098,
+        "push_id": 41640775120,
+        "ref": "refs/heads/main",
+        "head": "ab5123d71b1fce58177f2439fd9a228209a3bf72",
+        "before": "5b2aefa9fa50b5b18708110f4f8402fc2ef125f8"
+      }
+    }
+  ],
   "contributions": [
+    {
+      "date": "2025-01-01",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 1st."
+    },
+    {
+      "date": "2025-01-02",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 2nd."
+    },
+    {
+      "date": "2025-01-03",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 3rd."
+    },
+    {
+      "date": "2025-01-04",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 4th."
+    },
+    {
+      "date": "2025-01-05",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 5th."
+    },
+    {
+      "date": "2025-01-06",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 6th."
+    },
+    {
+      "date": "2025-01-07",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 7th."
+    },
+    {
+      "date": "2025-01-08",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 8th."
+    },
+    {
+      "date": "2025-01-09",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 9th."
+    },
+    {
+      "date": "2025-01-10",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 10th."
+    },
+    {
+      "date": "2025-01-11",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 11th."
+    },
+    {
+      "date": "2025-01-12",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 12th."
+    },
+    {
+      "date": "2025-01-13",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 13th."
+    },
+    {
+      "date": "2025-01-14",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 14th."
+    },
+    {
+      "date": "2025-01-15",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 15th."
+    },
+    {
+      "date": "2025-01-16",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 16th."
+    },
+    {
+      "date": "2025-01-17",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 17th."
+    },
+    {
+      "date": "2025-01-18",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 18th."
+    },
+    {
+      "date": "2025-01-19",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 19th."
+    },
+    {
+      "date": "2025-01-20",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 20th."
+    },
+    {
+      "date": "2025-01-21",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 21st."
+    },
+    {
+      "date": "2025-01-22",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 22nd."
+    },
+    {
+      "date": "2025-01-23",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 23rd."
+    },
+    {
+      "date": "2025-01-24",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 24th."
+    },
+    {
+      "date": "2025-01-25",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 25th."
+    },
+    {
+      "date": "2025-01-26",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 26th."
+    },
+    {
+      "date": "2025-01-27",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 27th."
+    },
+    {
+      "date": "2025-01-28",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 28th."
+    },
+    {
+      "date": "2025-01-29",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 29th."
+    },
+    {
+      "date": "2025-01-30",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 30th."
+    },
+    {
+      "date": "2025-01-31",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 31st."
+    },
+    {
+      "date": "2025-02-01",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 1st."
+    },
+    {
+      "date": "2025-02-02",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 2nd."
+    },
+    {
+      "date": "2025-02-03",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 3rd."
+    },
+    {
+      "date": "2025-02-04",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 4th."
+    },
+    {
+      "date": "2025-02-05",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 5th."
+    },
+    {
+      "date": "2025-02-06",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 6th."
+    },
+    {
+      "date": "2025-02-07",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 7th."
+    },
+    {
+      "date": "2025-02-08",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 8th."
+    },
+    {
+      "date": "2025-02-09",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 9th."
+    },
+    {
+      "date": "2025-02-10",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 10th."
+    },
+    {
+      "date": "2025-02-11",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 11th."
+    },
+    {
+      "date": "2025-02-12",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 12th."
+    },
+    {
+      "date": "2025-02-13",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 13th."
+    },
+    {
+      "date": "2025-02-14",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 14th."
+    },
+    {
+      "date": "2025-02-15",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 15th."
+    },
+    {
+      "date": "2025-02-16",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 16th."
+    },
+    {
+      "date": "2025-02-17",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 17th."
+    },
+    {
+      "date": "2025-02-18",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 18th."
+    },
+    {
+      "date": "2025-02-19",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 19th."
+    },
+    {
+      "date": "2025-02-20",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 20th."
+    },
+    {
+      "date": "2025-02-21",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 21st."
+    },
+    {
+      "date": "2025-02-22",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 22nd."
+    },
+    {
+      "date": "2025-02-23",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 23rd."
+    },
+    {
+      "date": "2025-02-24",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 24th."
+    },
+    {
+      "date": "2025-02-25",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 25th."
+    },
+    {
+      "date": "2025-02-26",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 26th."
+    },
+    {
+      "date": "2025-02-27",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 27th."
+    },
+    {
+      "date": "2025-02-28",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 28th."
+    },
+    {
+      "date": "2025-03-01",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 1st."
+    },
+    {
+      "date": "2025-03-02",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 2nd."
+    },
+    {
+      "date": "2025-03-03",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 3rd."
+    },
+    {
+      "date": "2025-03-04",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 4th."
+    },
+    {
+      "date": "2025-03-05",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 5th."
+    },
+    {
+      "date": "2025-03-06",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 6th."
+    },
+    {
+      "date": "2025-03-07",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 7th."
+    },
+    {
+      "date": "2025-03-08",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 8th."
+    },
+    {
+      "date": "2025-03-09",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 9th."
+    },
+    {
+      "date": "2025-03-10",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 10th."
+    },
+    {
+      "date": "2025-03-11",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 11th."
+    },
+    {
+      "date": "2025-03-12",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 12th."
+    },
+    {
+      "date": "2025-03-13",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 13th."
+    },
+    {
+      "date": "2025-03-14",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 14th."
+    },
+    {
+      "date": "2025-03-15",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 15th."
+    },
+    {
+      "date": "2025-03-16",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 16th."
+    },
+    {
+      "date": "2025-03-17",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 17th."
+    },
+    {
+      "date": "2025-03-18",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 18th."
+    },
+    {
+      "date": "2025-03-19",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 19th."
+    },
+    {
+      "date": "2025-03-20",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 20th."
+    },
+    {
+      "date": "2025-03-21",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 21st."
+    },
+    {
+      "date": "2025-03-22",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 22nd."
+    },
+    {
+      "date": "2025-03-23",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 23rd."
+    },
+    {
+      "date": "2025-03-24",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 24th."
+    },
+    {
+      "date": "2025-03-25",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 25th."
+    },
+    {
+      "date": "2025-03-26",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 26th."
+    },
+    {
+      "date": "2025-03-27",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 27th."
+    },
+    {
+      "date": "2025-03-28",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 28th."
+    },
+    {
+      "date": "2025-03-29",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 29th."
+    },
+    {
+      "date": "2025-03-30",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 30th."
+    },
+    {
+      "date": "2025-03-31",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 31st."
+    },
+    {
+      "date": "2025-04-01",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 1st."
+    },
+    {
+      "date": "2025-04-02",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 2nd."
+    },
+    {
+      "date": "2025-04-03",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 3rd."
+    },
+    {
+      "date": "2025-04-04",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 4th."
+    },
+    {
+      "date": "2025-04-05",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 5th."
+    },
+    {
+      "date": "2025-04-06",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 6th."
+    },
+    {
+      "date": "2025-04-07",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 7th."
+    },
+    {
+      "date": "2025-04-08",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 8th."
+    },
+    {
+      "date": "2025-04-09",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 9th."
+    },
+    {
+      "date": "2025-04-10",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 10th."
+    },
+    {
+      "date": "2025-04-11",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 11th."
+    },
+    {
+      "date": "2025-04-12",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 12th."
+    },
+    {
+      "date": "2025-04-13",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 13th."
+    },
+    {
+      "date": "2025-04-14",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 14th."
+    },
+    {
+      "date": "2025-04-15",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 15th."
+    },
+    {
+      "date": "2025-04-16",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 16th."
+    },
+    {
+      "date": "2025-04-17",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 17th."
+    },
+    {
+      "date": "2025-04-18",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 18th."
+    },
+    {
+      "date": "2025-04-19",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 19th."
+    },
+    {
+      "date": "2025-04-20",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 20th."
+    },
+    {
+      "date": "2025-04-21",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 21st."
+    },
+    {
+      "date": "2025-04-22",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 22nd."
+    },
+    {
+      "date": "2025-04-23",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 23rd."
+    },
+    {
+      "date": "2025-04-24",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 24th."
+    },
+    {
+      "date": "2025-04-25",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 25th."
+    },
+    {
+      "date": "2025-04-26",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 26th."
+    },
+    {
+      "date": "2025-04-27",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 27th."
+    },
+    {
+      "date": "2025-04-28",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 28th."
+    },
+    {
+      "date": "2025-04-29",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 29th."
+    },
+    {
+      "date": "2025-04-30",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 30th."
+    },
+    {
+      "date": "2025-05-01",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 1st."
+    },
+    {
+      "date": "2025-05-02",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 2nd."
+    },
+    {
+      "date": "2025-05-03",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 3rd."
+    },
+    {
+      "date": "2025-05-04",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 4th."
+    },
+    {
+      "date": "2025-05-05",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 5th."
+    },
+    {
+      "date": "2025-05-06",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 6th."
+    },
+    {
+      "date": "2025-05-07",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 7th."
+    },
+    {
+      "date": "2025-05-08",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 8th."
+    },
+    {
+      "date": "2025-05-09",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 9th."
+    },
+    {
+      "date": "2025-05-10",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 10th."
+    },
+    {
+      "date": "2025-05-11",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 11th."
+    },
+    {
+      "date": "2025-05-12",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 12th."
+    },
+    {
+      "date": "2025-05-13",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 13th."
+    },
+    {
+      "date": "2025-05-14",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 14th."
+    },
+    {
+      "date": "2025-05-15",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 15th."
+    },
+    {
+      "date": "2025-05-16",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 16th."
+    },
+    {
+      "date": "2025-05-17",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 17th."
+    },
+    {
+      "date": "2025-05-18",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 18th."
+    },
+    {
+      "date": "2025-05-19",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 19th."
+    },
+    {
+      "date": "2025-05-20",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 20th."
+    },
+    {
+      "date": "2025-05-21",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 21st."
+    },
+    {
+      "date": "2025-05-22",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 22nd."
+    },
+    {
+      "date": "2025-05-23",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 23rd."
+    },
+    {
+      "date": "2025-05-24",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 24th."
+    },
+    {
+      "date": "2025-05-25",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 25th."
+    },
+    {
+      "date": "2025-05-26",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 26th."
+    },
+    {
+      "date": "2025-05-27",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 27th."
+    },
+    {
+      "date": "2025-05-28",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 28th."
+    },
+    {
+      "date": "2025-05-29",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 29th."
+    },
+    {
+      "date": "2025-05-30",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 30th."
+    },
+    {
+      "date": "2025-05-31",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 31st."
+    },
+    {
+      "date": "2025-06-01",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 1st."
+    },
+    {
+      "date": "2025-06-02",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 2nd."
+    },
+    {
+      "date": "2025-06-03",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 3rd."
+    },
+    {
+      "date": "2025-06-04",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 4th."
+    },
+    {
+      "date": "2025-06-05",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 5th."
+    },
+    {
+      "date": "2025-06-06",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 6th."
+    },
+    {
+      "date": "2025-06-07",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 7th."
+    },
+    {
+      "date": "2025-06-08",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 8th."
+    },
+    {
+      "date": "2025-06-09",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 9th."
+    },
+    {
+      "date": "2025-06-10",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 10th."
+    },
+    {
+      "date": "2025-06-11",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 11th."
+    },
+    {
+      "date": "2025-06-12",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 12th."
+    },
+    {
+      "date": "2025-06-13",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 13th."
+    },
+    {
+      "date": "2025-06-14",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 14th."
+    },
+    {
+      "date": "2025-06-15",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 15th."
+    },
+    {
+      "date": "2025-06-16",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 16th."
+    },
+    {
+      "date": "2025-06-17",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 17th."
+    },
+    {
+      "date": "2025-06-18",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 18th."
+    },
+    {
+      "date": "2025-06-19",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 19th."
+    },
+    {
+      "date": "2025-06-20",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 20th."
+    },
+    {
+      "date": "2025-06-21",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 21st."
+    },
+    {
+      "date": "2025-06-22",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 22nd."
+    },
+    {
+      "date": "2025-06-23",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 23rd."
+    },
+    {
+      "date": "2025-06-24",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 24th."
+    },
+    {
+      "date": "2025-06-25",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 25th."
+    },
+    {
+      "date": "2025-06-26",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 26th."
+    },
+    {
+      "date": "2025-06-27",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 27th."
+    },
+    {
+      "date": "2025-06-28",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 28th."
+    },
+    {
+      "date": "2025-06-29",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 29th."
+    },
+    {
+      "date": "2025-06-30",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 30th."
+    },
+    {
+      "date": "2025-07-01",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 1st."
+    },
+    {
+      "date": "2025-07-02",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 2nd."
+    },
+    {
+      "date": "2025-07-03",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 3rd."
+    },
+    {
+      "date": "2025-07-04",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 4th."
+    },
+    {
+      "date": "2025-07-05",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 5th."
+    },
+    {
+      "date": "2025-07-06",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 6th."
+    },
+    {
+      "date": "2025-07-07",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 7th."
+    },
+    {
+      "date": "2025-07-08",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 8th."
+    },
+    {
+      "date": "2025-07-09",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 9th."
+    },
+    {
+      "date": "2025-07-10",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 10th."
+    },
+    {
+      "date": "2025-07-11",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 11th."
+    },
+    {
+      "date": "2025-07-12",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 12th."
+    },
+    {
+      "date": "2025-07-13",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 13th."
+    },
+    {
+      "date": "2025-07-14",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 14th."
+    },
+    {
+      "date": "2025-07-15",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 15th."
+    },
+    {
+      "date": "2025-07-16",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 16th."
+    },
+    {
+      "date": "2025-07-17",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 17th."
+    },
+    {
+      "date": "2025-07-18",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 18th."
+    },
+    {
+      "date": "2025-07-19",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 19th."
+    },
+    {
+      "date": "2025-07-20",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 20th."
+    },
+    {
+      "date": "2025-07-21",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 21st."
+    },
+    {
+      "date": "2025-07-22",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 22nd."
+    },
+    {
+      "date": "2025-07-23",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 23rd."
+    },
+    {
+      "date": "2025-07-24",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 24th."
+    },
+    {
+      "date": "2025-07-25",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 25th."
+    },
+    {
+      "date": "2025-07-26",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 26th."
+    },
+    {
+      "date": "2025-07-27",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 27th."
+    },
+    {
+      "date": "2025-07-28",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 28th."
+    },
+    {
+      "date": "2025-07-29",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 29th."
+    },
+    {
+      "date": "2025-07-30",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 30th."
+    },
+    {
+      "date": "2025-07-31",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 31st."
+    },
+    {
+      "date": "2025-08-01",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 1st."
+    },
+    {
+      "date": "2025-08-02",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 2nd."
+    },
+    {
+      "date": "2025-08-03",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 3rd."
+    },
+    {
+      "date": "2025-08-04",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 4th."
+    },
+    {
+      "date": "2025-08-05",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 5th."
+    },
+    {
+      "date": "2025-08-06",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 6th."
+    },
+    {
+      "date": "2025-08-07",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 7th."
+    },
+    {
+      "date": "2025-08-08",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 8th."
+    },
+    {
+      "date": "2025-08-09",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 9th."
+    },
+    {
+      "date": "2025-08-10",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 10th."
+    },
+    {
+      "date": "2025-08-11",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 11th."
+    },
+    {
+      "date": "2025-08-12",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 12th."
+    },
+    {
+      "date": "2025-08-13",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 13th."
+    },
+    {
+      "date": "2025-08-14",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 14th."
+    },
+    {
+      "date": "2025-08-15",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 15th."
+    },
+    {
+      "date": "2025-08-16",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 16th."
+    },
+    {
+      "date": "2025-08-17",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 17th."
+    },
+    {
+      "date": "2025-08-18",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 18th."
+    },
+    {
+      "date": "2025-08-19",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 19th."
+    },
+    {
+      "date": "2025-08-20",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 20th."
+    },
+    {
+      "date": "2025-08-21",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 21st."
+    },
+    {
+      "date": "2025-08-22",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 22nd."
+    },
+    {
+      "date": "2025-08-23",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 23rd."
+    },
+    {
+      "date": "2025-08-24",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 24th."
+    },
+    {
+      "date": "2025-08-25",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 25th."
+    },
+    {
+      "date": "2025-08-26",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 26th."
+    },
+    {
+      "date": "2025-08-27",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 27th."
+    },
+    {
+      "date": "2025-08-28",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 28th."
+    },
+    {
+      "date": "2025-08-29",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 29th."
+    },
+    {
+      "date": "2025-08-30",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 30th."
+    },
+    {
+      "date": "2025-08-31",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 31st."
+    },
+    {
+      "date": "2025-09-01",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 1st."
+    },
+    {
+      "date": "2025-09-02",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 2nd."
+    },
+    {
+      "date": "2025-09-03",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 3rd."
+    },
+    {
+      "date": "2025-09-04",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 4th."
+    },
+    {
+      "date": "2025-09-05",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 5th."
+    },
+    {
+      "date": "2025-09-06",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 6th."
+    },
+    {
+      "date": "2025-09-07",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 7th."
+    },
+    {
+      "date": "2025-09-08",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 8th."
+    },
+    {
+      "date": "2025-09-09",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 9th."
+    },
+    {
+      "date": "2025-09-10",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 10th."
+    },
     {
       "date": "2025-09-11",
       "level": 4,
       "count": 1,
       "label": "1 contribution on September 11th."
+    },
+    {
+      "date": "2025-09-12",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 12th."
+    },
+    {
+      "date": "2025-09-13",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 13th."
+    },
+    {
+      "date": "2025-09-14",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 14th."
+    },
+    {
+      "date": "2025-09-15",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 15th."
+    },
+    {
+      "date": "2025-09-16",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 16th."
+    },
+    {
+      "date": "2025-09-17",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 17th."
+    },
+    {
+      "date": "2025-09-18",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 18th."
+    },
+    {
+      "date": "2025-09-19",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 19th."
+    },
+    {
+      "date": "2025-09-20",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 20th."
+    },
+    {
+      "date": "2025-09-21",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 21st."
+    },
+    {
+      "date": "2025-09-22",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 22nd."
+    },
+    {
+      "date": "2025-09-23",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 23rd."
+    },
+    {
+      "date": "2025-09-24",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 24th."
+    },
+    {
+      "date": "2025-09-25",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 25th."
+    },
+    {
+      "date": "2025-09-26",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 26th."
+    },
+    {
+      "date": "2025-09-27",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 27th."
+    },
+    {
+      "date": "2025-09-28",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 28th."
+    },
+    {
+      "date": "2025-09-29",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 29th."
+    },
+    {
+      "date": "2025-09-30",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 30th."
+    },
+    {
+      "date": "2025-10-01",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 1st."
+    },
+    {
+      "date": "2025-10-02",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 2nd."
+    },
+    {
+      "date": "2025-10-03",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 3rd."
+    },
+    {
+      "date": "2025-10-04",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 4th."
+    },
+    {
+      "date": "2025-10-05",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 5th."
+    },
+    {
+      "date": "2025-10-06",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 6th."
+    },
+    {
+      "date": "2025-10-07",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 7th."
+    },
+    {
+      "date": "2025-10-08",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 8th."
+    },
+    {
+      "date": "2025-10-09",
+      "level": 4,
+      "count": 9,
+      "label": "9 contributions on October 9th."
+    },
+    {
+      "date": "2025-10-10",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 10th."
+    },
+    {
+      "date": "2025-10-11",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 11th."
+    },
+    {
+      "date": "2025-10-12",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 12th."
+    },
+    {
+      "date": "2025-10-13",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 13th."
+    },
+    {
+      "date": "2025-10-14",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 14th."
+    },
+    {
+      "date": "2025-10-15",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 15th."
+    },
+    {
+      "date": "2025-10-16",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 16th."
+    },
+    {
+      "date": "2025-10-17",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 17th."
+    },
+    {
+      "date": "2025-10-18",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 18th."
+    },
+    {
+      "date": "2025-10-19",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 19th."
+    },
+    {
+      "date": "2025-10-20",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 20th."
+    },
+    {
+      "date": "2025-10-21",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 21st."
+    },
+    {
+      "date": "2025-10-22",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 22nd."
+    },
+    {
+      "date": "2025-10-23",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 23rd."
+    },
+    {
+      "date": "2025-10-24",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 24th."
+    },
+    {
+      "date": "2025-10-25",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 25th."
+    },
+    {
+      "date": "2025-10-26",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 26th."
+    },
+    {
+      "date": "2025-10-27",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 27th."
+    },
+    {
+      "date": "2025-10-28",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 28th."
+    },
+    {
+      "date": "2025-10-29",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 29th."
+    },
+    {
+      "date": "2025-10-30",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 30th."
+    },
+    {
+      "date": "2025-10-31",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 31st."
+    },
+    {
+      "date": "2025-11-01",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 1st."
+    },
+    {
+      "date": "2025-11-02",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 2nd."
+    },
+    {
+      "date": "2025-11-03",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 3rd."
+    },
+    {
+      "date": "2025-11-04",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 4th."
+    },
+    {
+      "date": "2025-11-05",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 5th."
+    },
+    {
+      "date": "2025-11-06",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 6th."
+    },
+    {
+      "date": "2025-11-07",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 7th."
+    },
+    {
+      "date": "2025-11-08",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 8th."
+    },
+    {
+      "date": "2025-11-09",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 9th."
+    },
+    {
+      "date": "2025-11-10",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 10th."
+    },
+    {
+      "date": "2025-11-11",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 11th."
+    },
+    {
+      "date": "2025-11-12",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 12th."
+    },
+    {
+      "date": "2025-11-13",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 13th."
+    },
+    {
+      "date": "2025-11-14",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 14th."
+    },
+    {
+      "date": "2025-11-15",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 15th."
+    },
+    {
+      "date": "2025-11-16",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 16th."
+    },
+    {
+      "date": "2025-11-17",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 17th."
+    },
+    {
+      "date": "2025-11-18",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 18th."
+    },
+    {
+      "date": "2025-11-19",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 19th."
+    },
+    {
+      "date": "2025-11-20",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 20th."
+    },
+    {
+      "date": "2025-11-21",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 21st."
+    },
+    {
+      "date": "2025-11-22",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 22nd."
+    },
+    {
+      "date": "2025-11-23",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 23rd."
+    },
+    {
+      "date": "2025-11-24",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 24th."
+    },
+    {
+      "date": "2025-11-25",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 25th."
+    },
+    {
+      "date": "2025-11-26",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 26th."
+    },
+    {
+      "date": "2025-11-27",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 27th."
+    },
+    {
+      "date": "2025-11-28",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 28th."
+    },
+    {
+      "date": "2025-11-29",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 29th."
+    },
+    {
+      "date": "2025-11-30",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 30th."
+    },
+    {
+      "date": "2025-12-01",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 1st."
+    },
+    {
+      "date": "2025-12-02",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 2nd."
+    },
+    {
+      "date": "2025-12-03",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 3rd."
+    },
+    {
+      "date": "2025-12-04",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 4th."
+    },
+    {
+      "date": "2025-12-05",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 5th."
+    },
+    {
+      "date": "2025-12-06",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 6th."
+    },
+    {
+      "date": "2025-12-07",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 7th."
+    },
+    {
+      "date": "2025-12-08",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 8th."
+    },
+    {
+      "date": "2025-12-09",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 9th."
+    },
+    {
+      "date": "2025-12-10",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 10th."
+    },
+    {
+      "date": "2025-12-11",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 11th."
+    },
+    {
+      "date": "2025-12-12",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 12th."
+    },
+    {
+      "date": "2025-12-13",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 13th."
+    },
+    {
+      "date": "2025-12-14",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 14th."
+    },
+    {
+      "date": "2025-12-15",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 15th."
+    },
+    {
+      "date": "2025-12-16",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 16th."
+    },
+    {
+      "date": "2025-12-17",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 17th."
+    },
+    {
+      "date": "2025-12-18",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 18th."
+    },
+    {
+      "date": "2025-12-19",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 19th."
+    },
+    {
+      "date": "2025-12-20",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 20th."
+    },
+    {
+      "date": "2025-12-21",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 21st."
+    },
+    {
+      "date": "2025-12-22",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 22nd."
+    },
+    {
+      "date": "2025-12-23",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 23rd."
+    },
+    {
+      "date": "2025-12-24",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 24th."
+    },
+    {
+      "date": "2025-12-25",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 25th."
+    },
+    {
+      "date": "2025-12-26",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 26th."
+    },
+    {
+      "date": "2025-12-27",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 27th."
+    },
+    {
+      "date": "2025-12-28",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 28th."
+    },
+    {
+      "date": "2025-12-29",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 29th."
+    },
+    {
+      "date": "2025-12-30",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 30th."
+    },
+    {
+      "date": "2025-12-31",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 31st."
+    },
+    {
+      "date": "2026-01-01",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 1st."
+    },
+    {
+      "date": "2026-01-02",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 2nd."
+    },
+    {
+      "date": "2026-01-03",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 3rd."
+    },
+    {
+      "date": "2026-01-04",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 4th."
+    },
+    {
+      "date": "2026-01-05",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 5th."
+    },
+    {
+      "date": "2026-01-06",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 6th."
+    },
+    {
+      "date": "2026-01-07",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 7th."
+    },
+    {
+      "date": "2026-01-08",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 8th."
+    },
+    {
+      "date": "2026-01-09",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 9th."
+    },
+    {
+      "date": "2026-01-10",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 10th."
+    },
+    {
+      "date": "2026-01-11",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 11th."
+    },
+    {
+      "date": "2026-01-12",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 12th."
+    },
+    {
+      "date": "2026-01-13",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 13th."
+    },
+    {
+      "date": "2026-01-14",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 14th."
+    },
+    {
+      "date": "2026-01-15",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 15th."
+    },
+    {
+      "date": "2026-01-16",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 16th."
+    },
+    {
+      "date": "2026-01-17",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 17th."
+    },
+    {
+      "date": "2026-01-18",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 18th."
+    },
+    {
+      "date": "2026-01-19",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 19th."
+    },
+    {
+      "date": "2026-01-20",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 20th."
+    },
+    {
+      "date": "2026-01-21",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 21st."
+    },
+    {
+      "date": "2026-01-22",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 22nd."
+    },
+    {
+      "date": "2026-01-23",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 23rd."
+    },
+    {
+      "date": "2026-01-24",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 24th."
+    },
+    {
+      "date": "2026-01-25",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 25th."
+    },
+    {
+      "date": "2026-01-26",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 26th."
+    },
+    {
+      "date": "2026-01-27",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 27th."
+    },
+    {
+      "date": "2026-01-28",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 28th."
+    },
+    {
+      "date": "2026-01-29",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 29th."
+    },
+    {
+      "date": "2026-01-30",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 30th."
+    },
+    {
+      "date": "2026-01-31",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on January 31st."
+    },
+    {
+      "date": "2026-02-01",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 1st."
+    },
+    {
+      "date": "2026-02-02",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 2nd."
+    },
+    {
+      "date": "2026-02-03",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 3rd."
+    },
+    {
+      "date": "2026-02-04",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 4th."
+    },
+    {
+      "date": "2026-02-05",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 5th."
+    },
+    {
+      "date": "2026-02-06",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 6th."
+    },
+    {
+      "date": "2026-02-07",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 7th."
+    },
+    {
+      "date": "2026-02-08",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 8th."
+    },
+    {
+      "date": "2026-02-09",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 9th."
+    },
+    {
+      "date": "2026-02-10",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 10th."
+    },
+    {
+      "date": "2026-02-11",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 11th."
+    },
+    {
+      "date": "2026-02-12",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 12th."
+    },
+    {
+      "date": "2026-02-13",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 13th."
+    },
+    {
+      "date": "2026-02-14",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 14th."
+    },
+    {
+      "date": "2026-02-15",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 15th."
+    },
+    {
+      "date": "2026-02-16",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 16th."
+    },
+    {
+      "date": "2026-02-17",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 17th."
+    },
+    {
+      "date": "2026-02-18",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 18th."
+    },
+    {
+      "date": "2026-02-19",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 19th."
+    },
+    {
+      "date": "2026-02-20",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 20th."
+    },
+    {
+      "date": "2026-02-21",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 21st."
+    },
+    {
+      "date": "2026-02-22",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 22nd."
+    },
+    {
+      "date": "2026-02-23",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 23rd."
+    },
+    {
+      "date": "2026-02-24",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 24th."
+    },
+    {
+      "date": "2026-02-25",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 25th."
+    },
+    {
+      "date": "2026-02-26",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 26th."
+    },
+    {
+      "date": "2026-02-27",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 27th."
+    },
+    {
+      "date": "2026-02-28",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on February 28th."
+    },
+    {
+      "date": "2026-03-01",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 1st."
+    },
+    {
+      "date": "2026-03-02",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 2nd."
+    },
+    {
+      "date": "2026-03-03",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 3rd."
+    },
+    {
+      "date": "2026-03-04",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 4th."
+    },
+    {
+      "date": "2026-03-05",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 5th."
+    },
+    {
+      "date": "2026-03-06",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 6th."
+    },
+    {
+      "date": "2026-03-07",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 7th."
+    },
+    {
+      "date": "2026-03-08",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 8th."
+    },
+    {
+      "date": "2026-03-09",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 9th."
+    },
+    {
+      "date": "2026-03-10",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 10th."
+    },
+    {
+      "date": "2026-03-11",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 11th."
+    },
+    {
+      "date": "2026-03-12",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 12th."
+    },
+    {
+      "date": "2026-03-13",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 13th."
+    },
+    {
+      "date": "2026-03-14",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 14th."
+    },
+    {
+      "date": "2026-03-15",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 15th."
+    },
+    {
+      "date": "2026-03-16",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 16th."
+    },
+    {
+      "date": "2026-03-17",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 17th."
+    },
+    {
+      "date": "2026-03-18",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 18th."
+    },
+    {
+      "date": "2026-03-19",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 19th."
+    },
+    {
+      "date": "2026-03-20",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 20th."
+    },
+    {
+      "date": "2026-03-21",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 21st."
+    },
+    {
+      "date": "2026-03-22",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 22nd."
+    },
+    {
+      "date": "2026-03-23",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 23rd."
+    },
+    {
+      "date": "2026-03-24",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 24th."
+    },
+    {
+      "date": "2026-03-25",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 25th."
+    },
+    {
+      "date": "2026-03-26",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 26th."
+    },
+    {
+      "date": "2026-03-27",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 27th."
+    },
+    {
+      "date": "2026-03-28",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 28th."
+    },
+    {
+      "date": "2026-03-29",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 29th."
+    },
+    {
+      "date": "2026-03-30",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 30th."
+    },
+    {
+      "date": "2026-03-31",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on March 31st."
+    },
+    {
+      "date": "2026-04-01",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 1st."
+    },
+    {
+      "date": "2026-04-02",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 2nd."
+    },
+    {
+      "date": "2026-04-03",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 3rd."
+    },
+    {
+      "date": "2026-04-04",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 4th."
+    },
+    {
+      "date": "2026-04-05",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 5th."
+    },
+    {
+      "date": "2026-04-06",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 6th."
+    },
+    {
+      "date": "2026-04-07",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 7th."
+    },
+    {
+      "date": "2026-04-08",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 8th."
+    },
+    {
+      "date": "2026-04-09",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 9th."
+    },
+    {
+      "date": "2026-04-10",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 10th."
+    },
+    {
+      "date": "2026-04-11",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 11th."
+    },
+    {
+      "date": "2026-04-12",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 12th."
+    },
+    {
+      "date": "2026-04-13",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 13th."
+    },
+    {
+      "date": "2026-04-14",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 14th."
+    },
+    {
+      "date": "2026-04-15",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 15th."
+    },
+    {
+      "date": "2026-04-16",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 16th."
+    },
+    {
+      "date": "2026-04-17",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 17th."
+    },
+    {
+      "date": "2026-04-18",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 18th."
+    },
+    {
+      "date": "2026-04-19",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 19th."
+    },
+    {
+      "date": "2026-04-20",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 20th."
+    },
+    {
+      "date": "2026-04-21",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 21st."
+    },
+    {
+      "date": "2026-04-22",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 22nd."
+    },
+    {
+      "date": "2026-04-23",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 23rd."
+    },
+    {
+      "date": "2026-04-24",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 24th."
+    },
+    {
+      "date": "2026-04-25",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 25th."
+    },
+    {
+      "date": "2026-04-26",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 26th."
+    },
+    {
+      "date": "2026-04-27",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 27th."
+    },
+    {
+      "date": "2026-04-28",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 28th."
+    },
+    {
+      "date": "2026-04-29",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 29th."
+    },
+    {
+      "date": "2026-04-30",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on April 30th."
+    },
+    {
+      "date": "2026-05-01",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 1st."
+    },
+    {
+      "date": "2026-05-02",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 2nd."
+    },
+    {
+      "date": "2026-05-03",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 3rd."
+    },
+    {
+      "date": "2026-05-04",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 4th."
+    },
+    {
+      "date": "2026-05-05",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 5th."
+    },
+    {
+      "date": "2026-05-06",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 6th."
+    },
+    {
+      "date": "2026-05-07",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 7th."
+    },
+    {
+      "date": "2026-05-08",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 8th."
+    },
+    {
+      "date": "2026-05-09",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 9th."
+    },
+    {
+      "date": "2026-05-10",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 10th."
+    },
+    {
+      "date": "2026-05-11",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 11th."
+    },
+    {
+      "date": "2026-05-12",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 12th."
+    },
+    {
+      "date": "2026-05-13",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 13th."
+    },
+    {
+      "date": "2026-05-14",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 14th."
+    },
+    {
+      "date": "2026-05-15",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 15th."
+    },
+    {
+      "date": "2026-05-16",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 16th."
+    },
+    {
+      "date": "2026-05-17",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 17th."
+    },
+    {
+      "date": "2026-05-18",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 18th."
+    },
+    {
+      "date": "2026-05-19",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 19th."
+    },
+    {
+      "date": "2026-05-20",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 20th."
+    },
+    {
+      "date": "2026-05-21",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 21st."
+    },
+    {
+      "date": "2026-05-22",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 22nd."
+    },
+    {
+      "date": "2026-05-23",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 23rd."
+    },
+    {
+      "date": "2026-05-24",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 24th."
+    },
+    {
+      "date": "2026-05-25",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 25th."
+    },
+    {
+      "date": "2026-05-26",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 26th."
+    },
+    {
+      "date": "2026-05-27",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 27th."
+    },
+    {
+      "date": "2026-05-28",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 28th."
+    },
+    {
+      "date": "2026-05-29",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 29th."
+    },
+    {
+      "date": "2026-05-30",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 30th."
+    },
+    {
+      "date": "2026-05-31",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on May 31st."
+    },
+    {
+      "date": "2026-06-01",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 1st."
+    },
+    {
+      "date": "2026-06-02",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 2nd."
+    },
+    {
+      "date": "2026-06-03",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 3rd."
+    },
+    {
+      "date": "2026-06-04",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 4th."
+    },
+    {
+      "date": "2026-06-05",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 5th."
+    },
+    {
+      "date": "2026-06-06",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 6th."
+    },
+    {
+      "date": "2026-06-07",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 7th."
+    },
+    {
+      "date": "2026-06-08",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 8th."
+    },
+    {
+      "date": "2026-06-09",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 9th."
+    },
+    {
+      "date": "2026-06-10",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 10th."
+    },
+    {
+      "date": "2026-06-11",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 11th."
+    },
+    {
+      "date": "2026-06-12",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 12th."
+    },
+    {
+      "date": "2026-06-13",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 13th."
+    },
+    {
+      "date": "2026-06-14",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 14th."
+    },
+    {
+      "date": "2026-06-15",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 15th."
+    },
+    {
+      "date": "2026-06-16",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 16th."
+    },
+    {
+      "date": "2026-06-17",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 17th."
+    },
+    {
+      "date": "2026-06-18",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 18th."
+    },
+    {
+      "date": "2026-06-19",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 19th."
+    },
+    {
+      "date": "2026-06-20",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 20th."
+    },
+    {
+      "date": "2026-06-21",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 21st."
+    },
+    {
+      "date": "2026-06-22",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 22nd."
+    },
+    {
+      "date": "2026-06-23",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 23rd."
+    },
+    {
+      "date": "2026-06-24",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 24th."
+    },
+    {
+      "date": "2026-06-25",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 25th."
+    },
+    {
+      "date": "2026-06-26",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 26th."
+    },
+    {
+      "date": "2026-06-27",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 27th."
+    },
+    {
+      "date": "2026-06-28",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 28th."
+    },
+    {
+      "date": "2026-06-29",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 29th."
+    },
+    {
+      "date": "2026-06-30",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on June 30th."
+    },
+    {
+      "date": "2026-07-01",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 1st."
+    },
+    {
+      "date": "2026-07-02",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 2nd."
+    },
+    {
+      "date": "2026-07-03",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 3rd."
+    },
+    {
+      "date": "2026-07-04",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 4th."
+    },
+    {
+      "date": "2026-07-05",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 5th."
+    },
+    {
+      "date": "2026-07-06",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 6th."
+    },
+    {
+      "date": "2026-07-07",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 7th."
+    },
+    {
+      "date": "2026-07-08",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 8th."
+    },
+    {
+      "date": "2026-07-09",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 9th."
+    },
+    {
+      "date": "2026-07-10",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 10th."
+    },
+    {
+      "date": "2026-07-11",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 11th."
+    },
+    {
+      "date": "2026-07-12",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 12th."
+    },
+    {
+      "date": "2026-07-13",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 13th."
+    },
+    {
+      "date": "2026-07-14",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 14th."
+    },
+    {
+      "date": "2026-07-15",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 15th."
+    },
+    {
+      "date": "2026-07-16",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 16th."
+    },
+    {
+      "date": "2026-07-17",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 17th."
+    },
+    {
+      "date": "2026-07-18",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 18th."
+    },
+    {
+      "date": "2026-07-19",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 19th."
+    },
+    {
+      "date": "2026-07-20",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 20th."
+    },
+    {
+      "date": "2026-07-21",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 21st."
+    },
+    {
+      "date": "2026-07-22",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 22nd."
+    },
+    {
+      "date": "2026-07-23",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 23rd."
+    },
+    {
+      "date": "2026-07-24",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 24th."
+    },
+    {
+      "date": "2026-07-25",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 25th."
+    },
+    {
+      "date": "2026-07-26",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 26th."
+    },
+    {
+      "date": "2026-07-27",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 27th."
+    },
+    {
+      "date": "2026-07-28",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 28th."
+    },
+    {
+      "date": "2026-07-29",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 29th."
+    },
+    {
+      "date": "2026-07-30",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 30th."
+    },
+    {
+      "date": "2026-07-31",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on July 31st."
+    },
+    {
+      "date": "2026-08-01",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 1st."
+    },
+    {
+      "date": "2026-08-02",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 2nd."
     },
     {
       "date": "2026-08-03",
@@ -45,7 +3566,7 @@
     },
     {
       "date": "2026-08-04",
-      "level": 4,
+      "level": 3,
       "count": 13,
       "label": "13 contributions on August 4th."
     },
@@ -58,8 +3579,890 @@
     {
       "date": "2026-08-06",
       "level": 1,
+      "count": 4,
+      "label": "4 contributions on August 6th."
+    },
+    {
+      "date": "2026-08-07",
+      "level": 4,
+      "count": 24,
+      "label": "24 contributions on August 7th."
+    },
+    {
+      "date": "2026-08-08",
+      "level": 4,
+      "count": 22,
+      "label": "22 contributions on August 8th."
+    },
+    {
+      "date": "2026-08-09",
+      "level": 1,
+      "count": 2,
+      "label": "2 contributions on August 9th."
+    },
+    {
+      "date": "2026-08-10",
+      "level": 2,
+      "count": 9,
+      "label": "9 contributions on August 10th."
+    },
+    {
+      "date": "2026-08-11",
+      "level": 3,
+      "count": 13,
+      "label": "13 contributions on August 11th."
+    },
+    {
+      "date": "2026-08-12",
+      "level": 1,
+      "count": 3,
+      "label": "3 contributions on August 12th."
+    },
+    {
+      "date": "2026-08-13",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 13th."
+    },
+    {
+      "date": "2026-08-14",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 14th."
+    },
+    {
+      "date": "2026-08-15",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 15th."
+    },
+    {
+      "date": "2026-08-16",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 16th."
+    },
+    {
+      "date": "2026-08-17",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 17th."
+    },
+    {
+      "date": "2026-08-18",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 18th."
+    },
+    {
+      "date": "2026-08-19",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 19th."
+    },
+    {
+      "date": "2026-08-20",
+      "level": 1,
+      "count": 4,
+      "label": "4 contributions on August 20th."
+    },
+    {
+      "date": "2026-08-21",
+      "level": 3,
+      "count": 14,
+      "label": "14 contributions on August 21st."
+    },
+    {
+      "date": "2026-08-22",
+      "level": 2,
+      "count": 11,
+      "label": "11 contributions on August 22nd."
+    },
+    {
+      "date": "2026-08-23",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 23rd."
+    },
+    {
+      "date": "2026-08-24",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 24th."
+    },
+    {
+      "date": "2026-08-25",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 25th."
+    },
+    {
+      "date": "2026-08-26",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 26th."
+    },
+    {
+      "date": "2026-08-27",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 27th."
+    },
+    {
+      "date": "2026-08-28",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 28th."
+    },
+    {
+      "date": "2026-08-29",
+      "level": 4,
+      "count": 23,
+      "label": "23 contributions on August 29th."
+    },
+    {
+      "date": "2026-08-30",
+      "level": 1,
+      "count": 5,
+      "label": "5 contributions on August 30th."
+    },
+    {
+      "date": "2026-08-31",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on August 31st."
+    },
+    {
+      "date": "2026-09-01",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 1st."
+    },
+    {
+      "date": "2026-09-02",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 2nd."
+    },
+    {
+      "date": "2026-09-03",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 3rd."
+    },
+    {
+      "date": "2026-09-04",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 4th."
+    },
+    {
+      "date": "2026-09-05",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 5th."
+    },
+    {
+      "date": "2026-09-06",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 6th."
+    },
+    {
+      "date": "2026-09-07",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 7th."
+    },
+    {
+      "date": "2026-09-08",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 8th."
+    },
+    {
+      "date": "2026-09-09",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 9th."
+    },
+    {
+      "date": "2026-09-10",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 10th."
+    },
+    {
+      "date": "2026-09-11",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 11th."
+    },
+    {
+      "date": "2026-09-12",
+      "level": 1,
       "count": 1,
-      "label": "1 contribution on August 6th."
+      "label": "1 contribution on September 12th."
+    },
+    {
+      "date": "2026-09-13",
+      "level": 2,
+      "count": 7,
+      "label": "7 contributions on September 13th."
+    },
+    {
+      "date": "2026-09-14",
+      "level": 2,
+      "count": 10,
+      "label": "10 contributions on September 14th."
+    },
+    {
+      "date": "2026-09-15",
+      "level": 1,
+      "count": 2,
+      "label": "2 contributions on September 15th."
+    },
+    {
+      "date": "2026-09-16",
+      "level": 1,
+      "count": 4,
+      "label": "4 contributions on September 16th."
+    },
+    {
+      "date": "2026-09-17",
+      "level": 1,
+      "count": 3,
+      "label": "3 contributions on September 17th."
+    },
+    {
+      "date": "2026-09-18",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 18th."
+    },
+    {
+      "date": "2026-09-19",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 19th."
+    },
+    {
+      "date": "2026-09-20",
+      "level": 1,
+      "count": 1,
+      "label": "1 contribution on September 20th."
+    },
+    {
+      "date": "2026-09-21",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 21st."
+    },
+    {
+      "date": "2026-09-22",
+      "level": 1,
+      "count": 4,
+      "label": "4 contributions on September 22nd."
+    },
+    {
+      "date": "2026-09-23",
+      "level": 3,
+      "count": 13,
+      "label": "13 contributions on September 23rd."
+    },
+    {
+      "date": "2026-09-24",
+      "level": 3,
+      "count": 16,
+      "label": "16 contributions on September 24th."
+    },
+    {
+      "date": "2026-09-25",
+      "level": 1,
+      "count": 5,
+      "label": "5 contributions on September 25th."
+    },
+    {
+      "date": "2026-09-26",
+      "level": 3,
+      "count": 17,
+      "label": "17 contributions on September 26th."
+    },
+    {
+      "date": "2026-09-27",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 27th."
+    },
+    {
+      "date": "2026-09-28",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 28th."
+    },
+    {
+      "date": "2026-09-29",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 29th."
+    },
+    {
+      "date": "2026-09-30",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on September 30th."
+    },
+    {
+      "date": "2026-10-01",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 1st."
+    },
+    {
+      "date": "2026-10-02",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 2nd."
+    },
+    {
+      "date": "2026-10-03",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 3rd."
+    },
+    {
+      "date": "2026-10-04",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 4th."
+    },
+    {
+      "date": "2026-10-05",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 5th."
+    },
+    {
+      "date": "2026-10-06",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 6th."
+    },
+    {
+      "date": "2026-10-07",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 7th."
+    },
+    {
+      "date": "2026-10-08",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 8th."
+    },
+    {
+      "date": "2026-10-09",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 9th."
+    },
+    {
+      "date": "2026-10-10",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 10th."
+    },
+    {
+      "date": "2026-10-11",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 11th."
+    },
+    {
+      "date": "2026-10-12",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 12th."
+    },
+    {
+      "date": "2026-10-13",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 13th."
+    },
+    {
+      "date": "2026-10-14",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 14th."
+    },
+    {
+      "date": "2026-10-15",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 15th."
+    },
+    {
+      "date": "2026-10-16",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 16th."
+    },
+    {
+      "date": "2026-10-17",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 17th."
+    },
+    {
+      "date": "2026-10-18",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 18th."
+    },
+    {
+      "date": "2026-10-19",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 19th."
+    },
+    {
+      "date": "2026-10-20",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 20th."
+    },
+    {
+      "date": "2026-10-21",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 21st."
+    },
+    {
+      "date": "2026-10-22",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 22nd."
+    },
+    {
+      "date": "2026-10-23",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 23rd."
+    },
+    {
+      "date": "2026-10-24",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 24th."
+    },
+    {
+      "date": "2026-10-25",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 25th."
+    },
+    {
+      "date": "2026-10-26",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 26th."
+    },
+    {
+      "date": "2026-10-27",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 27th."
+    },
+    {
+      "date": "2026-10-28",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 28th."
+    },
+    {
+      "date": "2026-10-29",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 29th."
+    },
+    {
+      "date": "2026-10-30",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 30th."
+    },
+    {
+      "date": "2026-10-31",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on October 31st."
+    },
+    {
+      "date": "2026-11-01",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 1st."
+    },
+    {
+      "date": "2026-11-02",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 2nd."
+    },
+    {
+      "date": "2026-11-03",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 3rd."
+    },
+    {
+      "date": "2026-11-04",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 4th."
+    },
+    {
+      "date": "2026-11-05",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 5th."
+    },
+    {
+      "date": "2026-11-06",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 6th."
+    },
+    {
+      "date": "2026-11-07",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 7th."
+    },
+    {
+      "date": "2026-11-08",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 8th."
+    },
+    {
+      "date": "2026-11-09",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 9th."
+    },
+    {
+      "date": "2026-11-10",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 10th."
+    },
+    {
+      "date": "2026-11-11",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 11th."
+    },
+    {
+      "date": "2026-11-12",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 12th."
+    },
+    {
+      "date": "2026-11-13",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 13th."
+    },
+    {
+      "date": "2026-11-14",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 14th."
+    },
+    {
+      "date": "2026-11-15",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 15th."
+    },
+    {
+      "date": "2026-11-16",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 16th."
+    },
+    {
+      "date": "2026-11-17",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 17th."
+    },
+    {
+      "date": "2026-11-18",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 18th."
+    },
+    {
+      "date": "2026-11-19",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 19th."
+    },
+    {
+      "date": "2026-11-20",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 20th."
+    },
+    {
+      "date": "2026-11-21",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 21st."
+    },
+    {
+      "date": "2026-11-22",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 22nd."
+    },
+    {
+      "date": "2026-11-23",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 23rd."
+    },
+    {
+      "date": "2026-11-24",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 24th."
+    },
+    {
+      "date": "2026-11-25",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 25th."
+    },
+    {
+      "date": "2026-11-26",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 26th."
+    },
+    {
+      "date": "2026-11-27",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 27th."
+    },
+    {
+      "date": "2026-11-28",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 28th."
+    },
+    {
+      "date": "2026-11-29",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 29th."
+    },
+    {
+      "date": "2026-11-30",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on November 30th."
+    },
+    {
+      "date": "2026-12-01",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 1st."
+    },
+    {
+      "date": "2026-12-02",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 2nd."
+    },
+    {
+      "date": "2026-12-03",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 3rd."
+    },
+    {
+      "date": "2026-12-04",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 4th."
+    },
+    {
+      "date": "2026-12-05",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 5th."
+    },
+    {
+      "date": "2026-12-06",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 6th."
+    },
+    {
+      "date": "2026-12-07",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 7th."
+    },
+    {
+      "date": "2026-12-08",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 8th."
+    },
+    {
+      "date": "2026-12-09",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 9th."
+    },
+    {
+      "date": "2026-12-10",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 10th."
+    },
+    {
+      "date": "2026-12-11",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 11th."
+    },
+    {
+      "date": "2026-12-12",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 12th."
+    },
+    {
+      "date": "2026-12-13",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 13th."
+    },
+    {
+      "date": "2026-12-14",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 14th."
+    },
+    {
+      "date": "2026-12-15",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 15th."
+    },
+    {
+      "date": "2026-12-16",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 16th."
+    },
+    {
+      "date": "2026-12-17",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 17th."
+    },
+    {
+      "date": "2026-12-18",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 18th."
+    },
+    {
+      "date": "2026-12-19",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 19th."
+    },
+    {
+      "date": "2026-12-20",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 20th."
+    },
+    {
+      "date": "2026-12-21",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 21st."
+    },
+    {
+      "date": "2026-12-22",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 22nd."
+    },
+    {
+      "date": "2026-12-23",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 23rd."
+    },
+    {
+      "date": "2026-12-24",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 24th."
+    },
+    {
+      "date": "2026-12-25",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 25th."
+    },
+    {
+      "date": "2026-12-26",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 26th."
+    },
+    {
+      "date": "2026-12-27",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 27th."
+    },
+    {
+      "date": "2026-12-28",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 28th."
+    },
+    {
+      "date": "2026-12-29",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 29th."
+    },
+    {
+      "date": "2026-12-30",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 30th."
+    },
+    {
+      "date": "2026-12-31",
+      "level": 0,
+      "count": 0,
+      "label": "No contributions on December 31st."
     }
   ]
 }

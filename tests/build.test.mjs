@@ -49,9 +49,23 @@ test("external links open safely", () => {
   }
 });
 
-test("bundle ships the avatar cut-out and no leftovers from old designs", () => {
+test("the calendar heatmap is pre-rendered (53 weeks × 7 days)", () => {
+  const cells = html.match(/class="heat__c[^"]*"/g) ?? [];
+  assert.equal(cells.length, 53 * 7);
+  assert.ok(html.includes('data-heat-grid'), "heat grid container");
+});
+
+test("every screen has the tab bar and its own location", () => {
+  for (const id of ["profile", "skills", "works", "calendar", "contact", "system"]) assert.match(html, new RegExp(`data-tab-to="${id}"`));
+  assert.equal((html.match(/class="where"/g) ?? []).length, 7, "title + six screens name their scene");
+});
+
+test("bundle ships the avatar, Yachiyo's walk and no leftovers from old designs", () => {
   assert.ok(existsSync(new URL("assets/avatar.webp", dist)));
-  assert.ok(existsSync(new URL("assets/avatar-cut.webp", dist)), "avatar cut-out for the menu");
+  assert.ok(existsSync(new URL("assets/avatar-256.webp", dist)));
+  assert.ok(existsSync(new URL("assets/yachiyo-walk.mp4", dist)), "menu film band");
+  assert.ok(existsSync(new URL("assets/yachiyo-walk.webp", dist)), "menu film band poster");
+  assert.ok(!existsSync(new URL("assets/avatar-cut.webp", dist)), "v3 avatar cut-out is gone");
   const files = [];
   const walk = (dir) => {
     for (const f of readdirSync(dir)) {
