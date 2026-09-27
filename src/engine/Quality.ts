@@ -10,19 +10,18 @@ export type Tier = {
   scale: number; // render resolution relative to CSS px × DPR
   maxPixels: number; // hard cap on render pixels
   msaa: number;
-  cloudScale: number; // cloud buffer resolution relative to render resolution
-  cloudSteps: number;
-  cloudLightSteps: number;
-  reflScale: number;
-  particles: number; // multiplier for particle counts
+  particles: number; // multiplier for particle / instance counts
+  bloomLevels: number;
 };
 
 export const TIERS: Tier[] = [
-  { name: "low", scale: 0.6, maxPixels: 1280 * 720, msaa: 0, cloudScale: 0.25, cloudSteps: 36, cloudLightSteps: 3, reflScale: 0.25, particles: 0.45 },
-  { name: "medium", scale: 0.75, maxPixels: 1920 * 1080, msaa: 2, cloudScale: 0.33, cloudSteps: 48, cloudLightSteps: 4, reflScale: 0.33, particles: 0.7 },
-  { name: "high", scale: 0.9, maxPixels: 2304 * 1296, msaa: 4, cloudScale: 0.5, cloudSteps: 64, cloudLightSteps: 5, reflScale: 0.5, particles: 1 },
-  { name: "ultra", scale: 1, maxPixels: 2560 * 1440, msaa: 4, cloudScale: 0.5, cloudSteps: 88, cloudLightSteps: 6, reflScale: 0.5, particles: 1 },
+  { name: "low", scale: 0.6, maxPixels: 1280 * 720, msaa: 0, particles: 0.4, bloomLevels: 4 },
+  { name: "medium", scale: 0.8, maxPixels: 1920 * 1080, msaa: 2, particles: 0.65, bloomLevels: 5 },
+  { name: "high", scale: 0.9, maxPixels: 2304 * 1296, msaa: 4, particles: 1, bloomLevels: 6 },
+  { name: "ultra", scale: 1, maxPixels: 2560 * 1440, msaa: 4, particles: 1, bloomLevels: 6 },
 ];
+
+export const tierIndex = (n: TierName) => TIERS.findIndex((t) => t.name === n);
 
 export class Quality {
   index: number;
@@ -31,16 +30,22 @@ export class Quality {
   private over = 0;
   private under = 0;
   private cooldown = 2;
+  private justUpgraded = false;
   private failedUp = new Map<number, number>(); // tier index -> time when an upgrade to it failed
 
   constructor(initial: TierName | null, lockedName: TierName | null) {
-    const byName = (n: TierName) => TIERS.findIndex((t) => t.name === n);
     this.locked = !!lockedName;
-    this.index = lockedName ? byName(lockedName) : byName(initial ?? "high");
+    this.index = tierIndex(lockedName ?? initial ?? "high");
   }
 
   get current() {
     return TIERS[this.index];
+  }
+
+  /** Pin a tier (SYSTEM screen) or hand control back to the governor. */
+  lock(name: TierName | null) {
+    this.locked = !!name;
+    if (name) this.set(tierIndex(name));
   }
 
   set(index: number) {
@@ -59,7 +64,7 @@ export class Quality {
     if (this.cooldown > 0) return;
     const cost = gpuMs > 0 ? gpuMs : frameMs * 0.8;
     const overBudget = gpuMs > 0 ? cost > 12.5 : frameMs > 19;
-    const headroom = gpuMs > 0 ? cost < 6.2 : frameMs < 15 && frameMs > 0;
+    const headroom = gpuMs > 0 ? cost < 6.5 : frameMs < 15 && frameMs > 0;
     this.over = overBudget ? this.over + dt : Math.max(0, this.over - dt * 2);
     this.under = headroom ? this.under + dt : 0;
     if (this.over > 0.6 && this.index > 0) {
@@ -76,6 +81,4 @@ export class Quality {
     }
     if (this.under > 1) this.justUpgraded = false;
   }
-
-  private justUpgraded = false;
 }

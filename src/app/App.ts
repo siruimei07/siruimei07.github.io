@@ -1,570 +1,654 @@
 import * as THREE from "three";
+import { menu as menuItems, type MenuId } from "../content";
 import { Pipeline } from "../engine/Pipeline";
-import { Quality, TIERS, type Tier, type TierName } from "../engine/Quality";
-import { Tunnel } from "../stages/Tunnel";
-import { pose, lerpPose, WaterWorld, type Pose } from "../stages/WaterWorld";
-import { G } from "../world/atmos";
-import { createCloudNoise } from "../world/noiseTextures";
-import { DiveOverlay } from "../world/portal";
-import { Director, P_COVER, T_COVER_UI, T_INTRO_END } from "./Director";
-import { $, $$, UI } from "./ui";
+import { Quality, TIERS, type TierName } from "../engine/Quality";
+import type { GitHubSnapshot } from "../github";
+import { Boot } from "../ui/Boot";
+import { Daybreak } from "../ui/Daybreak";
+import { $, $$, blotPoints, circlePoints, clamp01, coverRadius, ease, holeClip, Spring, tween, wait } from "../ui/dom";
+import { Hud } from "../ui/Hud";
+import { Menu } from "../ui/Menu";
+import { calendarCtl, contactCtl, skillsCtl, systemCtl, worksCtl, type Screens } from "../ui/screens";
+import { Confetti } from "../world/confetti";
+import { FishSchool, type Emblem } from "../world/fish";
+import { Shards } from "../world/shards";
+import { bakeText } from "../ui/bake";
+import { STATIONS, World } from "../world/World";
 
-// Top-level controller: loading, the entry sequence, the cover in World A,
-// the passage through the torii and the chapters in World B. Owns the frame
-// loop, input and the adaptive quality.
+// Top-level controller: boot → title → day change → the flooded menu ⇄
+// screens. Owns the frame loop, input, routing, the post settings per mode,
+// the avatar layer and the fish choreography.
 
-type CityLike = {
-  update(dt: number, now: number): void;
-  render(pl: Pipeline): void;
-  resize(pl: Pipeline, tier: Tier): void;
-  arrive(now: number): void;
-  goChapter(i: number, now: number): void;
-  pointer(x: number, y: number): void;
-  click(ndc: THREE.Vector2, now: number): void;
-  lightSkill(id: string | null): void;
-  releaseLantern(now: number): void;
-  readonly settled: boolean;
-};
-
-type Mode = "loading" | "ready" | "intro" | "cover" | "passage" | "city" | "return";
-
-const s = THREE.MathUtils.smoothstep;
-const ease = (x: number) => x * x * (3 - 2 * x);
-const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
+type Mode = "boot" | "title" | "busy" | "menu" | "screen";
 
 const params = new URLSearchParams(location.search);
-const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const SCREENS: MenuId[] = ["profile", "skills", "works", "calendar", "contact", "system"];
+const store = {
+  get(k: string) {
+    try {
+      return localStorage.getItem(`tsukuyomi3:${k}`);
+    } catch {
+      return null;
+    }
+  },
+  set(k: string, v: string) {
+    try {
+      localStorage.setItem(`tsukuyomi3:${k}`, v);
+    } catch {
+      /* storage may be blocked */
+    }
+  },
+};
 
-// The passage (seconds from its start).
-const PASS_APPROACH = 1.7;
-const PASS_SWITCH = 2.75;
-const PASS_END = 4.0;
+type AvatarPose = { x: number; y: number; h: number; rot: number; alpha: number };
 
 export class App {
-  readonly ui = new UI();
   readonly quality: Quality;
   pl!: Pipeline;
-  world!: WaterWorld;
-  tunnel!: Tunnel;
-  director!: Director;
-  city: CityLike | null = null;
-  readonly dive = new DiveOverlay();
-  mode: Mode = "loading";
-  chapter = 0;
-  time = 0;
-  introT = 0;
-  introSpeed = 1;
-  private modeT = 0;
+  world!: World;
+  fish!: FishSchool;
+  confetti = new Confetti();
+  private shards = new Shards();
+  private shattering = false;
+  private navy = new THREE.Color().setRGB(0x16 / 255, 0x1a / 255, 0x30 / 255, THREE.LinearSRGBColorSpace);
+  private boot = new Boot();
+  private hud = new Hud();
+  private daybreak = new Daybreak();
+  private menu = new Menu();
+  private screens: Screens = {};
+  private title = $("[data-screen=title]")!;
+  mode: Mode = "boot";
+  current: MenuId | null = null;
   private last = performance.now();
-  private fade = 0;
-  private fadeTarget = 0;
-  private pendingJump: (() => void) | null = null;
-  private pointer = new THREE.Vector2();
-  private pointerSmooth = new THREE.Vector2();
-  private passFrom: Pose = pose(0, 0, 0, 0, 0, 0);
-  private tmpPose: Pose = pose(0, 0, 0, 0, 0, 0);
-  private navLock = 0;
-  private uiShown = false;
   private frameMs = 16.7;
-  private cityPromise: Promise<void> | null = null;
-  private wantChapter = -1;
-  /** Debug: 0 freezes the clock (for frame captures). */
+  private reduced: boolean;
+  private prefs: { quality: string; motion: string; fps: string };
+  private av = { x: new Spring(0, 7), y: new Spring(0, 7), h: new Spring(0, 7), rot: new Spring(0, 6), alpha: new Spring(0, 9) };
+  private moonTrack = false;
+  private moonAnchor = new THREE.Vector2();
+  private fpsEl = $("[data-fps]");
+  private fpsAcc = { t: 0, n: 0 };
+  private wheelLock = 0;
+  private data: GitHubSnapshot | null = null;
   timeScale = 1;
 
   constructor(private canvas: HTMLCanvasElement) {
-    const saved = (() => {
-      try {
-        return localStorage.getItem("tsukuyomi:tier") as TierName | null;
-      } catch {
-        return null;
-      }
-    })();
     const locked = params.get("q") as TierName | null;
-    this.quality = new Quality(saved ?? "high", locked && TIERS.some((t) => t.name === locked) ? locked : null);
+    const savedQ = store.get("quality") ?? "auto";
+    this.prefs = {
+      quality: savedQ,
+      motion: store.get("motion") ?? (matchMedia("(prefers-reduced-motion: reduce)").matches ? "reduced" : "full"),
+      fps: store.get("fps") ?? "off",
+    };
+    const fixed = locked && TIERS.some((t) => t.name === locked) ? locked : savedQ !== "auto" ? (savedQ as TierName) : null;
+    this.quality = new Quality("high", fixed);
+    this.reduced = this.prefs.motion === "reduced";
+    document.documentElement.classList.toggle("reduced-motion", this.reduced);
+    document.documentElement.classList.toggle("touch", matchMedia("(pointer: coarse)").matches);
   }
 
   async init() {
-    const ui = this.ui;
-    ui.progress(0.08, "点亮渲染器…");
+    this.boot.progress(0.08);
     await frame();
+    this.data = await fetch("/data/github.json")
+      .then((r) => (r.ok ? r.json() : null))
+      .catch(() => null);
     this.pl = new Pipeline(this.canvas, this.quality.current);
-    ui.progress(0.2, "编织云的纹理…");
+    this.boot.progress(0.25);
     await frame();
-    const noise = createCloudNoise(this.pl.renderer);
-    ui.progress(0.45, "引水入湖…");
+    const density = this.quality.current.particles;
+    this.world = new World(density);
+    this.world.motion = this.reduced ? 0 : 1;
+    this.boot.progress(0.55);
     await frame();
-    const particles = this.quality.current.particles;
-    this.world = new WaterWorld(noise, particles);
-    this.tunnel = new Tunnel(particles);
-    this.director = new Director(this.world, this.tunnel);
+    this.fish = new FishSchool(Math.round(520 * Math.max(0.5, density)));
+    // the fish swim in display space, over the sea grade (like P3R's UI confetti)
+    this.confetti.scene.add(this.fish.mesh);
+    this.pl.avatarTexture = await new THREE.TextureLoader().loadAsync("/assets/avatar-cut.webp").catch(() => null);
+    if (this.pl.avatarTexture) {
+      this.pl.avatarTexture.colorSpace = THREE.NoColorSpace;
+      this.pl.avatarTexture.anisotropy = 4;
+    }
+    this.boot.progress(0.7);
+    await Promise.race([document.fonts.ready, wait(2500)]);
     this.resize();
     addEventListener("resize", () => this.resize());
     this.quality.onChange = (t) => {
       this.pl.setTier(t);
       this.resize();
-      try {
-        localStorage.setItem("tsukuyomi:tier", t.name);
-      } catch {
-        /* storage may be blocked */
-      }
     };
-    ui.progress(0.6, "预热着色器…");
-    await frame();
-    // Compile every program once so nothing hitches when it first appears.
-    this.warm();
-    ui.progress(0.85, "月の都を準備中…");
-    await frame();
-    this.cityPromise = this.loadCity(noise);
+    this.bindScreens();
     this.bindInput();
-    this.loop();
-    ui.progress(1, "准备好了");
-    this.mode = "ready";
-    if (params.get("t") !== null) {
-      // Debug: jump straight to a moment of the entry sequence (frozen unless &play).
-      this.start(false);
-      this.introT = Number(params.get("t"));
-      this.introSpeed = params.has("play") ? 1 : 0;
-      this.ui.showSkip(false);
-    } else if (reduced || params.get("skip") === "1") {
-      ui.ready(() => this.start(true));
-    } else {
-      ui.ready(() => this.start(false));
-    }
-    Object.assign(window, { __app: this });
-  }
-
-  private async loadCity(noise: ReturnType<typeof createCloudNoise>) {
-    try {
-      const mod = await import("../stages/CityWorld");
-      this.city = new mod.CityWorld(noise, this.quality.current.particles, this.world);
-      this.city.resize(this.pl, this.quality.current);
-    } catch (e) {
-      console.error("city failed to load", e);
-    }
-  }
-
-  private warm() {
-    const pl = this.pl;
-    // Render one frame of each stage offscreen.
-    this.introT = 3.2;
-    this.director.intro(3.2, pl, 0);
-    pl.beginFrame();
-    this.tunnel.render(pl);
-    pl.finish();
-    this.director.intro(16, pl, 0);
+    // Compile every program once (title grade, the sea, blot) so nothing hitches later.
+    this.world.snap("title");
     this.world.update(0.016);
-    pl.beginFrame();
-    this.world.render(pl, 0);
-    pl.finish();
-    this.introT = 0;
+    this.pl.post.water = 1;
+    this.pl.post.blotMode = 1;
+    this.pl.render(this.world.frame(this.pl));
+    this.pl.post.water = 0;
+    this.pl.post.blotMode = 0;
+    this.boot.progress(1);
+    Object.assign(window, { __app: this });
+    this.loop();
+    await wait(250);
+    this.boot.done();
+    this.hud.onDarkHour = (dark) => (this.pl.post.dark = dark ? 1 : 0);
+    this.hud.refresh();
+    this.route(true);
   }
 
-  resize() {
-    const pl = this.pl;
-    pl.resize(innerWidth, innerHeight, Math.min(devicePixelRatio, 2));
-    this.world.resize(pl, this.quality.current);
-    this.tunnel.resize(pl.width, pl.height);
-    this.city?.resize(pl, this.quality.current);
+  // ------------------------------------------------------------------ routing
+
+  private hashTarget(): "title" | "menu" | MenuId {
+    const h = location.hash.slice(1);
+    if (SCREENS.includes(h as MenuId)) return h as MenuId;
+    if (h === "menu") return "menu";
+    return "title";
   }
 
-  // ---------------------------------------------------------------- flow
-
-  start(skip: boolean) {
-    this.ui.hideLoader();
-    this.mode = "intro";
-    this.introT = skip ? T_INTRO_END : 0;
-    this.introSpeed = 1;
-    this.world.skyLanterns.prefill(40, 90);
-    if (!skip) window.setTimeout(() => this.mode === "intro" && this.ui.showSkip(true, () => this.skipIntro()), 1400);
-    const hash = location.hash.slice(1);
-    const target = this.ui.chapters.findIndex((c) => c.id === hash);
-    if (target > 0) this.wantChapter = target;
+  private setHash(h: string) {
+    const url = h ? `#${h}` : location.pathname + location.search;
+    if ((h ? `#${h}` : "") !== location.hash) history.pushState(null, "", url);
   }
 
-  skipIntro() {
-    if (this.mode !== "intro" || this.introT >= 19.6) return;
-    this.ui.showSkip(false);
-    this.fadeTo(1, () => {
-      this.introT = 19.6;
-      this.fadeTo(0);
+  private async route(first = false) {
+    const target = this.hashTarget();
+    if (target === "title") {
+      if (first || this.mode === "boot") this.enterTitle();
+      else if (this.mode === "screen") await this.closeScreen(false).then(() => this.backToTitle(false));
+      else if (this.mode === "menu") await this.backToTitle(false);
+      return;
+    }
+    if (target === "menu") {
+      if (this.mode === "boot" || this.mode === "title") await this.enterMenu(this.mode === "boot" || first);
+      else if (this.mode === "screen") await this.closeScreen(false);
+      return;
+    }
+    // a screen
+    if (this.mode === "boot" || this.mode === "title") await this.enterMenu(true, target);
+    if (this.mode === "screen" && this.current !== target) await this.closeScreen(false);
+    if (this.mode === "menu") {
+      this.menu.select(SCREENS.indexOf(target));
+      await this.openScreen(target, false);
+    }
+  }
+
+  // ------------------------------------------------------------------ title
+
+  private enterTitle() {
+    this.mode = "title";
+    this.current = null;
+    this.title.classList.add("is-open");
+    this.title.classList.remove("is-leaving");
+    this.menu.root.classList.remove("is-open", "is-entering", "is-leaving");
+    this.hud.show(true);
+    this.world.snap("title");
+    const p = this.pl.post;
+    p.mono = 0.3;
+    p.water = 0;
+    p.flood = 0;
+    p.fade = 0;
+    p.calm = 0;
+    p.focus.set(0, 0, 0);
+    this.confetti.ambient = 0;
+    this.avatarTo({ x: 0.2, y: -0.6, h: 0.9, rot: 168, alpha: 0 }, true);
+    this.formTitleRing(true);
+    $<HTMLElement>("[data-enter]", this.title)?.addEventListener("click", this.onEnterLink);
+  }
+
+  private onEnterLink = (e: Event) => {
+    e.preventDefault();
+    if (this.mode === "title") this.startGame();
+  };
+
+  /** The fish circle the moon on the title. */
+  private formTitleRing(instant = false) {
+    const m = this.moonNdc();
+    const at = this.fish.at(m.x, m.y);
+    this.moonAnchor.set(m.x, m.y);
+    this.moonTrack = true;
+    this.fish.form("ring", this.world.time, { x: at.x, y: at.y, z: at.z, size: m.r * at.unit * 1.42 }, instant ? 0.01 : 2.2, -0.12);
+    if (instant) this.fish.alpha = 0;
+  }
+
+  private moonNdc() {
+    const cam = this.world.camera;
+    const v = this.world.sky.material.uniforms.uMoonDir.value.clone().multiplyScalar(1000).add(cam.position).project(cam);
+    const r = Math.tan(this.world.sky.material.uniforms.uMoonR.value) / Math.tan(THREE.MathUtils.degToRad(cam.fov / 2));
+    return { x: v.x, y: v.y, r };
+  }
+
+  async startGame(at?: { x: number; y: number }) {
+    if (this.mode !== "title") return;
+    this.mode = "busy";
+    this.setHash("menu");
+    const p = this.pl.post;
+    this.moonTrack = false;
+    if (this.reduced) {
+      this.title.classList.remove("is-open");
+      await this.enterMenu(true);
+      return;
+    }
+    // Shatter: bake this frame and the title's big words, break them apart.
+    const press = $<HTMLElement>("[data-press]")!.getBoundingClientRect();
+    const ix = at?.x ?? press.left + press.width * 0.32;
+    const iy = at?.y ?? press.top + press.height * 0.5;
+    const frameTex = this.pl.captureFrame(this.world.frame(this.pl));
+    const words = $$("[data-press] span, .title__name ruby, .title__logo b, .title__logo span, .title__logo em");
+    const text = new THREE.CanvasTexture(bakeText(words, this.pl.width / innerWidth));
+    text.colorSpace = THREE.NoColorSpace;
+    this.shards.start(frameTex, text, new THREE.Vector2((ix / innerWidth) * 2 - 1, 1 - (iy / innerHeight) * 2), innerWidth / innerHeight);
+    this.shattering = true;
+    this.title.classList.remove("is-open");
+    this.hud.show(false);
+    this.fish.alpha = 0;
+    this.confetti.burst(ix, iy, 60);
+    void tween(90, (k) => (this.shards.flash = 0.85 * k), ease.out).then(() => tween(380, (k) => (this.shards.flash = 0.85 * (1 - k)), ease.out));
+    // the world behind the calendar goes to the menu shot
+    this.world.snap(this.stationFor(this.menu.id()));
+    p.mono = 0;
+    p.water = 0;
+    p.flood = 0;
+    await wait(520);
+    const played = this.daybreak.play(new Date(), false);
+    await played;
+    const out = this.daybreak.exit();
+    await out.covered;
+    this.shattering = false;
+    await this.enterMenu(false);
+  }
+
+  // ------------------------------------------------------------------ menu
+
+  private stationFor(id: MenuId): keyof typeof STATIONS {
+    return id;
+  }
+
+  private emblemFor(id: MenuId): Emblem {
+    return (menuItems.find((m) => m.id === id)?.emblem ?? "scatter") as Emblem;
+  }
+
+  private placeEmblem(id: MenuId, dur = 1.3) {
+    const portrait = innerWidth < innerHeight;
+    const nx = portrait ? 0.35 : 0.6;
+    const ny = portrait ? 0.46 : 0.0;
+    const k = portrait ? 0.3 : 0.4;
+    const at = this.fish.at(nx, ny);
+    this.fish.form(this.emblemFor(id), this.world.time, { x: at.x, y: at.y, z: at.z, size: at.unit * k }, dur);
+    this.pl.post.focus.set(nx * 0.5 + 0.5, ny * 0.5 + 0.5, k * 0.62);
+  }
+
+  private async enterMenu(instant: boolean, then?: MenuId) {
+    this.mode = "busy";
+    this.current = null;
+    this.title.classList.remove("is-open", "is-leaving");
+    const p = this.pl.post;
+    p.mono = 0;
+    this.world.snap(this.stationFor(this.menu.id()));
+    this.menu.root.classList.add("is-open", "is-entering");
+    this.menu.select(this.menu.selected, true);
+    this.menu.flyIn();
+    if (instant) this.menu.snap();
+    this.hud.show(true);
+    this.moonTrack = false;
+    this.placeEmblem(this.menu.id(), instant ? 0.01 : 1.6);
+    this.confetti.ambient = this.reduced ? 0 : 1;
+    p.calm = 0.42;
+    // the avatar sinks in from above
+    this.avatarTo({ x: 0.22, y: -0.45, h: 0.92, rot: 190, alpha: 1 }, true);
+    this.avatarTo(this.menuPose());
+    if (instant || this.reduced) {
+      p.flood = 1;
+      p.water = 1;
+      this.fish.alpha = 1;
+    } else {
+      p.floodLine = 1;
+      void tween(700, (k) => (this.fish.alpha = k), ease.out);
+      await tween(900, (k) => (p.flood = k), ease.inOut);
+      p.water = 1;
+    }
+    window.setTimeout(() => this.menu.root.classList.remove("is-entering"), 900);
+    this.mode = "menu";
+    if (!then) this.setHash("menu");
+  }
+
+  private menuPose(): AvatarPose {
+    const portrait = innerWidth < innerHeight;
+    return portrait ? { x: 0.52, y: 0.27, h: 0.5, rot: 172, alpha: 1 } : { x: 0.19, y: 0.56, h: 0.8, rot: 166, alpha: 1 };
+  }
+
+  private async backToTitle(push = true) {
+    if (this.mode !== "menu") return;
+    this.mode = "busy";
+    const p = this.pl.post;
+    this.menu.root.classList.add("is-leaving");
+    this.avatarTo({ x: 0.2, y: -0.55, h: 0.9, rot: 150, alpha: 0 });
+    this.confetti.ambient = 0;
+    p.water = 0;
+    await tween(this.reduced ? 0 : 750, (k) => (p.flood = 1 - k), ease.inOut);
+    this.menu.root.classList.remove("is-open", "is-leaving");
+    if (push) this.setHash("");
+    this.enterTitle();
+    this.fish.alpha = 1;
+    this.formTitleRing(false);
+  }
+
+  // ------------------------------------------------------------------ screens
+
+  private bindScreens() {
+    this.screens = {
+      skills: skillsCtl(),
+      works: worksCtl(),
+      calendar: calendarCtl(this.data),
+      contact: contactCtl(() => this.toast("信已交给月亮 ✉")),
+      system: systemCtl({
+        quality: (v) => {
+          this.prefs.quality = v;
+          store.set("quality", v);
+          this.quality.lock(v === "auto" ? null : (v as TierName));
+        },
+        motion: (v) => {
+          this.prefs.motion = v;
+          store.set("motion", v);
+          this.reduced = v === "reduced";
+          this.world.motion = this.reduced ? 0 : 1;
+          this.confetti.ambient = this.reduced ? 0 : this.mode === "menu" || this.mode === "screen" ? 1 : 0;
+          document.documentElement.classList.toggle("reduced-motion", this.reduced);
+        },
+        fps: (v) => {
+          this.prefs.fps = v;
+          store.set("fps", v);
+          if (this.fpsEl) this.fpsEl.hidden = v !== "on";
+        },
+        toTitle: async () => {
+          await this.closeScreen(false);
+          await this.backToTitle();
+        },
+        current: () => this.prefs,
+      }),
+    };
+    if (this.fpsEl) this.fpsEl.hidden = this.prefs.fps !== "on";
+    this.menu.onSelect = (id) => {
+      if (this.mode !== "menu") return;
+      this.world.go(this.stationFor(id), 1.25);
+      this.placeEmblem(id);
+    };
+    this.menu.onConfirm = (id) => {
+      if (this.mode === "menu") void this.openScreen(id);
+    };
+    $$<HTMLAnchorElement>("[data-back]").forEach((a) =>
+      a.addEventListener("click", (e) => {
+        e.preventDefault();
+        void this.closeScreen();
+      }),
+    );
+  }
+
+  private async openScreen(id: MenuId, push = true) {
+    if (this.mode !== "menu") return;
+    this.mode = "busy";
+    const el = $<HTMLElement>(`#${id}`)!;
+    const item = this.menu.items[this.menu.selected].getBoundingClientRect();
+    const cx = item.left + item.width * 0.5;
+    const cy = item.top + item.height * 0.5;
+    const p = this.pl.post;
+    const s = this.pl.width / innerWidth;
+    const R = coverRadius(cx, cy) * 1.15;
+    el.classList.add("is-open", "is-entering");
+    el.style.clipPath = `polygon(${blotPoints(cx, cy, 0, 1, this.world.time).join(",")})`;
+    if (!this.reduced) this.confetti.burst(cx, cy, 40);
+    this.world.go(this.stationFor(id), 1.2);
+    // avatar: upright on PROFILE, gone elsewhere
+    this.avatarTo(id === "profile" ? this.profilePose() : { x: -0.3, y: 0.55, h: 0.9, rot: 150, alpha: 0 });
+    // the fish loosen into a slow school behind the panels
+    const at = this.fish.at(0.1, -0.05);
+    this.fish.form("scatter", this.world.time, { x: at.x, y: at.y, z: at.z - 20, size: at.unit * 0.55 }, 1.6);
+    void tween(600, (k) => {
+      this.fish.alpha = 1 - k * 0.72;
+      p.calm = 0.42 + k * 0.5;
+      p.focus.z *= 1 - k;
     });
+    p.blotMode = 1;
+    await tween(
+      this.reduced ? 0 : 560,
+      (k) => {
+        const r = R * k;
+        p.blot.set(cx * s, (innerHeight - cy) * s, r * s * 0.92, 1);
+        const pts = blotPoints(cx, cy, r, 1, this.world.time);
+        el.style.clipPath = `polygon(${pts.join(",")})`;
+        this.menu.root.style.clipPath = holeClip(pts);
+      },
+      ease.inOut,
+    );
+    p.blotMode = 0;
+    el.style.clipPath = "";
+    this.menu.root.style.clipPath = "";
+    this.menu.root.classList.remove("is-open");
+    this.mode = "screen";
+    this.current = id;
+    this.screens[id]?.enter?.();
+    if (push) this.setHash(id);
+    $<HTMLElement>("h2", el)?.setAttribute("tabindex", "-1");
+    $<HTMLElement>("h2", el)?.focus({ preventScroll: true });
+    window.setTimeout(() => el.classList.remove("is-entering"), 700);
   }
 
-  private fadeTo(v: number, then?: () => void) {
-    this.fadeTarget = v;
-    this.pendingJump = then ?? null;
+  private profilePose(): AvatarPose {
+    const portrait = innerWidth < innerHeight;
+    return portrait ? { x: 0.5, y: 0.3, h: 0.46, rot: -4, alpha: 1 } : { x: 0.25, y: 0.46, h: 0.9, rot: -5, alpha: 1 };
   }
 
-  private enterCover() {
-    this.mode = "cover";
-    this.chapter = 0;
-    this.ui.world("a");
-    this.ui.uiOn(true);
-    this.ui.setChapter(0);
-    this.ui.showSkip(false);
-    if (this.wantChapter > 0) {
-      const w = this.wantChapter;
-      this.wantChapter = -1;
-      window.setTimeout(() => this.go(w), 600);
-    }
+  private async closeScreen(push = true) {
+    if (this.mode !== "screen" || !this.current) return;
+    this.mode = "busy";
+    const el = $<HTMLElement>(`#${this.current}`)!;
+    const id = this.current;
+    const p = this.pl.post;
+    this.menu.root.classList.add("is-open");
+    this.menu.select(SCREENS.indexOf(id), true);
+    this.menu.snap();
+    this.avatarTo(this.menuPose());
+    this.placeEmblem(id, 1.2);
+    void tween(500, (k) => {
+      this.fish.alpha = 0.28 + k * 0.72;
+      p.calm = 0.92 - k * 0.5;
+    });
+    const cx = innerWidth * 0.5;
+    const cy = innerHeight * 0.5;
+    const R = coverRadius(cx, cy);
+    // iris out on two offset circles (P3R's "go back")
+    await tween(
+      this.reduced ? 0 : 420,
+      (k) => {
+        const r = R * (1 - k);
+        const pts = circlePoints(cx + k * 40, cy - k * 30, r);
+        el.style.clipPath = `polygon(${pts.join(",")})`;
+        this.menu.root.style.clipPath = holeClip(pts);
+      },
+      ease.in,
+    );
+    el.classList.remove("is-open", "is-entering");
+    el.style.clipPath = "";
+    this.menu.root.style.clipPath = "";
+    this.current = null;
+    this.mode = "menu";
+    if (push) this.setHash("menu");
+    this.menu.items[this.menu.selected].focus({ preventScroll: true });
   }
 
-  go(i: number) {
-    i = Math.max(0, Math.min(this.ui.chapters.length - 1, i));
-    if (this.navLock > this.time) return;
-    if (this.mode === "intro") {
-      this.skipIntro();
-      return;
-    }
-    if (this.mode === "cover" && i > 0) {
-      if (!this.city) {
-        this.ui.toast("月之都还在准备中…");
-        this.cityPromise?.then(() => this.go(i));
-        return;
-      }
-      this.startPassage(i);
-      return;
-    }
-    if (this.mode === "city") {
-      if (i === 0) {
-        this.startReturn();
-        return;
-      }
-      if (i === this.chapter) return;
-      this.chapter = i;
-      this.ui.clearChapter();
-      this.city!.goChapter(i, this.time);
-      this.navLock = this.time + 1.2;
-      return;
-    }
+  // ------------------------------------------------------------------ avatar
+
+  /** Target pose in viewport fractions: centre (x, y from the top), height, rotation (deg, cw). */
+  private avatarTo(p: AvatarPose, snap = false) {
+    const a = this.av;
+    const set = (s: Spring, v: number) => (snap ? s.snap(v) : (s.target = v));
+    set(a.x, p.x);
+    set(a.y, p.y);
+    set(a.h, p.h);
+    set(a.rot, p.rot);
+    set(a.alpha, p.alpha);
   }
 
-  private startPassage(target: number) {
-    this.mode = "passage";
-    this.modeT = 0;
-    this.wantChapter = target;
-    this.ui.clearChapter();
-    this.ui.uiOn(false);
-    const c = this.world.camera;
-    const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(c.quaternion);
-    this.passFrom = { pos: c.position.clone(), target: c.position.clone().addScaledVector(dir, 40), fov: c.fov, roll: 0 };
-    this.navLock = this.time + PASS_END + 1;
+  private updateAvatar(dt: number) {
+    const a = this.av;
+    const t = this.world.time;
+    const x = a.x.update(dt);
+    const y = a.y.update(dt);
+    const h = a.h.update(dt);
+    const rot = a.rot.update(dt);
+    const alpha = clamp01(a.alpha.update(dt));
+    const pl = this.pl;
+    const s = pl.width / innerWidth;
+    // float in the water: slow bob and sway
+    const bob = this.reduced ? 0 : Math.sin(t * 0.8) * 0.012;
+    const sway = this.reduced ? 0 : Math.sin(t * 0.55) * 2.2;
+    const cx = x * innerWidth * s;
+    const cy = (1 - (y + bob)) * innerHeight * s;
+    const S = h * innerHeight * s;
+    const phi = THREE.MathUtils.degToRad(-(rot + sway));
+    const c = Math.cos(phi);
+    const sn = Math.sin(phi);
+    pl.post.avatarInv.set(c / S, sn / S, -(c * cx + sn * cy) / S + 0.5, -sn / S, c / S, (sn * cx - c * cy) / S + 0.5, 0, 0, 1);
+    pl.post.avatar = alpha;
+    pl.post.avatarWave = this.reduced ? 0 : 1;
   }
 
-  private startReturn() {
-    this.mode = "return";
-    this.modeT = 0;
-    this.ui.clearChapter();
-    this.ui.uiOn(false);
-    this.navLock = this.time + 2.2;
-  }
-
-  // ---------------------------------------------------------------- input
+  // ------------------------------------------------------------------ input
 
   private bindInput() {
-    let wheelAcc = 0;
-    let wheelT = 0;
+    addEventListener("pointermove", (e) => this.world.setPointer((e.clientX / innerWidth) * 2 - 1, -((e.clientY / innerHeight) * 2 - 1)));
+    addEventListener("pointerdown", (e) => {
+      if (this.mode === "title" && !(e.target as HTMLElement).closest("a, button")) void this.startGame({ x: e.clientX, y: e.clientY });
+    });
+    addEventListener("keydown", (e) => this.onKey(e));
     addEventListener(
       "wheel",
       (e) => {
-        if ((e.target as HTMLElement).closest?.(".panel") && this.panelScrolls(e)) return;
-        e.preventDefault();
+        if (this.mode !== "menu") return;
         const now = performance.now();
-        if (now - wheelT > 400) wheelAcc = 0;
-        wheelT = now;
-        wheelAcc += e.deltaY;
-        if (Math.abs(wheelAcc) > 60) {
-          this.step(Math.sign(wheelAcc));
-          wheelAcc = 0;
-        }
-      },
-      { passive: false },
-    );
-    let touchY = 0;
-    addEventListener("touchstart", (e) => (touchY = e.touches[0].clientY), { passive: true });
-    addEventListener(
-      "touchend",
-      (e) => {
-        const dy = touchY - e.changedTouches[0].clientY;
-        if (Math.abs(dy) > 50 && !(e.target as HTMLElement).closest?.(".panel")) this.step(Math.sign(dy));
+        if (now < this.wheelLock || Math.abs(e.deltaY) < 8) return;
+        this.wheelLock = now + 140;
+        this.menu.move(e.deltaY > 0 ? 1 : -1);
       },
       { passive: true },
     );
-    addEventListener("keydown", (e) => {
-      const tag = (e.target as HTMLElement).tagName;
-      if (tag === "TEXTAREA" || tag === "INPUT") return;
-      if (this.mode === "ready" && (e.key === "Enter" || e.key === " ")) return;
-      if (["ArrowDown", "PageDown", " "].includes(e.key)) {
-        e.preventDefault();
-        this.step(1);
-      } else if (["ArrowUp", "PageUp"].includes(e.key)) {
-        e.preventDefault();
-        this.step(-1);
-      } else if (e.key === "Home") this.go(0);
-      else if (e.key === "End") this.go(this.ui.chapters.length - 1);
-      else if (e.key === "Escape" && this.mode === "intro") this.skipIntro();
-    });
-    for (const a of $$<HTMLAnchorElement>("[data-rail]")) {
-      a.addEventListener("click", (e) => {
-        e.preventDefault();
-        this.go(Number(a.dataset.rail));
-      });
-    }
-    $<HTMLAnchorElement>("[data-next]")?.addEventListener("click", (e) => {
-      e.preventDefault();
-      this.go(1);
-    });
-    addEventListener("pointermove", (e) => {
-      this.pointer.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
-    });
-    this.canvas.addEventListener("click", (e) => this.onCanvasClick(e));
-    // Chapter overlays let clicks through to the canvas on empty space.
-    document.querySelector(".chapters")?.addEventListener("click", (e) => {
-      if ((e.target as HTMLElement).closest("a,button,textarea,input,.panel,.cover")) return;
-      this.onCanvasClick(e as MouseEvent);
-    });
-    for (const card of $$<HTMLElement>("[data-skill]")) {
-      const on = () => this.city?.lightSkill(card.dataset.skill ?? null);
-      const off = () => this.city?.lightSkill(null);
-      card.addEventListener("pointerenter", on);
-      card.addEventListener("focus", on);
-      card.addEventListener("pointerleave", off);
-      card.addEventListener("blur", off);
-    }
-    const form = $<HTMLFormElement>("[data-letter]");
-    form?.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const ta = $<HTMLTextAreaElement>("textarea", form);
-      const text = ta?.value.trim() ?? "";
-      this.city?.releaseLantern(this.time);
-      const thanks = $<HTMLElement>("[data-thanks]", form);
-      if (thanks) thanks.hidden = false;
-      const mail = $<HTMLAnchorElement>("[data-mail]", form);
-      if (mail && text) mail.href = mail.href.split("&body=")[0] + "&body=" + encodeURIComponent(text);
-    });
+    addEventListener("popstate", () => void this.route());
   }
 
-  private panelScrolls(e: WheelEvent) {
-    const p = (e.target as HTMLElement).closest(".panel") as HTMLElement | null;
-    if (!p || p.scrollHeight <= p.clientHeight + 2) return false;
-    if (e.deltaY > 0 && p.scrollTop + p.clientHeight < p.scrollHeight - 1) return true;
-    if (e.deltaY < 0 && p.scrollTop > 0) return true;
-    return false;
-  }
-
-  private step(dir: number) {
-    if (this.mode === "intro") {
-      this.skipIntro();
+  private onKey(e: KeyboardEvent) {
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    const k = e.key;
+    const typing = (e.target as HTMLElement).closest("textarea, input");
+    if (this.mode === "title") {
+      if (["Shift", "Tab", "Control", "Alt", "Meta", "CapsLock"].includes(k)) return;
+      if ((e.target as HTMLElement).closest("a") && k === "Tab") return;
+      e.preventDefault();
+      void this.startGame();
       return;
     }
-    if (this.mode === "cover" || this.mode === "city") this.go(this.chapter + dir);
-  }
-
-  private onCanvasClick(e: MouseEvent) {
-    const ndc = new THREE.Vector2((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
-    if (this.mode === "intro") {
-      this.skipIntro();
+    if (this.mode === "menu") {
+      if (k === "ArrowDown" || k === "s" || k === "S") this.menu.move(1);
+      else if (k === "ArrowUp" || k === "w" || k === "W") this.menu.move(-1);
+      else if (k === "Enter" || k === " " || k === "ArrowRight") this.menu.confirm();
+      else if (k === "Escape" || k === "Backspace") void this.backToTitle();
+      else if (/^[1-6]$/.test(k)) {
+        this.menu.select(Number(k) - 1);
+        this.menu.confirm();
+      } else return;
+      e.preventDefault();
       return;
     }
-    if (this.mode === "cover") this.world.click(ndc, this.time);
-    else if (this.mode === "city") this.city?.click(ndc, this.time);
+    if (this.mode === "screen") {
+      if (typing) {
+        if (k === "Escape") (e.target as HTMLElement).blur();
+        return;
+      }
+      if (k === "Escape" || k === "Backspace") {
+        e.preventDefault();
+        void this.closeScreen();
+        return;
+      }
+      const ctl = this.current ? this.screens[this.current] : undefined;
+      if (ctl?.key?.(e)) e.preventDefault();
+    }
   }
 
-  // ---------------------------------------------------------------- frame
+  // ------------------------------------------------------------------ misc
+
+  toast(text: string) {
+    const t = $("[data-toast]");
+    if (!t) return;
+    t.textContent = text;
+    t.classList.add("is-on");
+    window.setTimeout(() => t.classList.remove("is-on"), 2800);
+  }
+
+  resize() {
+    this.pl.resize(innerWidth, innerHeight, Math.min(devicePixelRatio, 2));
+    this.world.resize(this.pl.width, this.pl.height);
+    this.fish.resize(innerWidth / innerHeight);
+    this.confetti.resize(innerWidth, innerHeight);
+    // formations live in view space: re-place them for the new shape
+    if (this.mode === "menu") {
+      this.menu.snap();
+      this.placeEmblem(this.menu.id(), 0.6);
+    } else if (this.mode === "title") {
+      this.formTitleRing(false);
+    }
+  }
+
+  /** Debug / tests: jump anywhere. */
+  go(where: "title" | "menu" | MenuId) {
+    this.setHash(where === "title" ? "" : where);
+    void this.route();
+  }
 
   private loop = () => {
     requestAnimationFrame(this.loop);
     const now = performance.now();
-    const rawDt = (now - this.last) / 1000;
+    const raw = Math.min(0.1, (now - this.last) / 1000);
     this.last = now;
-    const dt = Math.min(0.05, rawDt) * this.timeScale;
-    this.frameMs = this.frameMs * 0.9 + rawDt * 1000 * 0.1;
-    if (this.mode === "loading" || this.mode === "ready") return;
-    this.time += dt;
-    this.modeT += dt;
-    G.uTime.value = this.time;
-    const pl = this.pl;
-    pl.time = this.time;
-    this.quality.update(dt, pl.timer.total, this.frameMs, this.time);
-    this.pointerSmooth.lerp(this.pointer, 1 - Math.exp(-dt * 2.5));
-
-    // Fades (skip, returns).
-    const fs = this.fadeTarget > this.fade ? 3.2 : 1.6;
-    this.fade += Math.sign(this.fadeTarget - this.fade) * Math.min(Math.abs(this.fadeTarget - this.fade), dt * fs);
-    if (this.pendingJump && Math.abs(this.fade - this.fadeTarget) < 1e-3) {
-      const f = this.pendingJump;
-      this.pendingJump = null;
-      f();
-    }
-
-    pl.beginFrame();
-    switch (this.mode) {
-      case "intro":
-        this.frameIntro(dt);
-        break;
-      case "cover":
-        this.frameCover(dt);
-        break;
-      case "passage":
-        this.framePassage(dt);
-        break;
-      case "city":
-        this.frameCity(dt);
-        break;
-      case "return":
-        this.frameReturn(dt);
-        break;
-    }
-    pl.post.fade = Math.max(pl.post.fade, this.fade);
-    pl.finish();
-  };
-
-  private frameIntro(dt: number) {
-    const pl = this.pl;
-    this.introT += dt * this.introSpeed;
-    const T = this.introT;
-    const f = this.director.intro(T, pl, this.time);
-    if (f.stage === "black") {
-      pl.renderer.setRenderTarget(pl.scene);
-      pl.renderer.setClearColor(0x000000, 1);
-      pl.renderer.clear(true, true, false);
-      pl.current = pl.scene;
-      pl.post.fade = 1 - s(T, 0.62, 0.8);
-    } else if (f.stage === "tunnel") {
-      this.tunnel.render(pl);
-    } else {
-      this.world.update(dt);
-      this.world.render(pl, this.time);
-      pl.post.exposure = this.world.atmos.exposure * this.director.exposureBoost;
-    }
-    if (!this.uiShown && T >= T_COVER_UI) {
-      this.uiShown = true;
-      this.enterCover();
-      this.mode = "intro"; // keep the intro running until the camera settles
-    }
-    if (T >= T_INTRO_END) this.mode = "cover";
-  }
-
-  private coverPose(out: Pose) {
-    // Gentle parallax from the pointer.
-    const p = this.pointerSmooth;
-    out.pos.copy(P_COVER.pos).add(new THREE.Vector3(p.x * 1.2, p.y * 0.5, 0));
-    out.target.copy(P_COVER.target).add(new THREE.Vector3(p.x * 0.6, p.y * 0.4, 0));
-    out.fov = P_COVER.fov;
-    out.roll = 0;
-    return out;
-  }
-
-  private frameCover(dt: number) {
+    this.frameMs = this.frameMs * 0.9 + raw * 1000 * 0.1;
+    const dt = Math.min(0.05, raw) * this.timeScale;
     const w = this.world;
-    const pl = this.pl;
-    this.director.night(pl);
-    w.setPose(this.coverPose(this.tmpPose));
     w.update(dt);
-    w.render(pl, this.time);
-    pl.post.exposure = w.atmos.exposure;
-  }
-
-  private framePassage(dt: number) {
-    const t = this.modeT;
-    const w = this.world;
-    const pl = this.pl;
-    if (t < PASS_SWITCH) {
-      this.director.night(pl);
-      // Approach the torii along its axis, then press into the membrane.
-      const a = ease(clamp01(t / PASS_APPROACH));
-      const b = ease(clamp01((t - PASS_APPROACH) / (PASS_SWITCH - PASS_APPROACH)));
-      const axis = pose(0, 5.8, 18, 0, 6.2, 0, 44);
-      const touch = pose(0, 5.9, 0.9, 0, 6.0, -10, 58);
-      lerpPose(this.passFrom, axis, a, this.tmpPose);
-      if (b > 0) lerpPose(this.tmpPose, touch, b, this.tmpPose);
-      w.setPose(this.tmpPose);
-      w.portal.intensity = s(t, 0.2, 1.4);
-      if (t > PASS_APPROACH && !this.rippled) {
-        this.rippled = true;
-        w.portal.ripple(0.5, 0.5, this.time, 1);
-      }
-      w.update(dt);
-      w.render(pl, this.time);
-      pl.post.exposure = w.atmos.exposure * (1 + 0.4 * b);
-      this.dive.amount = s(t, PASS_APPROACH + 0.25, PASS_SWITCH - 0.1);
-      this.dive.white = s(t, PASS_SWITCH - 0.45, PASS_SWITCH);
+    this.fish.update(w.time);
+    if (this.moonTrack) {
+      const m = this.moonNdc();
+      const a = this.fish.at(m.x, m.y);
+      const b = this.fish.at(this.moonAnchor.x, this.moonAnchor.y);
+      this.fish.setOffset(a.x - b.x, a.y - b.y);
+      if (this.mode === "title" && this.fish.alpha < 0.7) this.fish.alpha = Math.min(0.7, this.fish.alpha + dt * 0.5);
+    }
+    this.menu.update(dt);
+    this.confetti.update(dt);
+    this.updateAvatar(dt);
+    this.pl.time = w.time;
+    if (this.shattering) {
+      this.shards.update(raw);
+      this.pl.renderPlain(
+        [
+          [this.shards.scene, this.shards.camera],
+          [this.confetti.scene, this.confetti.camera],
+        ],
+        this.navy,
+      );
     } else {
-      if (!this.switched) {
-        this.switched = true;
-        this.ui.world("b");
-        this.city!.arrive(this.time);
-        w.portal.intensity = 0;
-      }
-      this.city!.update(dt, this.time);
-      this.city!.render(pl);
-      const k = clamp01((t - PASS_SWITCH) / (PASS_END - PASS_SWITCH));
-      this.dive.amount = 1 - s(k, 0.1, 1);
-      this.dive.white = 1 - s(k, 0, 0.6);
-      if (t >= PASS_END) {
-        this.switched = false;
-        this.rippled = false;
-        this.dive.amount = this.dive.white = 0;
-        this.mode = "city";
-        this.chapter = Math.max(1, this.wantChapter);
-        this.wantChapter = -1;
-        if (this.chapter !== 1) this.city!.goChapter(this.chapter, this.time);
-        this.ui.uiOn(true);
+      const f = w.frame(this.pl);
+      f.overlay = this.confetti.scene;
+      f.overlayCamera = this.confetti.camera;
+      this.pl.render(f);
+    }
+    this.quality.update(raw, this.pl.timer.total, raw * 1000, now / 1000);
+    if (this.fpsEl && !this.fpsEl.hidden) {
+      this.fpsAcc.t += raw;
+      this.fpsAcc.n++;
+      if (this.fpsAcc.t > 0.5) {
+        this.fpsEl.textContent = `${Math.round(this.fpsAcc.n / this.fpsAcc.t)} fps · GPU ${this.pl.timer.total.toFixed(1)} ms · ${this.quality.current.name} · ${this.pl.width}×${this.pl.height}`;
+        this.fpsAcc = { t: 0, n: 0 };
       }
     }
-    this.applyDive();
-  }
-
-  private rippled = false;
-  private switched = false;
-
-  private frameCity(dt: number) {
-    const c = this.city!;
-    c.pointer(this.pointerSmooth.x, this.pointerSmooth.y);
-    c.update(dt, this.time);
-    c.render(this.pl);
-    if (c.settled && this.ui.active !== this.chapter) this.ui.setChapter(this.chapter);
-    this.applyDive();
-  }
-
-  private frameReturn(dt: number) {
-    const t = this.modeT;
-    const pl = this.pl;
-    if (t < 0.7) {
-      this.city!.update(dt, this.time);
-      this.city!.render(pl);
-      this.dive.amount = s(t, 0, 0.6);
-      this.dive.white = s(t, 0.3, 0.7);
-    } else {
-      if (!this.switched) {
-        this.switched = true;
-        this.ui.world("a");
-      }
-      this.frameCover(dt);
-      const k = clamp01((t - 0.7) / 1.3);
-      this.dive.amount = 1 - s(k, 0.1, 1);
-      this.dive.white = 1 - s(k, 0, 0.6);
-      if (t >= 2.0) {
-        this.switched = false;
-        this.dive.amount = this.dive.white = 0;
-        this.mode = "cover";
-        this.chapter = 0;
-        this.ui.uiOn(true);
-        this.ui.setChapter(0);
-      }
-    }
-    this.applyDive();
-  }
-
-  private applyDive() {
-    if (!this.dive.active) return;
-    const pl = this.pl;
-    const dst = pl.nextFx();
-    this.dive.render(pl.renderer, pl.current.texture, dst, this.time);
-    pl.current = dst;
-  }
+  };
 }
 
-function frame() {
-  return new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
+const frame = () => new Promise<void>((r) => requestAnimationFrame(() => r()));

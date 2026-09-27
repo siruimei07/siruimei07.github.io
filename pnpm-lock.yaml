@@ -8,10 +8,10 @@ importers:
 
   .:
     dependencies:
-      '@fontsource/cormorant-garamond':
+      '@fontsource/montserrat':
         specifier: ^5.3.0
         version: 5.3.0
-      '@fontsource/noto-serif-sc':
+      '@fontsource/noto-sans-sc':
         specifier: ^5.3.0
         version: 5.3.0
       '@fontsource/shippori-mincho-b1':
@@ -89,11 +89,11 @@ packages:
     resolution: {integrity: sha512-43/qtrDUokr7LJqoF2c3+RInu/t4zfrpYdoSDfYyhg52rwLV6TnOvdG4fXm7IkSB3wErkcmJS9iEhjVtOSEjjA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@fontsource/cormorant-garamond@5.3.0':
-    resolution: {integrity: sha512-weuGsCirGVWBWqpt6YUp0yLThTe4G8YO45noq8wxeJCRvEpq5lFrxNMFSTxcyOyV5k5otzJ8guDzYegdYlcLMQ==}
+  '@fontsource/montserrat@5.3.0':
+    resolution: {integrity: sha512-iQPDtZOnmM5ih4JBGaMSXisRap0ixb9bAUw2hDtY7EjVfaqiiNlKtVuJl9XclxUwtwMMHNcWXfQR6zI9x05+Tg==}
 
-  '@fontsource/noto-serif-sc@5.3.0':
-    resolution: {integrity: sha512-0/zaEFkidiWldE62rTeD74x8ygUsQvejiSNtO0LQxQk3qpaHnlMZ3w4C7yH80B4KTIg8VKeFP4oSgwWMchY9+g==}
+  '@fontsource/noto-sans-sc@5.3.0':
+    resolution: {integrity: sha512-HeqIlGm0+ohOKxZLuHj1qW6r6avHH0OWdKERAcSDI0RQ+MXrteuLKA+M+5eOA8rYy0MFvOR5AT0fQo2rUkye0Q==}
 
   '@fontsource/shippori-mincho-b1@5.3.0':
     resolution: {integrity: sha512-H4NvSJntaViHN8LjwmPTzZgJ8pyWcNetaJMHT4kfg6n1VR60QO2cYl/KDEIP4z2SR83//nlZb5gfQyZUpeNVNA==}
@@ -847,9 +847,9 @@ snapshots:
       '@eslint/core': 0.17.0
       levn: 0.4.1
 
-  '@fontsource/cormorant-garamond@5.3.0': {}
+  '@fontsource/montserrat@5.3.0': {}
 
-  '@fontsource/noto-serif-sc@5.3.0': {}
+  '@fontsource/noto-sans-sc@5.3.0': {}
 
   '@fontsource/shippori-mincho-b1@5.3.0': {}
 

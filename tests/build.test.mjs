@@ -1,5 +1,5 @@
 // Checks the static build in dist/ (run `pnpm run build` first; `pnpm test`
-// does both). Guards the things GitHub Pages depends on.
+// does both). Guards the things GitHub Pages and the no-JS page depend on.
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -10,10 +10,13 @@ import { fileURLToPath } from "node:url";
 const dist = new URL("../dist/", import.meta.url);
 const html = readFileSync(new URL("index.html", dist), "utf8");
 
-test("index.html is pre-rendered with every section", () => {
+test("index.html is pre-rendered with the title, the menu and every screen", () => {
   assert.ok(!html.includes("<!--app-->"), "placeholder was not replaced");
-  for (const id of ["cover", "profile", "skills", "works", "contact"]) {
-    assert.match(html, new RegExp(`id="${id}"`), `missing section #${id}`);
+  for (const id of ["top", "menu", "profile", "skills", "works", "calendar", "contact", "system"]) {
+    assert.match(html, new RegExp(`id="${id}"`), `missing #${id}`);
+  }
+  for (const id of ["profile", "skills", "works", "calendar", "contact", "system"]) {
+    assert.match(html, new RegExp(`href="#${id}"`), `menu has no link to #${id}`);
   }
 });
 
@@ -26,6 +29,10 @@ test("identity: persona ID and real name both present", () => {
 
 test("expertise lists statistics, economics and quant", () => {
   for (const s of ["统计", "经济", "量化"]) assert.ok(html.includes(s), `missing ${s}`);
+});
+
+test("the fan-made notice is on the page", () => {
+  assert.ok(html.includes("Fan-made tribute"), "credits line");
 });
 
 test("every local asset referenced by index.html exists", () => {
@@ -42,8 +49,9 @@ test("external links open safely", () => {
   }
 });
 
-test("bundle contains the avatar and no leftovers from the old site", () => {
+test("bundle ships the avatar cut-out and no leftovers from old designs", () => {
   assert.ok(existsSync(new URL("assets/avatar.webp", dist)));
+  assert.ok(existsSync(new URL("assets/avatar-cut.webp", dist)), "avatar cut-out for the menu");
   const files = [];
   const walk = (dir) => {
     for (const f of readdirSync(dir)) {
@@ -53,6 +61,6 @@ test("bundle contains the avatar and no leftovers from the old site", () => {
     }
   };
   walk(fileURLToPath(dist));
-  assert.ok(!files.some((f) => /angelina|summer-|chibi|doodle/i.test(f)), "old design assets found in dist");
+  assert.ok(!files.some((f) => /angelina|summer-|chibi|doodle|washi/i.test(f)), "old design assets found in dist");
   assert.ok(files.some((f) => f.endsWith(".js")), "no JavaScript bundle");
 });
