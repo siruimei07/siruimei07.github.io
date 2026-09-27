@@ -257,7 +257,7 @@ export const system = {
   fps: { label: "FPS", zh: "帧率显示", options: [["off", "OFF", "关"], ["on", "ON", "开"]] as [string, string, string][] },
   toTitle: { label: "RETURN TO TITLE", zh: "返回标题画面" },
   about: { label: "CREDITS", zh: "关于本站" },
-  tech: "three.js 自研三渲二管线：MSAA 多目标 G-buffer → 屏幕空间描线与边缘光 → 泛光 → P3R 水下调色合成。七个场景（月见桥、舞台、五重塔、大通、月见之野、电线杆街、竹林）各自独立程序化建模，涟漪转场切换；GPU 计时驱动自适应画质。",
+  tech: "three.js 自研三渲二管线：MSAA G-buffer（颜色与法线 / 深度分两遍绘制）→ 屏幕空间描线与边缘光 → 泛光 → P3R 水下调色合成。七个场景（月见桥、舞台、五重塔、大通、月见之野、电线杆街、竹林）各自独立程序化建模，空闲时预先构建与预热，涟漪转场切换；GPU 计时驱动自适应画质。",
   source: "本站源码",
 };
 

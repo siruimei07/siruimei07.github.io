@@ -80,8 +80,10 @@ export class SceneHost {
 export class Scenes {
   private hosts = new Map<SceneId, SceneHost>();
   private pending = new Map<SceneId, Promise<SceneHost>>();
-  /** Build / warm-up times (ms) per scene, for tuning. */
-  readonly stats: Record<string, { build: number; compile: number }> = {};
+  /** Scenes someone is waiting for: warm them up without yielding. */
+  private urgent = new Set<SceneId>();
+  /** Build / warm-up times (ms of main thread) per scene, for tuning. */
+  readonly stats: Record<string, { build: number; compile: number; upload: number }> = {};
 
   constructor(
     private ctx: SceneContext,
@@ -92,34 +94,72 @@ export class Scenes {
     return this.hosts.get(id);
   }
 
-  /** Import, build and warm up a scene (once). */
-  load(id: SceneId): Promise<SceneHost> {
+  /** Import, build and warm up a scene (once). `background`: only while the page is idle. */
+  load(id: SceneId, background = false): Promise<SceneHost> {
     const hit = this.hosts.get(id);
     if (hit) return Promise.resolve(hit);
+    if (!background) this.urgent.add(id);
     let p = this.pending.get(id);
     if (!p) {
-      p = (async () => {
-        const mod = await loaders[id]();
-        const t0 = performance.now();
-        const scene = await mod.build(this.ctx);
-        const host = new SceneHost(scene);
-        host.update(0, 0, new THREE.Vector2(), this.pl.width / this.pl.height, this.pl.height);
-        const t1 = performance.now();
-        await this.pl.compile(host.frame()).catch(() => undefined);
-        this.stats[id] = { build: Math.round(t1 - t0), compile: Math.round(performance.now() - t1) };
-        this.hosts.set(id, host);
-        return host;
-      })();
+      p = this.make(id);
       this.pending.set(id, p);
     }
     return p;
+  }
+
+  private async make(id: SceneId) {
+    const mod = await loaders[id]();
+    const t0 = performance.now();
+    const scene = await mod.build(this.ctx);
+    const host = new SceneHost(scene);
+    host.update(0, 0, new THREE.Vector2(), this.pl.width / this.pl.height, this.pl.height);
+    const t1 = performance.now();
+    await this.pl.compile(host.frame()).catch(() => undefined);
+    const t2 = performance.now();
+    const upload = await this.warm(host, id);
+    this.stats[id] = { build: Math.round(t1 - t0), compile: Math.round(t2 - t1), upload };
+    this.hosts.set(id, host);
+    this.urgent.delete(id);
+    return host;
+  }
+
+  /**
+   * Draw every part of a scene once off screen, so the first crossing into it
+   * does not stall on buffer uploads and draw-time shader variants. In the
+   * background this runs a few parts per idle slot. Returns busy ms.
+   */
+  private async warm(host: SceneHost, id: SceneId) {
+    const s = host.scene;
+    const parts: [THREE.Object3D, boolean][] = [];
+    for (const [root, fx] of [
+      [s.opaque, false],
+      [s.fx, true],
+    ] as const) {
+      root.updateMatrixWorld(true);
+      root.traverse((o) => {
+        if ((o as THREE.Mesh).isMesh || (o as THREE.Points).isPoints || (o as THREE.Line).isLine) parts.push([o, fx]);
+      });
+    }
+    const f = host.frame();
+    let busy = 0;
+    let i = 0;
+    while (i < parts.length) {
+      const slot = this.urgent.has(id) ? null : await idle();
+      const t = performance.now();
+      do {
+        const [part, fx] = parts[i++];
+        this.pl.upload(f, part, fx);
+      } while (i < parts.length && (this.urgent.has(id) || (slot?.timeRemaining() ?? 0) > 4));
+      busy += performance.now() - t;
+    }
+    return Math.round(busy);
   }
 
   /** Build the rest one after another while the page is idle. */
   async preload(ids: SceneId[]) {
     for (const id of ids) {
       await idle();
-      await this.load(id).catch((e) => console.warn(`scene ${id} failed`, e));
+      await this.load(id, true).catch((e) => console.warn(`scene ${id} failed`, e));
     }
   }
 
@@ -128,8 +168,10 @@ export class Scenes {
   }
 }
 
+type Slot = { timeRemaining(): number };
+
 const idle = () =>
-  new Promise<void>((r) => {
-    if ("requestIdleCallback" in window) (window as Window & { requestIdleCallback: (cb: () => void, o?: { timeout: number }) => void }).requestIdleCallback(() => r(), { timeout: 400 });
-    else setTimeout(r, 60);
+  new Promise<Slot>((r) => {
+    if ("requestIdleCallback" in window) window.requestIdleCallback((d) => r(d), { timeout: 400 });
+    else setTimeout(() => r({ timeRemaining: () => 0 }), 60);
   });

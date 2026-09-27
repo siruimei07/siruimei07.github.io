@@ -6,7 +6,8 @@ import type { Tier } from "./Quality";
 import { fxShared } from "./toon";
 
 // The toon frame:
-//   1. gbuf   — MSAA, two targets: shaded colour (HDR) + aux (view normal, view depth, ink id)
+//   1. gbuf + gaux — MSAA, drawn in two passes: shaded colour (HDR), then aux
+//      (view normal, view depth, ink id) with each material's aux twin (see auxTwin)
 //   2. ink    — screen-space lines from depth / normal / id discontinuities → lit
 //   3. fx     — additive and transparent effects into lit (they depth-test against aux)
 //   (1–3 run once per scene; while two scenes cross, a mix pass blends them)
@@ -155,6 +156,7 @@ uniform float uVignette;
 uniform float uGrain;
 uniform float uDark;
 uniform float uCalm;      // 0 menu … 1 screens: more blur, darker, quieter caustics
+uniform float uSea;       // per-scene luminance gain under the sea grade
 uniform vec3 uFocus;      // emblem centre (uv) + radius: the sea hushes behind the fish
 // Yachiyo's film band (display space): inverse affine from pixels to frame uv
 // (0…1, y up). The video stacks colour (top half) over her pop-out alpha.
@@ -277,7 +279,7 @@ void main() {
   if (water > 0.0 || blotIn > 0.0) {
     vec3 soft = texture2D(tSoft, suv).rgb * uExposure;
     vec3 base = display(mix(lit * uExposure, soft, 0.6 + 0.38 * uCalm));
-    float l = luma(base);
+    float l = luma(base) * uSea;
     l = pow(l, 0.85) * 1.12 + 0.03;
     l = mix(l, l * 0.5 + 0.06, uCalm);
     // brighter toward the surface (screen top), darker in the depths
@@ -429,6 +431,8 @@ export type FrameLook = {
   inkFade?: [number, number];
   inkWidth?: number;
   rim?: THREE.Color;
+  /** Luminance gain under the sea grade. */
+  sea?: number;
 };
 
 export type Frame = {
@@ -446,6 +450,39 @@ export type Frame = {
 
 /** How two scenes cross: 0 = ripple from a point, 1 = ink dissolve. */
 export type Mix = { k: number; mode: 0 | 1; center: THREE.Vector2 };
+
+// Why two passes and not one draw into two attachments: ANGLE on Direct3D 11
+// (Chrome and Edge on Windows) links every program for a single colour output
+// and, the first time it draws into two attachments, recompiles its pixel
+// shader synchronously — 20–200 ms per program on a first visit, seconds per
+// scene. A scene material still declares both outputs; in the colour pass its
+// aux output simply has nowhere to go. For the aux pass it gets a twin that
+// shares its uniforms and writes gAux as its only output.
+const AUX_DECL = /layout\s*\(\s*location\s*=\s*1\s*\)\s*out\s+highp\s+vec4\s+gAux\s*;/;
+const MAIN = /\bvoid\s+main\s*\(\s*(?:void\s*)?\)/;
+const twins = new WeakMap<THREE.Material, THREE.Material | null>();
+
+function auxTwin(m: THREE.Material): THREE.Material | null {
+  let twin = twins.get(m);
+  if (twin !== undefined) return twin;
+  twin = null;
+  const s = m as THREE.ShaderMaterial;
+  if (s.isShaderMaterial && AUX_DECL.test(s.fragmentShader) && MAIN.test(s.fragmentShader)) {
+    const t = s.clone();
+    t.uniforms = s.uniforms;
+    t.defines = s.defines;
+    // coverage came from the colour's alpha; the aux alpha carries the ink id
+    t.alphaToCoverage = false;
+    t.fragmentShader =
+      s.fragmentShader.replace(AUX_DECL, "highp vec4 gAux = vec4(0.0);").replace(MAIN, "void gbufMain()") +
+      `\nvoid main() {\n  gbufMain();\n${s.alphaToCoverage ? "  if (gl_FragColor.a < 0.5) discard;\n" : ""}  gl_FragColor = gAux;\n}\n`;
+    twin = t;
+  }
+  twins.set(m, twin);
+  return twin;
+}
+
+type Drawable = THREE.Object3D & { material?: THREE.Material | THREE.Material[] };
 
 const mixFrag = /* glsl */ `
 ${common}
@@ -495,8 +532,14 @@ export class Pipeline {
   readonly timer: GpuTimer;
   width = 1;
   height = 1;
+  /** G-buffer colour and aux, each its own MSAA target (see auxTwin). */
   gbuf!: THREE.WebGLRenderTarget;
+  gaux!: THREE.WebGLRenderTarget;
   lit!: THREE.WebGLRenderTarget;
+  private swapped: Drawable[] = [];
+  private swappedMat: (THREE.Material | THREE.Material[])[] = [];
+  private hidden: THREE.Object3D[] = [];
+  private clearKeep = new THREE.Color();
   /** Per-scene lit buffers while two scenes cross (allocated on first use). */
   private litA: THREE.WebGLRenderTarget | null = null;
   private litB: THREE.WebGLRenderTarget | null = null;
@@ -515,6 +558,7 @@ export class Pipeline {
   capture: THREE.WebGLRenderTarget | null = null;
   time = 0;
   private bloomNow = 1;
+  private seaNow = 1;
 
   constructor(canvas: HTMLCanvasElement, tier: Tier) {
     this.tier = tier;
@@ -577,6 +621,7 @@ export class Pipeline {
         uExposure: { value: 1 },
         uBloom: { value: 0.2 },
         uBloomNorm: { value: 1 / 6 },
+        uSea: { value: 1 },
         uMono: { value: 0 },
         uWater: { value: 0 },
         uFlood: { value: 0 },
@@ -613,34 +658,82 @@ export class Pipeline {
     if (rebuild && this.gbuf) this.allocate(this.width, this.height);
   }
 
-  private makeGbuf(w: number, h: number) {
+  private makeGbuf(w: number, h: number, nearest: boolean) {
+    // aux must not blend its depth across edges when sampled with offsets
+    const filter = nearest ? THREE.NearestFilter : THREE.LinearFilter;
     const rt = new THREE.WebGLRenderTarget(w, h, {
-      count: 2,
       samples: this.tier.msaa,
       type: THREE.HalfFloatType,
       format: THREE.RGBAFormat,
-      minFilter: THREE.LinearFilter,
-      magFilter: THREE.LinearFilter,
+      minFilter: filter,
+      magFilter: filter,
       generateMipmaps: false,
       depthBuffer: true,
       stencilBuffer: false,
     });
     rt.resolveDepthBuffer = false;
-    for (const t of rt.textures) t.colorSpace = THREE.NoColorSpace;
-    // aux must not blend its depth across edges when sampled with offsets
-    rt.textures[1].minFilter = THREE.NearestFilter;
-    rt.textures[1].magFilter = THREE.NearestFilter;
+    rt.texture.colorSpace = THREE.NoColorSpace;
     return rt;
+  }
+
+  /**
+   * Run `draw` with every material under `root` swapped for its aux twin
+   * (objects without one are hidden), then put everything back.
+   */
+  private withAux<T>(root: THREE.Object3D, draw: () => T): T {
+    const objs = this.swapped;
+    const mats = this.swappedMat;
+    const hidden = this.hidden;
+    root.traverse((o: Drawable) => {
+      const m = o.material;
+      if (!m) return;
+      if (Array.isArray(m)) {
+        objs.push(o);
+        mats.push(m);
+        o.material = m.map((x) => auxTwin(x)) as THREE.Material[];
+        return;
+      }
+      const twin = auxTwin(m);
+      if (twin) {
+        objs.push(o);
+        mats.push(m);
+        o.material = twin;
+      } else if (o.visible) {
+        hidden.push(o);
+        o.visible = false;
+      }
+    });
+    try {
+      return draw();
+    } finally {
+      for (let i = 0; i < objs.length; i++) objs[i].material = mats[i];
+      for (const o of hidden) o.visible = true;
+      objs.length = mats.length = hidden.length = 0;
+    }
+  }
+
+  /** The aux pass: clear to "far, no ink" and draw the twins. */
+  private drawAux(root: THREE.Object3D, camera: THREE.Camera) {
+    const r = this.renderer;
+    r.setRenderTarget(this.gaux);
+    const alpha = r.getClearAlpha();
+    r.getClearColor(this.clearKeep);
+    r.setClearColor(0x000000, 0);
+    r.clear(true, true, false);
+    r.setClearColor(this.clearKeep, alpha);
+    this.withAux(root, () => r.render(root, camera));
   }
 
   private allocate(w: number, h: number) {
     this.gbuf?.dispose();
+    this.gaux?.dispose();
     this.lit?.dispose();
     this.litA?.dispose();
     this.litB?.dispose();
     this.litA = this.litB = null;
     for (const rt of [...this.down, ...this.up]) rt.dispose();
-    this.gbuf = this.makeGbuf(w, h);
+    this.gbuf = this.makeGbuf(w, h, false);
+    this.gaux = this.makeGbuf(w, h, true);
     this.lit = hdrTarget(w, h);
     this.down = [];
     this.up = [];
@@ -723,10 +816,43 @@ export class Pipeline {
 
   /** Warm up every program a scene uses (without drawing it to the screen). */
   async compile(f: Frame) {
+    const r = this.renderer;
     f.before?.();
-    this.renderer.setRenderTarget(this.gbuf);
-    await this.renderer.compileAsync(f.opaque, f.camera);
-    if (f.fx) await this.renderer.compileAsync(f.fx, f.camera);
+    r.setRenderTarget(this.gbuf);
+    const colour = r.compileAsync(f.opaque, f.camera);
+    r.setRenderTarget(this.gaux);
+    // compileAsync gathers its materials synchronously, so the twins can go straight back
+    const aux = this.withAux(f.opaque, () => r.compileAsync(f.opaque, f.camera));
+    r.setRenderTarget(this.lit);
+    const fx = f.fx ? r.compileAsync(f.fx, f.camera) : null;
+    r.setRenderTarget(null);
+    await Promise.all([colour, aux, fx]);
+  }
+
+  /**
+   * Draw one part of a scene off screen (hidden or not, in view or not), so
+   * its buffers, textures and draw-time shader variants are on the GPU
+   * before the scene first crosses in. The next real frame overwrites it all.
+   */
+  upload(f: Frame, part: THREE.Object3D, fx: boolean) {
+    const r = this.renderer;
+    const { visible, frustumCulled } = part;
+    part.visible = true;
+    part.frustumCulled = false;
+    f.before?.();
+    if (fx) {
+      fxShared.tAux.value = this.gaux.texture;
+      r.setRenderTarget(this.lit);
+      r.render(part, f.camera);
+    } else {
+      r.setRenderTarget(this.gbuf);
+      r.render(part, f.camera);
+      r.setRenderTarget(this.gaux);
+      this.withAux(part, () => r.render(part, f.camera));
+    }
+    part.visible = visible;
+    part.frustumCulled = frustumCulled;
+    r.setRenderTarget(null);
   }
 
   /** G-buffer → ink (+ rim) → fx, into `out`. */
@@ -741,10 +867,14 @@ export class Pipeline {
     r.render(f.opaque, f.camera);
     t.end();
 
+    t.begin("aux");
+    this.drawAux(f.opaque, f.camera);
+    t.end();
+
     t.begin("ink");
     const im = this.inkPass.material.uniforms;
-    im.tColor.value = this.gbuf.textures[0];
-    im.tAux.value = this.gbuf.textures[1];
+    im.tColor.value = this.gbuf.texture;
+    im.tAux.value = this.gaux.texture;
     im.uTexel.value.set(1 / this.width, 1 / this.height);
     im.uWidth.value = (look.inkWidth ?? 1.4) * Math.max(1.0, this.height / 1000);
     im.uInkFade.value.set(...(look.inkFade ?? [260, 900]));
@@ -764,7 +894,7 @@ export class Pipeline {
 
     if (f.fx && f.fx.children.length) {
       t.begin("fx");
-      fxShared.tAux.value = this.gbuf.textures[1];
+      fxShared.tAux.value = this.gaux.texture;
       r.setRenderTarget(out);
       r.render(f.fx, f.camera);
       t.end();
@@ -776,6 +906,7 @@ export class Pipeline {
     fxShared.uRes.value.set(this.width, this.height);
     this.scene(f, this.lit);
     this.bloomNow = f.look?.bloom ?? 1;
+    this.seaNow = f.look?.sea ?? 1;
     this.finish(f, target);
   }
 
@@ -800,6 +931,7 @@ export class Pipeline {
     this.mixPass.render(this.renderer, this.lit);
     t.end();
     this.bloomNow = THREE.MathUtils.lerp(a.look?.bloom ?? 1, b.look?.bloom ?? 1, mix.k);
+    this.seaNow = THREE.MathUtils.lerp(a.look?.sea ?? 1, b.look?.sea ?? 1, mix.k);
     this.finish(b, null);
   }
 
@@ -819,6 +951,7 @@ export class Pipeline {
     u.uStepTime.value = Math.floor(this.time * 9) / 9;
     u.uExposure.value = p.exposure;
     u.uBloom.value = p.bloom * this.bloomNow;
+    u.uSea.value = this.seaNow;
     u.uBloomNorm.value = 1 / Math.max(1, this.down.length);
     u.uMono.value = p.mono;
     u.uWater.value = p.water;

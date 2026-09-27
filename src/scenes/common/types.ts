@@ -33,6 +33,8 @@ export type ScenePost = {
   vignette?: number;
   /** Colour of the screen-space rim light (linear). */
   rim?: THREE.Color;
+  /** Brightness under the menu's sea grade (1 = as is); keeps the menu words readable over bright skies. */
+  sea?: number;
 };
 
 export interface StageScene {
