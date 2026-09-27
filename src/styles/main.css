@@ -1136,6 +1136,7 @@ kbd:first-child {
   animation: flare 5.5s linear infinite, bob 3.2s ease-in-out infinite;
   animation-delay: calc(var(--i) * -0.8s), calc(var(--i) * -0.45s);
   display: inline-block;
+  position: relative;
   opacity: 0.93;
 }
 
@@ -1149,6 +1150,22 @@ kbd:first-child {
   50% {
     transform: translateY(-0.05em) skewX(-2deg);
   }
+}
+
+/* a deep-blue copy just below and right: the pale words keep their edge over bright water */
+.js .mw--shade {
+  position: absolute;
+  left: calc(0.3vw + 0.045em);
+  top: calc(0.2vw + 0.06em);
+  -webkit-text-fill-color: rgba(5, 22, 98, 0.5);
+  background: none;
+  animation: bob 3.2s ease-in-out infinite;
+  animation-delay: calc(var(--i) * -0.45s);
+  opacity: 1;
+}
+
+.js .menu__list li.is-on .mw--shade {
+  visibility: hidden;
 }
 
 .js .mw--red {
@@ -1514,6 +1531,16 @@ kbd:first-child {
 .js .screen {
   padding: 0;
   overflow: hidden;
+}
+
+/* a quieter left side under the content, so loose text reads over any scene
+   (the scene's hero keeps the right side) */
+.js .screen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(4, 12, 44, 0.5) 0%, rgba(4, 12, 44, 0.36) 36%, rgba(4, 12, 44, 0) 60%);
+  pointer-events: none;
 }
 
 .screen__big {
@@ -2117,7 +2144,7 @@ kbd:first-child {
   align-items: center;
   gap: 0.4rem 1.2vw;
   padding: 1vh 1.3vw;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(6, 16, 56, 0.78);
   cursor: pointer;
   outline: none;
   transition: background 0.15s, color 0.15s, transform 0.25s var(--swing);
@@ -3667,6 +3694,10 @@ html:not(.js) .title__focus {
   list-style: none;
 }
 
+html:not(.js) .title__foot span::before {
+  content: " · ";
+}
+
 html:not(.js) .title__focus li {
   padding: 0.1em 0.8em;
   background: var(--white);
@@ -3693,6 +3724,7 @@ html:not(.js) .menu__list small {
 }
 
 html:not(.js) .mw--red,
+html:not(.js) .mw--shade,
 html:not(.js) .menu__cursor,
 html:not(.js) .menu__desc,
 html:not(.js) .keys {

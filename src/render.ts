@@ -76,7 +76,7 @@ function renderMenu(data: GitHubSnapshot | null) {
   const stats = summarize(data);
   const items = menu
     .map(
-      (m, i) => `<li style="--r:${LEAN[i].r}deg;--x:${LEAN[i].x}em;--i:${i}"><a href="#${m.id}" data-item="${m.id}" data-info="${esc(m.desc)}" data-info-en="${esc(m.descEn)}" data-place="${esc(places[sceneOf[m.id]].ja)}"><span class="mw" data-word>${esc(m.label)}</span><span class="mw mw--red" aria-hidden="true">${esc(m.label)}</span><small>${esc(m.zh)}</small></a></li>`,
+      (m, i) => `<li style="--r:${LEAN[i].r}deg;--x:${LEAN[i].x}em;--i:${i}"><a href="#${m.id}" data-item="${m.id}" data-info="${esc(m.desc)}" data-info-en="${esc(m.descEn)}" data-place="${esc(places[sceneOf[m.id]].ja)}"><span class="mw mw--shade" aria-hidden="true">${esc(m.label)}</span><span class="mw" data-word>${esc(m.label)}</span><span class="mw mw--red" aria-hidden="true">${esc(m.label)}</span><small>${esc(m.zh)}</small></a></li>`,
     )
     .join("");
   const links = card.links.map((l) => (l.id === "mail" ? `<a href="${esc(l.href)}">${esc(l.label)}</a>` : ext(l.href, esc(l.label)))).join("");

@@ -124,12 +124,13 @@ export function calendarCtl(data: GitHubSnapshot | null): ScreenCtl {
   let sel = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
-  // Today: tonight's moon, big.
+  // Today: tonight's moon, big (at 21:00, like every day in the grid and the day panel).
   const fillToday = () => {
     const now = new Date();
-    const m = moonAt(now);
-    const name = moonName(now);
-    const toFull = daysToFull(now);
+    const night = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 21);
+    const m = moonAt(night);
+    const name = moonName(night);
+    const toFull = daysToFull(new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12));
     $<SVGPathElement>("[data-today-icon] .moon-lit", root)?.setAttribute("d", moonLitPath(m.phase, 44));
     const set = (s: string, html: string) => {
       const e = $(s, root);
