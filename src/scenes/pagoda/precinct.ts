@@ -93,7 +93,7 @@ export function buildPrecinct(density: number) {
   // on the terrace, framing the pagoda
   for (const [x, z, r] of [
     [-12, -56, 6.5],
-    [15, -55, 6.0],
+    [14, -51, 7.0],
     [-18, -71, 7.0],
     [21, -74, 7.2],
     [-8, -88, 6.0],
@@ -112,7 +112,7 @@ export function buildPrecinct(density: number) {
   const blobs: { p: THREE.Vector3; s: THREE.Vector3; hue: number }[] = [];
   const trunks = new GeoBuilder();
   for (const t of spots) {
-    const n = Math.round(7 + t.r * 0.8);
+    const n = Math.round(12 + t.r * 2.0);
     const crown = new THREE.Vector3(t.x, t.y + t.h * 0.7, t.z);
     // trunk and a few heavy limbs
     trunks.beam(new THREE.Vector3(t.x, t.y - 0.5, t.z), new THREE.Vector3(t.x + 0.3, t.y + t.h * 0.45, t.z), 0.55, 0.55, [0.04, 0.022, 0.024]);
@@ -125,11 +125,11 @@ export function buildPrecinct(density: number) {
       const a = rand() * Math.PI * 2;
       const rr = Math.sqrt(rand()) * t.r * 0.85;
       const p = crown.clone().add(new THREE.Vector3(Math.cos(a) * rr, (rand() - 0.3) * t.r * 0.5, Math.sin(a) * rr));
-      const s = t.r * (0.45 + rand() * 0.3) * (0.7 + 0.3 * density);
+      const s = t.r * (0.26 + rand() * 0.22) * (0.75 + 0.25 * density);
       blobs.push({ p, s: new THREE.Vector3(s, s * (0.62 + rand() * 0.2), s), hue: rand() });
     }
   }
-  const blobGeo = new THREE.IcosahedronGeometry(1, 3);
+  const blobGeo = new THREE.IcosahedronGeometry(1, 2);
   const bloom = new THREE.InstancedMesh(
     blobGeo,
     toonMaterial({
@@ -139,6 +139,7 @@ export function buildPrecinct(density: number) {
       rim: 1.0,
       step: -0.05,
       soft: 0.12,
+      alphaToCoverage: true,
       vertexHead: /* glsl */ `varying vec3 vObj; attribute float aHue; varying float vHue;`,
       vertex: /* glsl */ `
         vObj = position;
@@ -147,19 +148,26 @@ export function buildPrecinct(density: number) {
         vec3 pp = position * 2.3 + aHue * 17.0;
         float bump = vnoise(pp.xy + pp.z) * 0.55 + vnoise(pp.yz * 2.1 - pp.x) * 0.3;
         vec3 sc = vec3(length(instanceMatrix[0].xyz), length(instanceMatrix[1].xyz), length(instanceMatrix[2].xyz));
-        wp.xyz += nrm * (bump - 0.35) * sc.x * 0.42;
+        wp.xyz += nrm * (bump - 0.35) * sc.x * 0.62;
         // a slow breeze
         wp.x += sin(uTime * 0.7 + wp.z * 0.2 + aHue * 6.0) * 0.06 * sc.x;`,
       fragmentHead: /* glsl */ `varying vec3 vObj; varying float vHue;`,
       fragment: /* glsl */ `
-        // blossom texture: bright florets over deeper pink, lit from below
-        float fl = vnoise(vWorldPos.xy * 3.1 + vWorldPos.z * 1.7);
-        float fl2 = vnoise(vWorldPos.zy * 7.3 - vWorldPos.x * 2.1);
-        float flor = smoothstep(0.55, 0.8, fl * 0.6 + fl2 * 0.5);
-        base = mix(base * vec3(0.95, 0.82, 0.9), vec3(1.0, 0.93, 0.97), flor * 0.7);
-        shade = mix(shade, vec3(0.78, 0.5, 0.78), flor * 0.4);
+        // blossom clusters, projected three ways so they never streak
+        vec3 an = abs(n); an = an * an * an * an; an /= (an.x + an.y + an.z);
+        vec3 p1 = vWorldPos * 2.1 + vHue * 5.0;
+        vec3 p2 = vWorldPos * 6.3 + 3.1;
+        float f1 = vnoise(p1.yz) * an.x + vnoise(p1.zx) * an.y + vnoise(p1.xy) * an.z;
+        float f2 = vnoise(p2.yz) * an.x + vnoise(p2.zx) * an.y + vnoise(p2.xy) * an.z;
+        float flor = smoothstep(0.5, 0.8, f1 * 0.45 + f2 * 0.65);
+        // ragged, fluffy edges where the puff turns away from the eye
+        float facing = abs(dot(n, V));
+        alpha = smoothstep(0.0, 0.2, facing - 0.28 + f2 * 0.55);
+        if (alpha < 0.02) discard;
+        base = mix(base * vec3(0.92, 0.74, 0.86), vec3(1.0, 0.92, 0.96), flor * 0.75);
+        shade = mix(shade, vec3(0.74, 0.44, 0.74), flor * 0.45);
         float under = saturate(-n.y * 0.6 + 0.4);
-        emis += vec3(1.0, 0.36, 0.58) * (0.3 + 0.75 * under) * (0.7 + 0.6 * flor) * mix(0.8, 1.2, vHue);`,
+        emis += vec3(1.0, 0.36, 0.58) * (0.25 + 0.7 * under) * (0.6 + 0.7 * flor) * mix(0.8, 1.2, vHue);`,
     }),
     blobs.length,
   );

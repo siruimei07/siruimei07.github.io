@@ -44,9 +44,7 @@ export function buildFish(fx: THREE.Scene, heroes: { role: string; top: THREE.Ve
   const n = (c: number) => Math.round(c * density);
 
   // 1 · the great S-river through the right of the screen shot: in front of the lantern tower low, behind it high
-  add(
-    new FishStream({
-      path: fromShot(shots.screen, [
+  const sRiver = fromShot(shots.screen, [
         [0.36, 1.12, 150],
         [0.56, 0.9, 220],
         [0.74, 0.77, 285],
@@ -56,12 +54,14 @@ export function buildFish(fx: THREE.Scene, heroes: { role: string; top: THREE.Ve
         [0.67, 0.25, 590],
         [0.55, 0.15, 700],
         [0.62, 0.04, 880],
-        [0.8, -0.06, 1150],
-        [1.0, -0.12, 1500],
-      ]),
+        [0.78, -0.08, 1100],
+      ]);
+  add(
+    new FishStream({
+      path: sRiver,
       closed: false,
-      count: n(3400),
-      radius: 5.5,
+      count: n(4200),
+      radius: 5,
       flatten: 0.7,
       size: 1.15,
       speed: 12,
@@ -73,6 +73,9 @@ export function buildFish(fx: THREE.Scene, heroes: { role: string; top: THREE.Ve
       seed: 7,
     }),
   );
+
+  // … and a looser halo of stragglers around it, so the river has body
+  add(new FishStream({ path: sRiver, closed: false, count: n(1800), radius: 16, flatten: 0.6, size: 0.9, speed: 10, colors: PINK, intensity: 1.3, shoals: 0.5, trail: 0.15, minPx: 1.5, seed: 8 }));
 
   // 2 · a school of big fish gliding close through the lower right
   add(
@@ -157,7 +160,7 @@ export function buildFish(fx: THREE.Scene, heroes: { role: string; top: THREE.Ve
       const t = i / 12;
       pts.push(start.clone().addScaledVector(flat, t * 3600).add(V(Math.sin(t * 8) * 90, t * t * 1300 + Math.sin(t * 5) * 40, 0)));
     }
-    add(new FishStream({ path: pts, closed: false, count: n(3200), radius: 22, flatten: 0.4, size: 4.2, speed: 22, colors: CYAN, intensity: 2.2, shoals: 0.7, trail: 0.3, minPx: 1.5, seed: 61 }));
+    add(new FishStream({ path: pts, closed: false, count: n(4200), radius: 18, flatten: 0.45, size: 4.6, speed: 22, colors: CYAN, intensity: 3.2, shoals: 0.7, trail: 0.3, minPx: 1.6, seed: 61 }));
   }
 
   // ---- sparkler fish

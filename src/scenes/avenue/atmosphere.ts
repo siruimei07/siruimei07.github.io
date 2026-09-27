@@ -156,8 +156,11 @@ export class Searchlight {
   update(t: number) {
     const az = this.az0 + Math.sin(t * this.rate + this.phase) * this.swing;
     const el = this.el + Math.sin(t * this.rate * 0.7 + this.phase * 2.0) * 0.08;
-    const dir = new THREE.Vector3(Math.sin(az) * Math.cos(el), Math.sin(el), -Math.cos(az) * Math.cos(el));
+    _dir.set(Math.sin(az) * Math.cos(el), Math.sin(el), -Math.cos(az) * Math.cos(el));
     this.mesh.position.copy(this.base);
-    this.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+    this.mesh.quaternion.setFromUnitVectors(_up, _dir);
   }
 }
+
+const _dir = new THREE.Vector3();
+const _up = new THREE.Vector3(0, 1, 0);

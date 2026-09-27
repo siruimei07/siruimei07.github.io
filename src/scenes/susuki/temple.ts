@@ -390,8 +390,8 @@ class Roof {
 
 function roofMaterial() {
   return toonMaterial({
-    color: 0x4a64a0,
-    shade: 0x121c46,
+    color: 0x22365f,
+    shade: 0x0b1336,
     ink: 53,
     rim: 1.0,
     step: 0.18,
@@ -418,8 +418,8 @@ function roofMaterial() {
       } else if (part < 2.5) {
         // fascia: pale weathered boards with the rafter ends
         float r = fract(vUv.x / 0.26);
-        base = vec3(0.62, 0.6, 0.7);
-        shade = vec3(0.16, 0.17, 0.3);
+        base = vec3(0.34, 0.34, 0.46);
+        shade = vec3(0.09, 0.1, 0.2);
         float endR = step(0.62, r);
         base *= 1.0 - endR * 0.2; shade *= 1.0 - endR * 0.25;
       } else if (part < 3.5) {
@@ -431,8 +431,8 @@ function roofMaterial() {
         shade = mix(vec3(0.12, 0.14, 0.28), vec3(0.03, 0.03, 0.08), lat);
       } else {
         // ridges, barge boards, ornaments
-        base = vec3(0.22, 0.27, 0.45);
-        shade = vec3(0.045, 0.06, 0.16);
+        base = vec3(0.1, 0.13, 0.25);
+        shade = vec3(0.03, 0.04, 0.11);
       }`,
   });
 }

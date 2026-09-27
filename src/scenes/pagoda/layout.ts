@@ -25,8 +25,8 @@ export const PAGODA = { x: 1.5, z: -66, rot: THREE.MathUtils.degToRad(24) };
 const eye = (x: number, z: number, h: number): [number, number, number] => [x, streetY(z) + h, z];
 
 export const SHOTS: SceneShots = {
-  // further down the street: pagoda, moon and airship in the right third
-  menu: { pos: eye(-1.2, 4, 1.7), yaw: -30, pitch: 30, fov: 64 },
+  // a few steps further down the street: pagoda, moon and airship in the right third
+  menu: { pos: eye(0.6, -6, 1.7), yaw: -33, pitch: 32, fov: 64 },
   // pushed in: the pagoda against the moon, the airship over the city
   screen: { pos: eye(-1.6, -14, 1.6), yaw: -19, pitch: 27, fov: 60 },
 };
@@ -56,8 +56,9 @@ export function screenPoint(s: Shot, x: number, y: number, d: number) {
  */
 function placeAirship() {
   const s = SHOTS.screen;
-  const nose = screenPoint(s, 0.715, 0.15, 250);
-  const tail = screenPoint(s, 1.0, 0.47, 285);
+  // (kept below the HUD's top-right corner: x > 0.72, y < 0.11)
+  const nose = screenPoint(s, 0.725, 0.19, 250);
+  const tail = screenPoint(s, 1.0, 0.5, 285);
   const pos = nose.clone().add(tail).multiplyScalar(0.5);
   const N = nose.clone().sub(tail);
   const length = N.length();
@@ -72,7 +73,7 @@ function placeAirship() {
 
 export const AIRSHIP = placeAirship();
 
-/** The moon: right behind the pagoda's spire in the screen shot. */
-export const MOON_AZ = 2;
-export const MOON_EL = 41;
+/** The moon: right behind the pagoda's spire (in both shots). */
+export const MOON_AZ = 3.2;
+export const MOON_EL = 39.5;
 export const moonDir = dirFromAzEl(MOON_AZ, MOON_EL);

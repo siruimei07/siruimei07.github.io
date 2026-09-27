@@ -12,7 +12,7 @@ import { TERRACE_Y } from "./layout";
 
 type Tower = { x: number; z: number; w: number; d: number; h: number; rot: number; kind: number };
 
-export const GREEN_TOWER = { x: 250, z: -560, h: 250, w: 46 };
+export const GREEN_TOWER = { x: -51, z: -430, h: 240, w: 44 };
 
 export function buildSkyline(density: number) {
   const rand = rng(3131);

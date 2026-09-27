@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { toonMaterial } from "../../engine/toon";
 import { WARM } from "./bridge";
 import { box, curvedBeam, cyl, facadeBox, hipRoof, merge, prep } from "./geo";
-import { DECK_Y, GATE_Z, SHORE_LAMPS, SHORE_Z, TORII_H, TORII_HALF, TORII_Z, Z_FAR } from "./layout";
+import { DECK_Y, GATE_Z, SHORE_LAMPS, SHORE_Z, TORII_H, TORII_HALF, TORII_S, TORII_Z, Z_FAR } from "./layout";
 
 // The far end of the bridge: the great vermilion torii with its black kasagi
 // sweeping up at the ends, the two-storey gate hall (楼門) with its corridors
@@ -84,10 +84,10 @@ function buildTorii(): THREE.Group {
       ink: 11,
       rim: 0.6,
       lights: 0,
-      uniforms: { uC: { value: new THREE.Vector2(0, G + 10.95) } },
-      fragmentHead: /* glsl */ `uniform vec2 uC;`,
+      uniforms: { uC: { value: new THREE.Vector2(0, G + 10.95 * TORII_S) }, uS: { value: TORII_S } },
+      fragmentHead: /* glsl */ `uniform vec2 uC; uniform float uS;`,
       fragment: /* glsl */ `
-        vec2 q = vec2(vWorldPos.x - uC.x, vWorldPos.y - uC.y);
+        vec2 q = vec2(vWorldPos.x - uC.x, vWorldPos.y - uC.y) / uS;
         float border = step(0.6, abs(q.x)) + step(0.94, abs(q.y));
         vec3 gold = vec3(1.0, 0.72, 0.3);
         base = mix(base, gold * 0.8, min(border, 1.0));
@@ -99,6 +99,7 @@ function buildTorii(): THREE.Group {
   );
   g.add(redMesh, blackMesh, plaque);
   g.position.set(0, G, TORII_Z);
+  g.scale.setScalar(TORII_S);
   return g;
 }
 
@@ -115,8 +116,8 @@ function buildGate(): THREE.Group {
   const wallMesh = new THREE.Mesh(
     merge(walls),
     toonMaterial({
-      color: 0xece6da,
-      shade: 0x4e5680,
+      color: 0xbfb4aa,
+      shade: 0x3a3f62,
       ink: 12,
       rim: 0.6,
       step: 0.1,
@@ -167,8 +168,8 @@ function buildGate(): THREE.Group {
           float col = 1.0 - step(0.2, c);
           float band = step(1.6, f.y) * step(f.y, 3.3) * (1.0 - col);
           float bars = step(0.5, fract(f.x / 0.22));
-          base = mix(base, red, col);
-          shade = mix(shade, redS, col);
+          base = mix(vec3(0.1, 0.07, 0.08), red, col);
+          shade = mix(vec3(0.04, 0.03, 0.05), redS, col);
           emis += uLanternCol * band * (0.35 + 0.5 * bars) * 0.9;
           vec2 lq = vec2(abs(fract(f.x / 6.0) - 0.5) * 6.0, f.y - 3.6);
           emis += uLanternCol * step(length(lq * vec2(1.0, 0.75)), 0.3) * 3.2;

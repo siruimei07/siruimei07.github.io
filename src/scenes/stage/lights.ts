@@ -87,7 +87,7 @@ varying float vFace;
 void main() {
   float vis = sceneVisible(vViewZ);
   if (vis <= 0.0) discard;
-  float fall = pow(1.0 - vT, 2.6) * smoothstep(0.0, 0.05, vT);
+  float fall = pow(1.0 - vT, 3.2) * smoothstep(0.0, 0.08, vT);
   float core = pow(vFace, 2.5);
   gl_FragColor = vec4(vC * fall * core * uGain * vis, 1.0);
 }`;
@@ -175,11 +175,10 @@ export function buildTownLights(density: number): TownLights {
   // ---- searchlights
   const beams: [number, number, number, number, number][] = [
     // az, d, length, sweep, colour
-    [-36, 1100, 900, 0.07, 0],
-    [-17, 1600, 1100, 0.09, 1],
-    [-3, 900, 800, 0.06, 0],
-    [44, 1250, 950, 0.08, 1],
-    [58, 2000, 1200, 0.07, 2],
+    [-30, 1200, 520, 0.06, 0],
+    [-9, 1500, 600, 0.07, 1],
+    [52, 1300, 560, 0.06, 0],
+    [66, 2100, 640, 0.05, 1],
   ];
   const bg = new THREE.CylinderGeometry(1, 1, 1, 14, 1, true);
   bg.translate(0, 0.5, 0);
@@ -193,7 +192,7 @@ export function buildTownLights(density: number): TownLights {
     const x = Math.sin(a) * d;
     const z = -Math.cos(a) * d;
     base.set([x, landY(x, z) + 20, z, rand()], i * 4);
-    par.set([len, len * 0.06, sw, c], i * 4);
+    par.set([len, len * 0.09, sw, c], i * 4);
   });
   g2.setAttribute("aBase", new THREE.InstancedBufferAttribute(base, 4));
   g2.setAttribute("aBeam", new THREE.InstancedBufferAttribute(par, 4));
@@ -204,7 +203,7 @@ export function buildTownLights(density: number): TownLights {
     uniforms: {
       ...fxShared,
       uTime: env.uTime,
-      uGain: { value: 0.14 },
+      uGain: { value: 0.16 },
       uCols: { value: [new THREE.Color(1.0, 0.45, 0.25), new THREE.Color(0.35, 0.85, 1.0), new THREE.Color(0.8, 0.5, 1.0)] },
     },
     transparent: true,

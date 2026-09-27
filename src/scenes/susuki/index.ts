@@ -4,7 +4,7 @@ import { Clouds } from "../common/clouds";
 import { makeEnv } from "../common/env";
 import { FishStream } from "../common/fishStream";
 import type { SceneContext, SceneShots, StageScene } from "../common/types";
-import { buildGround, buildHills, buildTreelines, buildWoods, Pond } from "./land";
+import { buildGround, buildHills, buildTreelines, Pond } from "./land";
 import { EYE_MENU, EYE_SCREEN, groundY, moonDir } from "./layout";
 import { MoonSky } from "./moonSky";
 import { Motes } from "./motes";
@@ -25,9 +25,9 @@ const shots: SceneShots = {
 };
 
 const SKY = {
-  zenith: new THREE.Color(0x1f6ef0),
-  mid: new THREE.Color(0x3a9ae6),
-  horizon: new THREE.Color(0x7cd0f0),
+  zenith: new THREE.Color(0x2378e8),
+  mid: new THREE.Color(0x42a4e8),
+  horizon: new THREE.Color(0x86d6f2),
   glow: new THREE.Color(0xc9f4ff),
 };
 
@@ -36,9 +36,8 @@ export function build(ctx: SceneContext): StageScene {
   const fx = new THREE.Scene();
 
   // ---- sky: today's moon
-  const sky = new MoonSky({ moonRadius: 4.6, zenith: SKY.zenith, mid: SKY.mid, horizon: SKY.horizon, glow: SKY.glow, stars: 0.3, halo: 0.8 });
-  const phaseOverride = Number(new URLSearchParams(globalThis.location?.search ?? "").get("phase") ?? NaN);
-  const phaseNow = () => (Number.isFinite(phaseOverride) ? phaseOverride : moonAt(new Date()).phase);
+  const sky = new MoonSky({ moonRadius: 4.6, zenith: SKY.zenith, mid: SKY.mid, horizon: SKY.horizon, glow: SKY.glow, stars: 0, halo: 0.8 });
+  const phaseNow = () => moonAt(new Date()).phase;
   sky.phase = phaseNow();
   const clouds = new Clouds({
     list: [
@@ -47,7 +46,7 @@ export function build(ctx: SceneContext): StageScene {
       [12, 4.4, 30, 2.2],
       [66, 5.2, 28, 2.4],
       // a long thin streak trailing from under the moon
-      [20, 12.6, 28, 2.0],
+      [14, 11.2, 26, 1.8],
       [58, 10.5, 20, 2.2],
       // soft banks high up
       [2, 30, 36, 5.2],
@@ -117,25 +116,13 @@ export function build(ctx: SceneContext): StageScene {
   );
   pond.lit = (1 - Math.cos(sky.phase * 2 * Math.PI)) / 2;
 
-  // TEMP profiling switch: ?off=sky,clouds,hills,trees,woods,ground,pond,temple,lanterns,leaves,plumes
-  const off = new Set((new URLSearchParams(globalThis.location?.search ?? "").get("off") ?? "").split(","));
-  const parts: [string, THREE.Object3D][] = [
-    ["sky", sky.mesh],
-    ["clouds", clouds.mesh],
-    ["hills", buildHills()],
-    ["trees", buildTreelines()],
-    ["woods", buildWoods()],
-    ["ground", buildGround()],
-    ["pond", pond.mesh],
-    ["temple", temple.group],
-    ["lanterns", lanterns],
-    ["lanterns", yukimi],
-    ["field", field.group],
-  ];
-  for (const [k, o] of parts) if (!off.has(k)) opaque.add(o);
-  if (off.has("leaves")) field.group.children.slice(0, 3).forEach((c) => (c.visible = false));
-  if (off.has("plumes")) field.group.children[3].visible = false;
-  console.warn("susuki counts", JSON.stringify(field.group.userData.counts));
+  // draw order for early depth rejection: the grass (renderOrder −30/−20) first, then the ground
+  // and the pond it hides; the far treelines and hills (8…13) and the clouds (20) last
+  const ground = buildGround();
+  ground.renderOrder = -5;
+  pond.mesh.renderOrder = -4;
+  clouds.mesh.renderOrder = 20;
+  opaque.add(sky.mesh, clouds.mesh, buildHills(), buildTreelines(), ground, pond.mesh, temple.group, lanterns, yukimi, field.group);
 
   // ---- fx: moon motes, fireflies, a faint school of light-fish crossing the moon
   const motes = new Motes(ctx.density);
@@ -157,10 +144,10 @@ export function build(ctx: SceneContext): StageScene {
     count: Math.round(110 * (0.5 + 0.5 * ctx.density)),
     radius: 3.2,
     flatten: 0.45,
-    size: 1.3,
+    size: 1.9,
     speed: 11,
     colors: [0xbff4ff, 0xe8fbff, 0x8fdcff, 0xd6f0ff],
-    intensity: 0.85,
+    intensity: 1.05,
     shoals: 0.8,
     trail: 0.45,
     minPx: 2.2,
@@ -177,7 +164,8 @@ export function build(ctx: SceneContext): StageScene {
     fx,
     env,
     shots,
-    post: { exposure: 1.0, bloom: 1.25, inkFade: [80, 480], inkWidth: 1.25, rim: new THREE.Color(0.7, 0.92, 1.0) },
+    // the bright blue-hour sky would wash the menu words out in the sea grade
+    post: { exposure: 1.0, bloom: 1.25, inkFade: [80, 480], inkWidth: 1.25, rim: new THREE.Color(0.7, 0.92, 1.0), sea: 0.55 },
     moonRadius: sky.moonRadius,
     update(t, _dt, camera, heightPx) {
       // the real phase of the moon, refreshed every minute

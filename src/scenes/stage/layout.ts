@@ -35,7 +35,7 @@ export function stairsY(z: number) {
 }
 
 // The moon hangs high over the right third of the view, above the mesa.
-export const MOON_AZ = 31;
+export const MOON_AZ = 32;
 export const MOON_EL = 16;
 export const moonDir = dirFromAzEl(MOON_AZ, MOON_EL);
 

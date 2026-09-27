@@ -34,6 +34,8 @@ type Storey = {
 };
 
 const PLAT = 1.5;
+/** How far a storey's wall plane continues above its wall top (behind the brackets, up to the soffit). */
+const WALL_EXTRA = 1.6 + 2.16 * 0.26 + 0.1;
 const LIFT = 0.95;
 const BOW = 0.85;
 const liftF = (u: number) => Math.pow(Math.abs(u), 3.2);
@@ -192,9 +194,12 @@ export function buildPagoda(pos: THREE.Vector3, rot: number): PagodaResult {
       lanterns.push(tip.clone().setY(tip.y - 0.75));
 
       // walls: recessed infill between the columns (shader draws doors / windows)
-      const wg = new THREE.PlaneGeometry(2 * b, yWT - yB);
-      const wm = new THREE.Matrix4().makeBasis(t.clone(), new THREE.Vector3(0, 1, 0), d.clone());
-      wm.setPosition(d.clone().multiplyScalar(b - 0.1).setY((yB + yWT) / 2));
+      // the wall runs up behind the brackets to the soffit, closing the roof void
+      const wallTop = ySoffWall + 0.1;
+      const wg = new THREE.PlaneGeometry(2 * b, wallTop - yB);
+      // (−t, up, d) is right-handed, so the wall's front face looks outward
+      const wm = new THREE.Matrix4().makeBasis(t.clone().negate(), new THREE.Vector3(0, 1, 0), d.clone());
+      wm.setPosition(d.clone().multiplyScalar(b - 0.1).setY((yB + wallTop) / 2));
       walls.add(wg, wm, 0xffffff, [k, s, b, yWT - yB]);
 
       // columns (corners shared: one per side at u = −1) and the ±1/3 posts
@@ -278,7 +283,7 @@ export function buildPagoda(pos: THREE.Vector3, rot: number): PagodaResult {
           wood.box(c.x, y, c.z, 0.13, h, 2 * rr + 0.1, (s * Math.PI) / 2, VERM);
         }
         const pg = new THREE.PlaneGeometry(2 * rr, 0.38);
-        const pm = new THREE.Matrix4().makeBasis(t.clone(), new THREE.Vector3(0, 1, 0), d.clone());
+        const pm = new THREE.Matrix4().makeBasis(t.clone().negate(), new THREE.Vector3(0, 1, 0), d.clone());
         pm.setPosition(d.clone().multiplyScalar(rr).setY(yB + 0.34));
         rails.add(pg, pm, 0xffffff, [k, s, rr, 0]);
       }
@@ -409,7 +414,7 @@ export function buildPagoda(pos: THREE.Vector3, rot: number): PagodaResult {
       float b = vPart.z;
       float hw = vPart.w;
       float x = (vUv.x - 0.5) * 2.0 * b;
-      float y = vUv.y * hw;
+      float y = vUv.y * (hw + ${WALL_EXTRA.toFixed(3)});
       float bay = floor((x / b + 1.0) * 1.5);           // 0, 1, 2
       float bx = fract((x / b + 1.0) * 1.5);            // 0 … 1 in the bay
       vec3 plaster = vec3(0.13, 0.01, 0.007);

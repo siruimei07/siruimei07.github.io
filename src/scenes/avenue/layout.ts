@@ -72,12 +72,23 @@ export function aim(pos: [number, number, number], target: THREE.Vector3, ndc: [
 /** The hero cluster the shots frame. */
 export const HERO = new THREE.Vector3(150, 40, -90);
 
+/** Centre of the tower block containing (x, z). */
+export function blockOf(x: number, z: number) {
+  const i = Math.max(0, Math.round((Math.abs(x) - EDGE - BLOCK / 2) / PITCH));
+  const k = Math.round((Z0 - BLOCK / 2 - z) / PITCH);
+  return { x: Math.sign(x || 1) * (EDGE + i * PITCH + BLOCK / 2), z: Z0 - k * PITCH - BLOCK / 2 };
+}
+
+/** The great lantern tower (a whole block south-east of the precinct) and its lantern's height. */
+export const HERO_LANTERN = new THREE.Vector3(261, 0, 103);
+export const HERO_LANTERN_Y = 161;
+
 export const shots: { menu: Shot; screen: Shot } = {
   // high and far to the south: the district to the horizon, the moon rising out of the haze at the right,
   // the lantern tower and the precinct stacked under it in the right strip
   menu: { pos: [-38, 360, 1161], yaw: -18.14, pitch: -8.63, fov: 50 },
   // pushed in and tipped down over the precinct: plaza, hall, pagoda, lantern tower and fish rivers in the right 45 %
-  screen: aim([110, 340, 420], new THREE.Vector3(194, 158, 120), [0.6, 0.05], 40),
+  screen: aim([110, 340, 420], new THREE.Vector3(HERO_LANTERN.x, HERO_LANTERN_Y, HERO_LANTERN.z), [0.62, 0.05], 40),
 };
 
 export const inPrecinct = (x: number, z: number, pad = 0) =>
@@ -164,30 +175,16 @@ export function towerLots(density: number): Lot[] {
       }
     }
   }
-  // Hero towers around the precinct: the lantern pavilions and the dot-ring roof.
+  // Hero towers around the precinct: the lantern pavilions and the dot-ring roof. Each takes a
+  // whole block (the other lots there are cleared), so it stands free with space around it.
   const cast = (at: THREE.Vector3, role: Lot["hero"], h: number, crown: Crown, size: number) => {
-    let best = -1;
-    let bd = 1e9;
-    lots.forEach((l, i) => {
-      const dd = Math.hypot(l.x - at.x, l.z - at.z);
-      if (dd < bd && !l.hero) {
-        bd = dd;
-        best = i;
-      }
-    });
-    if (best < 0) return;
-    const l = lots[best];
-    l.hero = role;
-    l.h = h;
-    l.crown = crown;
-    l.steps = 1;
-    l.w = Math.max(l.w, size);
-    l.d = Math.max(l.d, size);
-    l.style = 0;
+    const { x: bx, z: bz } = blockOf(at.x, at.z);
+    for (let i = lots.length - 1; i >= 0; i--) if (Math.abs(lots[i].x - bx) < BLOCK / 2 && Math.abs(lots[i].z - bz) < BLOCK / 2) lots.splice(i, 1);
+    lots.push({ x: bx, z: bz, w: size, d: size, h, crown, style: 0, steps: 1, seed: Math.abs(bx * 7.1 + bz * 3.3) % 1000, hero: role });
   };
-  cast(new THREE.Vector3(194, 0, 122), "lantern", 132, "lantern", 36);
-  cast(new THREE.Vector3(270, 0, 30), "dots", 100, "dots", 34);
-  cast(new THREE.Vector3(120, 0, -330), "lantern2", 124, "lantern", 32);
+  cast(HERO_LANTERN, "lantern", 132, "lantern", 54);
+  cast(new THREE.Vector3(347, 0, -155), "dots", 96, "dots", 50);
+  cast(new THREE.Vector3(89, 0, -327), "lantern2", 124, "lantern", 46);
   return lots;
 }
 

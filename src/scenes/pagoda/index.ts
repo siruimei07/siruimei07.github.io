@@ -5,6 +5,7 @@ import { Sky } from "../common/sky";
 import type { SceneContext, StageScene } from "../common/types";
 import { buildAirship } from "./airship";
 import { buildFish } from "./fish";
+import { buildSkyGlow } from "./glow";
 import { buildGround } from "./ground";
 import { Lanterns } from "./lanterns";
 import { AIRSHIP, moonDir, PAGODA, screenPoint, SHOTS, shotCamera, STREET_HALF, streetY, TERRACE_Y } from "./layout";
@@ -45,7 +46,7 @@ function viewLoop(sx: number, sy: number, d: number, rx: number, ry: number, dep
 export function build(ctx: SceneContext): StageScene {
   const opaque = new THREE.Scene();
   const fx = new THREE.Scene();
-  const sky = new Sky({ moonRadius: 4.6, zenith: 0x02060f, mid: 0x071335, horizon: 0x16306a, glow: 0x2c52a8, moonGain: 2.5, stars: 0.35 });
+  const sky = new Sky({ moonRadius: 4.6, zenith: 0x02060f, mid: 0x071335, horizon: 0x16306a, glow: 0x2c52a8, moonGain: 2.5, stars: 0.22 });
   const clouds = new Clouds({
     list: [
       [-34, 26, 46, 5],
@@ -83,11 +84,12 @@ export function build(ctx: SceneContext): StageScene {
   const onPagoda = V(0, 7.2, 6.4).applyAxisAngle(V(0, 1, 0), face).add(V(PAGODA.x, TERRACE_Y, PAGODA.z));
   const glyphs: GlyphSpec[] = [
     { p: onPagoda, size: 1.5, glyph: 2, color: 0xff2848, yaw: face },
-    { p: V(15, TERRACE_Y + 10, -60), size: 1.5, glyph: 0, color: 0xff48c8, yaw: -0.35, flicker: 1 },
-    { p: V(11.5, TERRACE_Y + 5.5, -53), size: 1.15, glyph: 1, color: 0x8cff3c, yaw: -0.25 },
-    { p: V(-10.5, TERRACE_Y + 7.5, -56), size: 1.0, glyph: 1, color: 0x40e6ff, yaw: 0.3 },
-    { p: V(-13, TERRACE_Y + 12, -64), size: 1.1, glyph: 3, color: 0xff70d0, yaw: 0.35, flicker: 1 },
-    { p: V(8.4, streetY(-30) + 11.5, -30), size: 0.9, glyph: 4, color: 0xffb030, yaw: -0.5 },
+    // floating round the pagoda, where the street opens onto the terrace
+    { p: V(9.5, 16.5, -57), size: 1.6, glyph: 0, color: 0xff48c8, yaw: -0.35, flicker: 1 },
+    { p: V(-6.8, 17.2, -55.5), size: 1.3, glyph: 1, color: 0x8cff3c, yaw: 0.3 },
+    { p: V(5.2, 9.2, -51.5), size: 0.8, glyph: 1, color: 0x40e6ff, yaw: -0.2 },
+    { p: V(-11.5, 37, -75), size: 1.8, glyph: 3, color: 0xff70d0, yaw: 0.35, flicker: 1 },
+    { p: V(-4.6, streetY(-24) + 8.2, -24), size: 0.55, glyph: 4, color: 0xffb030, yaw: 1.2 },
     { p: V(70, 70, -300), size: 9, glyph: 0, color: 0xff48c8, yaw: -0.2 },
     { p: V(-110, 80, -330), size: 10, glyph: 1, color: 0x8cff3c, yaw: 0.25 },
     { p: V(170, 90, -420), size: 12, glyph: 3, color: 0x40e6ff, yaw: -0.4, flicker: 1 },
@@ -107,23 +109,30 @@ export function build(ctx: SceneContext): StageScene {
   const spark = buildSparkFish(big, ctx.density);
   const particles = buildParticles(
     [
-      { min: V(-8, streetY(20), -60), max: V(10, streetY(20) + 32, 20), count: 380, type: 0 },
+      { min: V(-8, streetY(-20), -62), max: V(10, streetY(-20) + 30, -20), count: 320, type: 0 },
       { min: V(-40, 10, -190), max: V(50, 130, -10), count: 110, type: 1 },
       { min: V(-10, 4, -75), max: V(14, 24, -22), count: 90, type: 2 },
       { min: V(-22, TERRACE_Y, -92), max: V(26, TERRACE_Y + 16, -44), count: 420, type: 3 },
-      { min: V(-6, 2, -40), max: V(6, 13, 12), count: 160, type: 3 },
+      { min: V(-6, 3, -46), max: V(6, 13, -22), count: 150, type: 3 },
     ],
     ctx.density,
   );
-  fx.add(fish.group, spark.mesh, particles.mesh, neon.fx);
+  // haze behind the pagoda (backlights its silhouette) and the city's glow on the horizon
+  const skyGlow = buildSkyGlow([
+    { az: 2, el: 15, radius: 22, color: 0x1a2c5c, squash: 0.85 },
+    { az: 34, el: 5, radius: 34, color: 0x2c1c26, squash: 0.35 },
+    { az: -32, el: 5, radius: 30, color: 0x24182a, squash: 0.35 },
+  ]);
+  fx.add(skyGlow, fish.group, spark.mesh, particles.mesh, neon.fx);
 
-  const lanternMesh = lanterns.build();
-  const ground = buildGround();
-  opaque.add(sky.mesh, clouds.mesh, ground, pagoda.group, machiya.group, precinct.group, skyline.group, airship.group, neon.group, lanternMesh);
-  // DEBUG(perf): ?hide=a,b hides groups
-  const hide = new URLSearchParams(location.search).get("hide")?.split(",") ?? [];
-  const named: Record<string, THREE.Object3D> = { sky: sky.mesh, clouds: clouds.mesh, ground, pagoda: pagoda.group, machiya: machiya.group, precinct: precinct.group, skyline: skyline.group, airship: airship.group, neon: neon.group, lanterns: lanternMesh, fish: fish.group, spark: spark.mesh, particles: particles.mesh, neonfx: neon.fx };
-  for (const h of hide) if (named[h]) named[h].visible = false;
+  opaque.add(sky.mesh, clouds.mesh, buildGround(), pagoda.group, machiya.group, precinct.group, skyline.group, airship.group, neon.group, lanterns.build());
+
+  // The menu (graded to the P3R sea, luminance only) gets a calmer sky so
+  // the pagoda's silhouette against the moon reads; the content screen
+  // gets every fish. Blended by how close the camera is to the menu pose.
+  const menuAt = new THREE.Vector3(...SHOTS.menu.pos);
+  const screenAt = new THREE.Vector3(...SHOTS.screen.pos);
+  const span = menuAt.distanceTo(screenAt);
 
   return {
     id: "pagoda",
@@ -140,6 +149,10 @@ export function build(ctx: SceneContext): StageScene {
       fish.update(camera, heightPx);
       spark.update(camera, heightPx);
       particles.update(camera, heightPx);
+      const k = THREE.MathUtils.smoothstep(1 - camera.position.distanceTo(menuAt) / span, 0.3, 0.9);
+      fish.gain(1 - 0.65 * k);
+      spark.gain(1 - 0.4 * k);
+      particles.gain(1 - 0.6 * k);
     },
   };
 }

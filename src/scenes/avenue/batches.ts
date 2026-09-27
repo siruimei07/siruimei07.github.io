@@ -77,7 +77,10 @@ const bodyShader = /* glsl */ `
       wc = mix(vec3(1.0, 0.6, 0.42), wc, detail);
       // distance dims the city a little so the haze stays deep
       float dcam = length(vWorldPos - cameraPosition);
-      e *= mix(1.0, 0.55, smoothstep(700.0, 2600.0, dcam));
+      e *= mix(1.0, 0.32, smoothstep(600.0, 2600.0, dcam));
+      // downtown: the blocks around the precinct burn brightest, the outskirts go quieter
+      vec2 dc = (vWorldPos.xz - uCore.xy) / uCore.z;
+      e *= mix(0.42, 1.2, exp(-dot(dc, dc)));
       emis += wc * e;
       float glass = band * (1.0 - on) * detail;
       base = mix(base, base * 0.5 + vec3(0.015, 0.012, 0.03), glass);
@@ -241,7 +244,7 @@ export class Batches {
       rim: 0.8,
       step: 0.1,
       soft: 0.03,
-      uniforms: { uWin: uniforms.uWin },
+      uniforms: { uWin: uniforms.uWin, uCore: { value: new THREE.Vector3(190, 20, 460) } },
       vertexHead: /* glsl */ `
         attribute vec3 aSize;
         attribute vec2 aInfo;
@@ -258,6 +261,7 @@ export class Batches {
         vStyle = aInfo.y;`,
       fragmentHead: /* glsl */ `
         uniform float uWin;
+        uniform vec3 uCore;
         varying vec3 vLocal;
         varying vec3 vLocalN;
         varying vec3 vSize;

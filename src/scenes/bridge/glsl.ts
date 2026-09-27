@@ -1,4 +1,4 @@
-import { BAY, DECK_Y, GATE_Z, NBAYS, RAIL_X, TORII_H, TORII_HALF, TORII_Z, Z_FAR, Z_NEAR } from "./layout";
+import { BAY, DECK_Y, GATE_Z, NBAYS, POST, POST_DZ, POST_LIGHT_Y, POST_N, POST_Z0, RAIL_X, TORII_H, TORII_HALF, TORII_S, TORII_Z, Z_FAR, Z_NEAR } from "./layout";
 
 // GLSL shared by the bridge's materials: the bridge's constants, the rail
 // lanterns (periodic along both railings, so any fragment can sum the few
@@ -17,7 +17,13 @@ export const bridgeDefs = /* glsl */ `
 #define TORII_Z ${f(TORII_Z)}
 #define TORII_HALF ${f(TORII_HALF)}
 #define TORII_H ${f(TORII_H)}
+#define TORII_S ${f(TORII_S)}
 #define GATE_Z ${f(GATE_Z)}
+#define POST_X ${f(POST.x)}
+#define POST_DZ ${f(POST_DZ)}
+#define POST_N ${f(POST_N)}
+#define POST_Z0 ${f(POST_Z0)}
+#define POST_LY ${f(POST_LIGHT_Y)}
 `;
 
 /** Needs `uTime` and `common`. */
@@ -44,6 +50,13 @@ float lanternLight(vec3 P, float radius) {
     }
   }
   return acc;
+}
+// Warm light from the nearest wooden lantern post (they stand outside the right railing).
+float postLight(vec3 P, float radius) {
+  float k = clamp(floor((POST_Z0 - P.z) / POST_DZ + 0.5), 0.0, POST_N - 1.0);
+  vec3 L = vec3(POST_X, POST_LY, POST_Z0 - k * POST_DZ);
+  float fall = saturate(1.0 - length(L - P) / radius);
+  return fall * fall * (0.9 + 0.06 * sin(uTime * 7.3 + k * 2.0) + 0.04 * sin(uTime * 17.1 + k));
 }
 `;
 
@@ -77,7 +90,9 @@ float railCover(float h, float z, float blH, float blZ, out float lant, out floa
 
 // The torii seen in its plane z = TORII_Z at (x, h above the deck).
 float toriiCover(float x, float h, float bl, out float black) {
-  float ax = abs(x);
+  h /= TORII_S;
+  bl /= TORII_S;
+  float ax = abs(x) / TORII_S;
   float pil = nearS(abs(ax - TORII_HALF), 0.45, bl) * bandS(h, -3.0, TORII_H, bl);
   float lift = 0.9 * pow(saturate(ax / 8.0), 2.5);
   float kas = nearS(ax, 8.0, bl) * bandS(h, TORII_H + 0.5 + lift * 0.5, TORII_H + 1.25 + lift, bl);

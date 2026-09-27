@@ -17,7 +17,7 @@ const snap = (h: number) => Math.max(FH * 3, Math.round(h / FH) * FH);
 
 export type GiantLantern = { pos: THREE.Vector3; size: number; phase: number };
 
-const RED = new THREE.Color(1.0, 0.16, 0.1);
+const RED = new THREE.Color(1.0, 0.1, 0.05);
 const WARM = new THREE.Color(1.0, 0.62, 0.3);
 const WHITE = new THREE.Color(1.0, 0.9, 0.8);
 
@@ -124,7 +124,7 @@ export function buildTowers(lots: Lot[], b: Batches, dots: Dots, eyes: THREE.Vec
         b.roof(l.x, y + 0.8, l.z, rw, rh, rd, 0, rc, near);
         if (near) b.box(l.x, y + rh * 0.9, l.z, 0.7, rh * 0.5 + 3, 0.7, 0, Style.Plain, 0, 0x2a2228);
         dots.add(l.x, y + rh * 1.4 + 3.5, l.z, 0.6, WHITE, 5, { twinkle: 0.25, speed: 0.4 });
-        if (near && rand() < 0.16) ledRing({ x: l.x, y: y + 0.8, z: l.z, w: rw, h: rh, d: rd, rot: 0 }, RED, 1.5, 5, 0.32);
+        if (near && rand() < 0.16) ledRing({ x: l.x, y: y + 0.8, z: l.z, w: rw, h: rh, d: rd, rot: 0 }, RED, 1.5, 3.4, 0.34);
         break;
       }
       case "pagoda2": {
@@ -144,7 +144,7 @@ export function buildTowers(lots: Lot[], b: Batches, dots: Dots, eyes: THREE.Vec
         b.roof(l.x, dy + dh - 0.2, l.z, r2w, r2h, r2d, 0, rc, near);
         if (near) b.box(l.x, dy + dh + r2h * 0.85, l.z, 0.7, r2h * 0.5 + 4, 0.7, 0, Style.Plain, 0, 0x2a2228);
         dots.add(l.x, dy + dh + r2h * 1.35 + 4.5, l.z, 0.7, WHITE, 5, { twinkle: 0.25, speed: 0.4 });
-        if (near && rand() < 0.18) ledRing({ x: l.x, y: y + 0.8, z: l.z, w: r1w, h: r1h, d: r1d, rot: 0 }, RED, 1.5, 5, 0.32);
+        if (near && rand() < 0.18) ledRing({ x: l.x, y: y + 0.8, z: l.z, w: r1w, h: r1h, d: r1d, rot: 0 }, RED, 1.5, 3.4, 0.34);
         top.y = dy + dh + r2h;
         break;
       }
@@ -165,7 +165,7 @@ export function buildTowers(lots: Lot[], b: Batches, dots: Dots, eyes: THREE.Vec
             const n = Math.max(2, Math.round(len / spacing));
             for (let i = 0; i < n; i++) {
               const p = eavePoint({ x: l.x, y: y + 1.0 + prof * rh, z: l.z, w: ww, h: rh * (1 - t) * (1 - t), d: dd2, rot: 0 }, side, (i + 0.5) / n);
-              dots.add(p.x, p.y + 0.3, p.z, 0.42, RED, 6.5, { twinkle: 0.2, speed: 0.8 });
+              dots.add(p.x, p.y + 0.3, p.z, 0.46, RED, 3.6, { twinkle: 0.2, speed: 0.8 });
             }
           }
         };
@@ -184,7 +184,7 @@ export function buildTowers(lots: Lot[], b: Batches, dots: Dots, eyes: THREE.Vec
         b.box(l.x, y, l.z, w + 0.8, 1.4, d + 0.8, 0, Style.Cornice, l.seed + 5, tint);
         const ls = m * 0.74;
         const lh = ls * 1.2;
-        const ph = lh * 1.55;
+        const ph = lh * 1.3;
         const pw = 1.6;
         for (const [sx, sz] of [
           [-1, -1],
@@ -202,7 +202,7 @@ export function buildTowers(lots: Lot[], b: Batches, dots: Dots, eyes: THREE.Vec
         b.roof(l.x, ry, l.z, rw, rh, rd, 0, rc, true);
         b.box(l.x, ry + rh * 0.9, l.z, 0.9, rh * 0.5 + 5, 0.9, 0, Style.Plain, 0, 0x2a2228);
         dots.add(l.x, ry + rh * 1.4 + 5.5, l.z, 0.9, WHITE, 6, { twinkle: 0.25, speed: 0.4 });
-        ledRing({ x: l.x, y: ry, z: l.z, w: rw, h: rh, d: rd, rot: 0 }, RED, 1.3, 6, 0.36);
+        ledRing({ x: l.x, y: ry, z: l.z, w: rw, h: rh, d: rd, rot: 0 }, RED, 1.3, 3.6, 0.38);
         lanterns.push({ pos: new THREE.Vector3(l.x, y + 1.4 + ph - lh * 0.62, l.z), size: ls, phase: rand() * 6.28 });
         top.y = ry + rh;
         heroes.push({ role: l.hero ?? "lantern", top: top.clone(), w: rw });
@@ -231,13 +231,15 @@ export function buildLanterns(list: GiantLantern[]) {
       float facing = saturate(dot(n, normalize(cameraPosition - vWorldPos)));
       float rib = smoothstep(0.78, 1.0, abs(sin(vY * 3.14159 * 15.0)));
       float flick = 0.92 + 0.08 * sin(uTime * 7.0 + vWorldPos.x) * sin(uTime * 3.1 + vWorldPos.z);
-      vec3 hot = mix(vec3(1.0, 0.11, 0.025) * 1.5, vec3(1.0, 0.52, 0.12) * 2.4, pow(facing, 1.7));
+      vec3 hot = mix(vec3(1.0, 0.1, 0.02) * 1.15, vec3(1.0, 0.5, 0.1) * 1.75, pow(facing, 1.6));
       // a dark mon (crest) ring on two sides
       float ang = atan(vN0.z, vN0.x);
       float side = abs(fract(ang / 3.14159) - 0.5);
       float mon = smoothstep(0.03, 0.0, abs(length(vec2(side * 3.4, vY * 2.2)) - 0.36)) * step(abs(vY), 0.3);
       emis += hot * (1.0 - rib * 0.4) * (1.0 - mon * 0.7) * flick;
-      base = vec3(0.9, 0.3, 0.1);`,
+      // self-lit: the paper adds almost nothing of its own under the moon
+      base = vec3(0.08, 0.02, 0.01);
+      shade = base;`,
   });
   const lacquer = toonMaterial({ color: 0x241418, shade: 0x0c0608, ink: 5, rim: 1.0 });
   const lg = lanternGeometry();

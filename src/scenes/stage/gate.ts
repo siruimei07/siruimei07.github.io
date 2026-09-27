@@ -153,7 +153,6 @@ export function buildGate(): Gate {
   const yBase = (z: number) => purlinY + 0.36 + (z - (Z - 1.5)) * 0.32;
   const yFly = (z: number) => yBase(zB0) + 0.2 + (z - zB0) * 0.1;
   const rafters: THREE.Matrix4[] = [];
-  const kinds: number[] = [];
   const q = new THREE.Quaternion();
   const e = new THREE.Euler();
   for (let x = -X_END - 0.3; x <= X_END + 0.3; x += 0.42) {
@@ -164,7 +163,6 @@ export function buildGate(): Gate {
       e.set(-Math.atan(0.32), 0, 0);
       q.setFromEuler(e);
       rafters.push(new THREE.Matrix4().compose(new THREE.Vector3(x, yBase(zc), zc), q, new THREE.Vector3(0.15, 0.17, len)));
-      kinds.push(0);
     }
     // flying rafter
     {
@@ -173,7 +171,6 @@ export function buildGate(): Gate {
       e.set(-Math.atan(0.1), 0, 0);
       q.setFromEuler(e);
       rafters.push(new THREE.Matrix4().compose(new THREE.Vector3(x, yFly(zc), zc), q, new THREE.Vector3(0.13, 0.15, len)));
-      kinds.push(1);
     }
   }
   const rafterGeo = new THREE.BoxGeometry(1, 1, 1);
@@ -188,8 +185,7 @@ export function buildGate(): Gate {
     fragmentHead: /* glsl */ `varying float vEnd;`,
     fragment: /* glsl */ `
       // the rafter ends are painted chalk-yellow
-      float endc = step(vEnd, -0.49) + step(-0.5, vEnd) * step(vEnd, -0.47) * 0.0;
-      endc = step(0.5, -n.z) * step(vEnd, -0.48);
+      float endc = step(0.5, -n.z) * step(vEnd, -0.48);
       base = mix(base, vec3(0.98, 0.84, 0.42), endc); shade = mix(shade, vec3(0.5, 0.36, 0.3), endc);`,
   });
   const rafterMesh = new THREE.InstancedMesh(rafterGeo, rafterMat, rafters.length);
@@ -197,7 +193,6 @@ export function buildGate(): Gate {
   rafterMesh.frustumCulled = false;
   rafterMesh.renderOrder = 1;
   group.add(rafterMesh);
-  void kinds;
 
   // soffit boards above the rafters, the fascia boards (木負・茅負), tile edge
   const sof: THREE.BufferGeometry[] = [];

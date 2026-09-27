@@ -71,6 +71,8 @@ export class ShiningStalk {
           base = rgb * 0.3 + 0.04;
           shade = rgb * 0.16 + 0.02;
           emis += rgb * (1.5 * tube * chase * fall * breathe) * (0.45 + 0.55 * face);
+          // a white-hot core down the middle, like a neon tube (keeps its value in any hue)
+          emis += mix(rgb, vec3(1.0), 0.7) * pow(face, 6.0) * 1.1 * tube * fall * breathe;
           emis += mix(rgb, vec3(1.0), 0.35) * node * 1.8 * fall * breathe;
           emis += joint * (vec3(1.0, 0.97, 0.92) * 9.0 * (0.75 + 0.25 * face) + rgb * 2.5) * breathe;
           // a warm glow at the very foot

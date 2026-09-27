@@ -76,13 +76,14 @@ void main() {
 const frag = /* glsl */ `
 ${common}
 ${fxDepthTest}
+uniform float uGain;
 varying vec2 vQ;
 varying float vViewZ;
 varying vec3 vCol;
 varying float vB;
 varying float vStar;
 void main() {
-  float vis = sceneVisible(vViewZ);
+  float vis = sceneVisible(vViewZ) * uGain;
   if (vis <= 0.0) discard;
   float r = length(vQ);
   float a = exp(-r * r * 6.0) * 1.2 + exp(-r * r * 30.0) * 1.5;
@@ -197,7 +198,7 @@ export function buildSparkFish(fish: BigFish[], density: number) {
   const mat = new THREE.ShaderMaterial({
     vertexShader: vert,
     fragmentShader: frag,
-    uniforms: { ...fxShared, tPaths: { value: dt }, uTime: env.uTime, uPxAngle: { value: 0.001 }, uFish: { value: info } },
+    uniforms: { ...fxShared, tPaths: { value: dt }, uTime: env.uTime, uPxAngle: { value: 0.001 }, uFish: { value: info }, uGain: { value: 1 } },
     transparent: true,
     depthTest: false,
     depthWrite: false,
@@ -209,6 +210,9 @@ export function buildSparkFish(fish: BigFish[], density: number) {
     mesh,
     update(camera: THREE.PerspectiveCamera, heightPx: number) {
       mat.uniforms.uPxAngle.value = THREE.MathUtils.degToRad(camera.fov) / Math.max(1, heightPx);
+    },
+    gain(v: number) {
+      mat.uniforms.uGain.value = v;
     },
   };
 }

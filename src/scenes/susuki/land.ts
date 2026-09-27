@@ -115,59 +115,6 @@ export function buildGround(): THREE.Mesh {
   );
 }
 
-const hallToWorld = (lx: number, lz: number): [number, number] => [
-  TEMPLE.x + lx * Math.cos(TEMPLE.yaw) + lz * Math.sin(TEMPLE.yaw),
-  TEMPLE.z - lx * Math.sin(TEMPLE.yaw) + lz * Math.cos(TEMPLE.yaw),
-];
-
-/** A grove of tall cedars (杉) behind the hall. */
-export function buildWoods(): THREE.Object3D {
-  const group = new THREE.Group();
-  const m = new THREE.Matrix4();
-  const q = new THREE.Quaternion();
-  const up = new THREE.Vector3(0, 1, 0);
-  // cedars: stacked cones, slender
-  const tiers: THREE.BufferGeometry[] = [];
-  for (let t = 0; t < 5; t++) {
-    const c = new THREE.ConeGeometry(0.15 - t * 0.022, 0.3, 8, 1);
-    c.translate(0, 0.36 + t * 0.15, 0);
-    tiers.push(c.toNonIndexed());
-  }
-  const trunk = new THREE.CylinderGeometry(0.016, 0.026, 0.45, 6, 1);
-  trunk.translate(0, 0.22, 0);
-  tiers.push(trunk.toNonIndexed());
-  for (const g of tiers) g.deleteAttribute("uv");
-  const cedarGeo = mergeNonIndexed(tiers);
-  const cr = rng(33);
-  const spots: [number, number, number][] = [];
-  const cedarLocal: [number, number, number][] = [
-    [7, -17, 17],
-    [10.5, -21, 20],
-    [13.5, -16.5, 16],
-    [17, -20, 19],
-    [20.5, -15.5, 15],
-    [24, -19.5, 18],
-    [28, -14, 16],
-    [31, -18, 19],
-    [15, -25, 21],
-    [26, -24, 20],
-  ];
-  for (const [lx, lz, h] of cedarLocal) {
-    const [x, z] = hallToWorld(lx, lz);
-    spots.push([x, z, h * (0.92 + cr() * 0.16)]);
-  }
-  const cedars = new THREE.InstancedMesh(cedarGeo, toonMaterial({ color: 0x2a5a80, shade: 0x0a1a3c, ink: 8, rim: 1.1, step: 0.15 }), spots.length);
-  spots.forEach(([x, z, h], i) => {
-    q.setFromAxisAngle(up, cr() * 6.28);
-    m.compose(new THREE.Vector3(x, groundY(x, z) - 0.4, z), q, new THREE.Vector3(h * 0.95, h, h * 0.95));
-    cedars.setMatrixAt(i, m);
-  });
-  cedars.frustumCulled = false;
-  group.add(cedars);
-
-  return group;
-}
-
 // ------------------------------------------------------------------ treelines
 
 const treeVert = /* glsl */ `
@@ -208,6 +155,9 @@ void main() {
   gAux = vec4(0.0, 0.0, vViewZ, uInk + 0.15 * 0.45);
 }`;
 
+// valley azimuth (about the valley centre) of the woods seen behind the hall from both viewpoints
+const DIP = THREE.MathUtils.degToRad(41);
+
 /** Treelines on the valley rim: curtains whose top edge is a scallop of crowns (and a few spires). */
 export function buildTreelines(): THREE.Object3D {
   const group = new THREE.Group();
@@ -221,7 +171,9 @@ export function buildTreelines(): THREE.Object3D {
     const az0 = THREE.MathUtils.degToRad(-80);
     const az1 = THREE.MathUtils.degToRad(160);
     // trees along the arc: azimuth, half-width (rad), height, pointed
-    const stand = (az: number) => 0.78 + 0.2 * Math.sin(az * 6 + seed) + 0.12 * Math.sin(az * 15 + seed * 2.3) + 0.06 * Math.sin(az * 37 + seed);
+    // the woods thin out behind the hall so its roofs stand against the haze
+    const behindHall = (az: number) => Math.exp(-(((az - DIP) / 0.3) ** 2));
+    const stand = (az: number) => (0.78 + 0.2 * Math.sin(az * 6 + seed) + 0.12 * Math.sin(az * 15 + seed * 2.3) + 0.06 * Math.sin(az * 37 + seed)) * (1 - 0.55 * behindHall(az));
     const trees: [number, number, number, number][] = [];
     let a = az0;
     while (a < az1) {
@@ -275,27 +227,10 @@ export function buildTreelines(): THREE.Object3D {
     });
     const mesh = new THREE.Mesh(g, mat);
     mesh.frustumCulled = false;
-    mesh.renderOrder = -300 + li;
+    mesh.renderOrder = 8 + li;
     group.add(mesh);
   });
   return group;
-}
-
-function mergeNonIndexed(list: THREE.BufferGeometry[]): THREE.BufferGeometry {
-  let count = 0;
-  for (const g of list) count += g.getAttribute("position").count;
-  const pos = new Float32Array(count * 3);
-  let o = 0;
-  for (const g of list) {
-    const a = g.getAttribute("position").array as Float32Array;
-    pos.set(a, o);
-    o += a.length;
-  }
-  const out = new THREE.BufferGeometry();
-  out.setAttribute("position", new THREE.BufferAttribute(pos, 3));
-  out.setAttribute("uv", new THREE.BufferAttribute(new Float32Array(count * 2), 2));
-  out.computeVertexNormals();
-  return out;
 }
 
 // ------------------------------------------------------------------ far hills
@@ -340,7 +275,7 @@ export function buildHills(): THREE.Object3D {
   const group = new THREE.Group();
   // radius (m), base height, amplitude, colour, mist, seed
   const layers: [number, number, number, number, number, number][] = [
-    [520, 40, 70, 0x1f4f92, 0x5fa9dc, 11],
+    [520, 40, 70, 0x2d66aa, 0x7cc0e8, 11],
     [900, 70, 120, 0x2c69aa, 0x6dbbe6, 23],
     [1600, 110, 210, 0x3f86c2, 0x7cc9ee, 37],
     [2800, 150, 330, 0x5aa3d6, 0x8ad4f2, 51],
@@ -389,7 +324,8 @@ export function buildHills(): THREE.Object3D {
     });
     const mesh = new THREE.Mesh(g, mat);
     mesh.frustumCulled = false;
-    mesh.renderOrder = -400 + li;
+    // far layers draw after the near geometry, so most of their pixels are rejected early
+    mesh.renderOrder = 10 + li;
     group.add(mesh);
   });
   return group;

@@ -12,8 +12,10 @@ import { stalkHueGlsl, swayGlsl } from "./shaders";
 
 export type Culm = { x: number; y: number; z: number; h: number; r: number; lx: number; lz: number; seed: number; dCam: number };
 
-/** Culms nearer than this (m, to the nearest main camera) get detailed geometry and leaf sprays. */
-const NEAR = 24;
+/** Culms nearer than this (m, to the nearest main camera) get detailed, inked geometry. */
+const NEAR = 16;
+/** ...and culms nearer than this carry real leaf sprays (further off: leaf cards). */
+const SPRAY_NEAR = 20;
 
 /** Smooth value noise in [0, 1] (deterministic). */
 export function noise2(x: number, z: number): number {
@@ -115,7 +117,7 @@ export function placeCulms(density: number): Culm[] {
     const x = cam.x + Math.sin(az) * dist;
     const z = cam.z - Math.cos(az) * dist;
     const y = groundY(x, z);
-    culms.push({ x, y, z, h: 24, r, lx: 0.004, lz: -0.006, seed: rand(), dCam: NEAR + 1 });
+    culms.push({ x, y, z, h: 24, r, lx: 0.004, lz: -0.006, seed: rand(), dCam: dist });
   }
   return culms.sort((a, b) => camDist(a.x, a.z) - camDist(b.x, b.z));
 }
@@ -183,7 +185,7 @@ export function culmMaterial(stalk: THREE.Vector3, far: boolean) {
     color: far ? 0x3a6f70 : 0x3c7470,
     shade: far ? 0x0c1e2e : 0x091c29,
     ink: far ? 0 : 2,
-    rim: far ? 0.0 : 0.75,
+    rim: far ? 0.0 : 0.6,
     step: 0.12,
     soft: 0.03,
     lights: far ? 0 : 1,
@@ -417,10 +419,10 @@ export function buildSprays(culms: Culm[], density: number): { near: THREE.Mesh;
   const xAxis = new THREE.Vector3(1, 0, 0);
   const P = new THREE.Vector3();
   for (const c of culms) {
-    const isNear = c.dCam < NEAR * 0.85;
+    const isNear = c.dCam < SPRAY_NEAR;
     const n = isNear
       ? Math.round((18 + rand() * 8) * (0.6 + 0.4 * density))
-      : Math.round((c.dCam < 46 ? 5.5 + rand() * 2.5 : c.dCam < 72 ? 3 + rand() * 2 : 1.5 + rand() * 1.5) * (0.7 + 0.3 * density));
+      : Math.round((c.dCam < 40 ? 5 + rand() * 2.5 : c.dCam < 65 ? 2 + rand() * 1.5 : 0) * (0.7 + 0.3 * density));
     for (let j = 0; j < n; j++) {
       const t = isNear ? 0.42 + Math.pow(rand(), 0.75) * 0.58 : 0.5 + Math.pow(rand(), 0.7) * 0.5;
       const lean = t * t * c.h;
@@ -459,8 +461,27 @@ export function buildSprays(culms: Culm[], density: number): { near: THREE.Mesh;
     mesh.frustumCulled = false;
     return mesh;
   };
-  const card = new THREE.PlaneGeometry(2.4, 1.9);
-  card.translate(0, -0.95, 0);
+  // an octagon around the crown outline (fewer wasted fragments than a quad)
+  const oct: number[] = [0.5, 0.55];
+  for (let k = 0; k <= 8; k++) {
+    const a = (k / 8) * Math.PI * 2 + Math.PI / 8;
+    oct.push(0.5 + Math.cos(a) * 0.54, 0.55 + Math.sin(a) * 0.5);
+  }
+  const cardPos: number[] = [];
+  const cardUv: number[] = [];
+  for (let k = 0; k < oct.length; k += 2) {
+    const u = THREE.MathUtils.clamp(oct[k], 0, 1);
+    const v = THREE.MathUtils.clamp(oct[k + 1], 0, 1);
+    cardPos.push((u - 0.5) * 2.4, (v - 1) * 1.9, 0);
+    cardUv.push(u, v);
+  }
+  const cardIdx: number[] = [];
+  for (let k = 1; k <= 8; k++) cardIdx.push(0, k, k + 1);
+  const card = new THREE.BufferGeometry();
+  card.setAttribute("position", new THREE.Float32BufferAttribute(cardPos, 3));
+  card.setAttribute("uv", new THREE.Float32BufferAttribute(cardUv, 2));
+  card.setAttribute("normal", new THREE.Float32BufferAttribute(new Array(cardPos.length / 3).fill([0, 0, 1]).flat(), 3));
+  card.setIndex(cardIdx);
   card.scale(1.25, 1.25, 1.25);
   return { near: make(near, sprayGeometry(11, NEAR_SPRAY), leafMaterial(0x4a8a70, 0x0a2330, 4)), cards: make(cards, card, cardMaterial()) };
 }

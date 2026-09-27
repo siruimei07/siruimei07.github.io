@@ -52,7 +52,7 @@ void main() {
   float y = vQ.y;
   float core = exp(-x * x * 18.0);
   float soft = exp(-x * x * 3.0);
-  float a = (core * 0.7 + soft * 0.3) * pow(1.0 - y, 2.2) * smoothstep(0.0, 0.02, y);
+  float a = (core * 0.35 + soft * 0.65) * pow(1.0 - y, 2.2) * smoothstep(0.0, 0.02, y);
   // faint drifting haze in the beam
   a *= 0.8 + 0.2 * vnoise(vec2(x * 3.0, y * 40.0 - uTime * 0.6));
   gl_FragColor = vec4(vC * a * vis * uIntensity, 1.0);
@@ -132,8 +132,8 @@ void main() {
   if (farM <= 0.0) discard;
   vec2 q = vQ;
   float r = length(q * vec2(1.0, 1.35));
-  float core = exp(-r * r * 9.0);
-  float wide = exp(-r * r * 2.2);
+  float core = exp(-r * r * 14.0);
+  float wide = exp(-r * r * 3.0);
   // denser low down, thinning upward
   float lowK = smoothstep(0.55, -0.35, q.y);
   vec3 c = uWarm * core * (0.6 + 0.6 * lowK) + uCool * wide * 0.5 * lowK;

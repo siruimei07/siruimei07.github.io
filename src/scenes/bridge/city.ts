@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { toonMaterial } from "../../engine/toon";
 import { rng } from "../common/util";
 import { WARM, type CityMap } from "./bridge";
@@ -49,21 +50,21 @@ export function buildCity(density: number): CityResult {
       if (Math.hypot((jx - MESA.x) * 0.95, (jz - MESA.z) * 1.3) < MESA.r1 + 30) continue;
       const ax = Math.abs(jx);
       const s = slopeS(jx, jz);
-      const keep = (0.9 - 0.3 * Math.min(1, ax / 2200) - 0.3 * s * s) * (0.55 + 0.45 * density);
+      const keep = (0.92 - 0.3 * Math.min(1, ax / 2200) - 0.75 * smooth(s, 0.55, 1.0)) * (0.55 + 0.45 * density);
       if (rand() > keep) continue;
       const wc = warmth(jx, jz);
-      let style = rand() < 0.16 + 0.6 * wc ? 1 : 0;
-      if (style === 0 && ax > 300 && rand() < 0.03) style = 2;
+      let style = rand() < 0.14 + 0.72 * wc ? 1 : 0;
+      if (style === 0 && ax > 300 && rand() < 0.015) style = 2;
       const big = 1 + 0.5 * smooth(ax, 600, 2000);
       const w = (style === 1 ? 14 + rand() * 16 : 10 + rand() * 14) * big;
       const d = (style === 1 ? 12 + rand() * 10 : 9 + rand() * 12) * big;
-      let h = style === 1 ? 9 + rand() * 12 : 10 + rand() * 24 + (rand() < 0.12 ? 22 : 0);
-      if (style === 2) h = 70 + rand() * 80;
+      let h = (style === 1 ? 9 + rand() * 12 : 10 + rand() * 24 + (rand() < 0.12 ? 22 : 0)) * (1 - 0.45 * smooth(s, 0.6, 1.0));
+      if (style === 2) h = 45 + rand() * 55;
       const yc = hillY(jx, jz);
       const ylo = Math.min(hillY(jx - w / 2, jz + d / 2), hillY(jx + w / 2, jz + d / 2), yc) - 4;
-      const warm = rand() < 0.25 + 0.7 * wc;
-      const win = pick(warm ? WARM_PAL : COOL_PAL).multiplyScalar(style === 1 ? 2.6 : 2.2 + rand() * 1.6);
-      const lit = style === 1 ? 0.65 + rand() * 0.3 : 0.28 + rand() * 0.42;
+      const warm = rand() < 0.2 + 0.8 * wc;
+      const win = pick(warm ? WARM_PAL : COOL_PAL).multiplyScalar(style === 1 ? 2.1 : 1.7 + rand() * 1.3);
+      const lit = style === 1 ? 0.6 + rand() * 0.3 : 0.22 + rand() * 0.4;
       blds.push({ x: jx, y0: ylo, y1: yc + h, z: jz, w, d, rot: (rand() - 0.5) * 0.3, style, win, lit });
     }
     z -= rowStep;
@@ -75,7 +76,7 @@ export function buildCity(density: number): CityResult {
     const yc = hillY(x, z);
     const w = 26 + rand() * 24;
     const d = 16 + rand() * 10;
-    blds.push({ x, y0: yc - 6, y1: yc + 12 + rand() * 12, z, w, d, rot: (rand() - 0.5) * 0.1, style: 1, win: pick(WARM_PAL).multiplyScalar(2.8), lit: 0.9 });
+    blds.push({ x, y0: yc - 6, y1: yc + 12 + rand() * 12, z, w, d, rot: (rand() - 0.5) * 0.1, style: 1, win: pick(WARM_PAL).multiplyScalar(2.3), lit: 0.9 });
   }
   // near first, so the depth test rejects most of what hides behind
   blds.sort((a, b) => b.z - a.z);
@@ -96,7 +97,7 @@ export function buildCity(density: number): CityResult {
     sizes.set([b.w, H, b.d], i * 3);
     wins.set([b.win.r, b.win.g, b.win.b, b.lit], i * 4);
     styles.set([b.style, rand() * 100], i * 2);
-    wall.setHSL(0.62 + rand() * 0.1, 0.3, 0.38 + rand() * 0.2);
+    wall.setHSL(0.63 + rand() * 0.08, 0.25, 0.3 + rand() * 0.16);
     bodies.setColorAt(i, wall);
   });
   bodies.geometry.setAttribute("aSize", new THREE.InstancedBufferAttribute(sizes, 3));
@@ -107,7 +108,7 @@ export function buildCity(density: number): CityResult {
   bodies.renderOrder = 1;
 
   // ---------------------------------------------------------------- temple roofs
-  const unitRoof = hipRoof(1.6, 1, 1, { lift: 0.16, pow: 1.7, segU: 5, segV: 3, fascia: 0.09 });
+  const unitRoof = hipRoof(1.6, 1, 1, { lift: 0.16, pow: 1.7, segU: 3, segV: 2, fascia: 0.09 });
   unitRoof.scale(1 / 1.6, 1, 1);
   const roofList: { x: number; y: number; z: number; w: number; h: number; d: number; rot: number; glow: number }[] = [];
   for (const b of blds) {
@@ -200,18 +201,24 @@ export function buildCity(density: number): CityResult {
   for (let i = 0; i < nSak; i++) {
     let x: number;
     let z: number;
-    if (rand() < 0.5) {
-      // in the shore forest, clustered left and right of the gate
+    const t = rand();
+    if (t < 0.1) {
+      // flanking the gate, just behind the corridors
       const side = rand() < 0.5 ? -1 : 1;
-      x = side * (90 + Math.pow(rand(), 1.3) * 1100) + (rand() - 0.5) * 40;
-      z = -150 - rand() * 130;
+      x = side * (30 + Math.pow(rand(), 1.1) * 200);
+      z = -160 - rand() * 8;
+    } else if (t < 0.55) {
+      // in the shore forest further out
+      const side = rand() < 0.5 ? -1 : 1;
+      x = side * (60 + Math.pow(rand(), 1.3) * 1200) + (rand() - 0.5) * 40;
+      z = -180 - rand() * 90;
     } else {
       // at the foot of the city
       x = (rand() - 0.5) * 2400 - 250;
       z = -280 - rand() * 170;
     }
-    const r = 4.5 + rand() * 6;
-    sak.push({ x, y: hillY(x, z) + r * 0.7 + 1.5, z, r, h: r * (0.62 + rand() * 0.2) });
+    const r = 3.5 + rand() * 4;
+    sak.push({ x, y: hillY(x, z) + r * 0.85 + 2.5, z, r, h: r * (0.75 + rand() * 0.2) });
   }
   const sakura = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 2), sakuraMaterial(), sak.length);
   sak.forEach((s, i) => {
@@ -223,7 +230,7 @@ export function buildCity(density: number): CityResult {
   sakura.name = "sakura";
   sakura.renderOrder = 0;
 
-  const forest = buildForest(rand, density);
+  const forest = buildForest();
   forest.name = "forest";
   const terrain = buildTerrain();
   terrain.name = "terrain";
@@ -324,8 +331,8 @@ function buildTerrain(): THREE.Mesh {
 
 function buildingMaterial(): THREE.ShaderMaterial {
   return toonMaterial({
-    color: 0x151c3a,
-    shade: 0x070b1c,
+    color: 0x10152a,
+    shade: 0x05070f,
     ink: 0,
     rim: 0,
     step: 0.2,
@@ -386,14 +393,14 @@ function buildingMaterial(): THREE.ShaderMaterial {
           win = (1.0 - smoothstep(hs.x - 0.5, hs.x + 0.5, dpx.x)) * (1.0 - smoothstep(hs.y - 0.5, hs.y + 0.5, dpx.y));
         }
         win *= step(1.2, v);                        // not on the parapet
-        emis += wc * win * lit * (1.0 + 0.2 * lod);
+        emis += wc * win * lit * (1.0 + 0.1 * lod);
         base = mix(base, base * 0.4, win * 0.6);
         shade = mix(shade, shade * 0.5, win * 0.6);
         if (tower > 0.5) {
-          // LED edges and crown rings
-          float edge = 1.0 - smoothstep(0.35, 0.9, min(u, faceW - u));
-          float ring = step(0.92, fract(vLocal.y / 24.0));
-          emis += vWin.rgb * (edge * 1.2 + ring * 0.6);
+          // a softly lit crown and a thin light line at the corners of the top floors
+          float crown = step(v, 3.0) * step(1.2, v);
+          float edge = (1.0 - smoothstep(0.2, 0.6, min(u, faceW - u))) * step(v, 26.0);
+          emis += vWin.rgb * (crown * 0.5 + edge * 0.35);
           emis += vec3(1.0, 0.12, 0.08) * step(v, 1.2) * step(0.5, fract(uTime * 0.5 + seed)) * 6.0;
         }
       } else {
@@ -448,101 +455,126 @@ function pagodaWallMaterial(): THREE.ShaderMaterial {
 
 function sakuraMaterial(): THREE.ShaderMaterial {
   return toonMaterial({
-    color: 0xf0b4d4,
-    shade: 0x6a3c7a,
-    ink: 19,
-    rim: 0.9,
-    step: -0.1,
-    soft: 0.1,
+    color: 0xffc6e2,
+    shade: 0x9a4a86,
+    ink: 0,
+    rim: 0,
+    step: -0.2,
+    soft: 0.15,
     lights: 0,
     vertex: /* glsl */ `
-      // lumpy, cloud-like crowns
+      // soft, cloud-like crowns
       vec3 c = (m * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
-      float lump = vnoise(wp.xz * 0.45 + wp.y * 0.4) * 0.5 + vnoise(wp.xz * 1.2 - wp.y) * 0.25;
-      wp.xyz = c + (wp.xyz - c) * (0.7 + lump);`,
+      float lump = vnoise(wp.xz * 0.28 + wp.y * 0.3) * 0.5 + vnoise(wp.xz * 0.75 - wp.y * 0.6) * 0.22;
+      wp.xyz = c + (wp.xyz - c) * (0.72 + lump);`,
     fragment: /* glsl */ `
-      float fl = vnoise(vWorldPos.xz * 1.3 + vWorldPos.y * 0.9);
-      float spark = step(0.8, vnoise(vWorldPos.xz * 3.7 + vWorldPos.y * 2.9 + floor(uTime * 0.7)));
-      vec3 pink = vec3(1.0, 0.5, 0.74);
-      emis += pink * (0.3 + 0.45 * fl) + vec3(1.0, 0.86, 0.95) * spark * 1.1;
-      base *= 0.8 + 0.35 * fl;`,
+      float fl = vnoise(vWorldPos.xz * 0.9 + vWorldPos.y * 0.7);
+      // blossom clumps: soft darker gaps between glowing masses
+      float clump = smoothstep(0.3, 0.7, vnoise(vWorldPos.xz * 0.7 + vWorldPos.y * 0.8));
+      base *= 0.7 + 0.45 * clump;
+      shade *= 0.65 + 0.5 * clump;
+      vec3 pink = vec3(1.0, 0.5, 0.76);
+      emis += pink * (0.32 + 0.6 * fl * clump);
+      // twinkling petals: round dots on a coarse 3D grid
+      vec3 g = vWorldPos * 1.2;
+      vec3 cell = floor(g);
+      float hs = hash13(cell);
+      float tw = 0.5 + 0.5 * sin(uTime * (1.5 + hs * 3.0) + hs * 40.0);
+      float dotm = step(0.82, hs) * (1.0 - smoothstep(0.12, 0.26, length(fract(g) - 0.5)));
+      emis += vec3(1.0, 0.9, 0.97) * dotm * tw * 1.8;`,
   });
 }
 
 // ---------------------------------------------------------------- forest
 
-function buildForest(rand: () => number, density: number): THREE.Group {
-  const g = new THREE.Group();
-  // a ragged conifer: stacked, skewed cones, height 1
-  const layers: THREE.BufferGeometry[] = [];
-  const lr = rng(77);
-  for (let i = 0; i < 5; i++) {
-    const r = 0.44 - i * 0.075 + (lr() - 0.5) * 0.06;
-    const h = 0.34 - i * 0.02;
-    const c = new THREE.ConeGeometry(r, h, 7, 1, false);
-    c.rotateY(i * 1.1);
-    c.translate((lr() - 0.5) * 0.08, 0.16 + i * 0.16 + h / 2, (lr() - 0.5) * 0.08);
-    layers.push(prep(c));
+function buildForest(): THREE.Mesh {
+  // Three painted treelines (front, middle, back) along the shore: vertical
+  // strips whose tops are cut by a procedural silhouette of cedars and round
+  // crowns, alpha-to-coverage edges, darkest in front, hazier behind.
+  const bands: [number, number, number, number, number][] = [
+    // z, min height, max height, seed, haze
+    [-172, 9, 22, 3.1, 0.0],
+    [-212, 12, 28, 7.7, 0.3],
+    [-258, 15, 33, 12.9, 0.6],
+  ];
+  const parts: THREE.BufferGeometry[] = [];
+  for (const [z, h0, h1, seed, haze] of bands) {
+    const g = new THREE.PlaneGeometry(5200, 44, 1, 1);
+    g.translate(-300, DECK_Y + 22 - 2, z);
+    const n = g.getAttribute("position").count;
+    const a = new Float32Array(n * 4);
+    for (let i = 0; i < n; i++) a.set([seed, h0, h1, haze], i * 4);
+    g.setAttribute("aBand", new THREE.Float32BufferAttribute(a, 4));
+    parts.push(g);
   }
-  layers.push(prep(cyl(0.03, 0.045, 0.3, 5, 0, 0, 0)));
-  const conifer = merge(layers);
-  const blob = prep(new THREE.IcosahedronGeometry(0.5, 1).translate(0, 0.6, 0));
-  const mat = toonMaterial({
-    color: 0x131d36,
-    shade: 0x050814,
-    ink: 20,
-    rim: 0.85,
-    step: 0.15,
-    lights: 1,
-    fog: 0.7,
-    vertex: /* glsl */ `
-      vec3 c = (m * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
-      float lump = vnoise(wp.xz * 0.6 + wp.y * 0.5) - 0.5;
-      wp.xz += (wp.xz - c.xz) * lump * 0.5;`,
-  });
-  const nT = Math.round(2600 * (0.6 + 0.4 * density));
-  const cones = new THREE.InstancedMesh(conifer, mat, nT);
-  const blobs = new THREE.InstancedMesh(blob, mat, Math.round(nT * 0.45));
-  const m = new THREE.Matrix4();
-  const q = new THREE.Quaternion();
-  const up = new THREE.Vector3(0, 1, 0);
-  const col = new THREE.Color();
-  type T = { x: number; y: number; z: number; w: number; h: number; blob: boolean };
-  const trees: T[] = [];
-  for (let i = 0; i < nT * 3 && trees.length < nT * 1.4; i++) {
-    const x = (rand() - 0.5) * 3800 - 300;
-    const z = -134 - Math.pow(rand(), 0.9) * 160;
-    const ax = Math.abs(x);
-    if (ax < 82 && z > GATE_Z - 7) continue; // keep the gate and corridors clear
-    const y = hillY(x, z) - 0.5;
-    const h = (9 + rand() * 13) * (0.9 + 0.25 * (1 - Math.min(1, ax / 1800)));
-    const blobT = rand() < 0.3;
-    trees.push({ x, y, z, w: h * (blobT ? 0.8 + rand() * 0.3 : 0.5 + rand() * 0.25), h: blobT ? h * 0.8 : h, blob: blobT });
-  }
-  trees.sort((a, b) => b.z - a.z);
-  let ci = 0;
-  let bi = 0;
-  for (const t of trees) {
-    q.setFromAxisAngle(up, rand() * 6.28);
-    col.setHSL(0.6 + rand() * 0.06, 0.3, 0.42 + rand() * 0.16);
-    m.compose(new THREE.Vector3(t.x, t.y, t.z), q, new THREE.Vector3(t.w, t.h, t.w));
-    if (t.blob && bi < blobs.count) {
-      blobs.setMatrixAt(bi, m);
-      blobs.setColorAt(bi, col);
-      bi++;
-    } else if (!t.blob && ci < cones.count) {
-      cones.setMatrixAt(ci, m);
-      cones.setColorAt(ci, col);
-      ci++;
-    }
-  }
-  cones.count = ci;
-  blobs.count = bi;
-  cones.frustumCulled = false;
-  blobs.frustumCulled = false;
-  g.add(cones, blobs);
-  g.renderOrder = 3;
-  return g;
+  const geo = mergeGeometries(parts, false);
+  if (!geo) throw new Error("bridge: forest merge failed");
+  const mesh = new THREE.Mesh(
+    geo,
+    toonMaterial({
+      color: 0x111a30,
+      shade: 0x070b16,
+      ink: 20,
+      rim: 0.7,
+      step: 0.2,
+      lights: 1,
+      fog: 0.6,
+      side: THREE.DoubleSide,
+      alphaToCoverage: true,
+      vertexHead: /* glsl */ `attribute vec4 aBand; flat varying vec4 vBand;`,
+      vertex: /* glsl */ `vBand = aBand;`,
+      uniforms: { uLanternCol: { value: WARM } },
+      fragmentHead: /* glsl */ `
+        flat varying vec4 vBand;
+        uniform vec3 uLanternCol;
+        // the silhouette: cedars (spikes with branch tiers) and round crowns
+        float treeline(float x, float seed, float h0, float h1) {
+          float w = 6.5;
+          float c = floor(x / w);
+          float h = 0.0;
+          for (int k = -2; k <= 2; k++) {
+            float ci = c + float(k);
+            float r = hash11(ci * 1.37 + seed);
+            float cx = (ci + 0.5 + (hash11(ci * 7.1 + seed) - 0.5) * 0.7) * w;
+            float th = mix(h0, h1, r * r);
+            float roundT = step(0.8, hash11(ci * 5.9 + seed));
+            float tw = th * mix(0.22, 0.34, hash11(ci * 3.3 + seed)) * (1.0 + roundT * 0.9);
+            float d = abs(x - cx) / tw;
+            float y;
+            if (roundT > 0.5) {
+              float lob = 0.08 * sin(d * 9.0 + ci * 3.0) + 0.06 * sin(d * 17.0 - ci);
+              y = d < 1.0 ? th * (0.6 + 0.4 * sqrt(1.0 - d * d) + lob * (1.0 - d)) : 0.0;
+            } else {
+              // spike with branch tiers: the edge steps out every ~2.5 m
+              float yy = th * (1.0 - d);
+              y = yy - fract(yy / 2.4) * 0.9 * step(0.12, d);
+            }
+            h = max(h, y);
+          }
+          return h + (vnoise(vec2(x * 1.9, seed)) - 0.5) * 1.1;
+        }`,
+      fragment: /* glsl */ `
+        float yy = vWorldPos.y - ${DECK_Y.toFixed(2)};
+        float th = treeline(vWorldPos.x, vBand.x, vBand.y, vBand.z);
+        float aa = max(fwidth(yy), 1e-3) * 0.8;
+        alpha = smoothstep(th + aa, th - aa, yy);
+        if (alpha < 0.02) discard;
+        // foliage texture, lighter crowns, haze on the rows behind
+        float leaf = vnoise(vWorldPos.xy * vec2(0.9, 1.6));
+        float top = smoothstep(th - 4.0, th, yy);
+        base *= 0.8 + 0.3 * leaf + 0.25 * top;
+        shade *= 0.75 + 0.35 * leaf + 0.3 * top;
+        vec3 hz = vec3(0.05, 0.07, 0.15);
+        base = mix(base, hz, vBand.w * 0.2);
+        shade = mix(shade, hz * 0.8, vBand.w * 0.2);
+        // the city glow behind rims the crowns, warmest behind the gate
+        float heart = exp(-vWorldPos.x * vWorldPos.x / 90000.0);
+        emis += mix(vec3(0.16, 0.12, 0.3), uLanternCol, heart) * top * (0.05 + 0.12 * heart) * (0.6 + vBand.w);`,
+    }),
+  );
+  mesh.frustumCulled = false;
+  mesh.renderOrder = 0;
+  return mesh;
 }
 
 // ---------------------------------------------------------------- pagoda

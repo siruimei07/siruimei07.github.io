@@ -65,7 +65,7 @@ float fishShadow(vec2 p, float t) {
     if (h < 0.5) {
       float c = seg * (0.3 + 0.4 * hash11(h * 91.0));
       float lat = (hash11(h * 37.0) - 0.5) * laneW * 0.5;
-      float len = 0.6 + 0.7 * hash11(h * 53.0);
+      float len = 0.8 + 0.9 * hash11(h * 53.0);
       float x = (sf - c) / len;
       float y = (la - lat + sin(x * 2.5 - t * 5.0 + h * 20.0) * 0.07 * len) / len;
       float body = length(vec2((x - 0.1) / 0.85, y / 0.24));
@@ -103,7 +103,7 @@ void main() {
   vec4 cm = cityMap(vWorld, R, 0.02 + 0.03 * (1.0 - farK));
   // break the city's reflection into vertical streaks
   float streak = 0.55 + 0.45 * step(0.45, vnoise(vec2(p.x * 0.35, p.y * 3.5 + t * 0.6)));
-  vec3 refl = mix(sky, vec3(0.004, 0.006, 0.016) + cm.rgb * streak * 1.1, cm.a);
+  vec3 refl = mix(sky, vec3(0.004, 0.006, 0.016) + cm.rgb * streak * 0.55, cm.a);
   // shore lanterns: long warm streaks
   if (R.z < -1e-3) {
     float tt = (uLamps.x - vWorld.z) / R.z;
@@ -124,13 +124,16 @@ void main() {
   float da = atan(R.x, -R.z) - atan(uMoonDir.x, -uMoonDir.z);
   float de = asin(clamp(R.y, 0.0, 1.0)) - asin(uMoonDir.y);
   float road = exp(-da * da / 0.0016) * exp(-de * de / 0.12);
+  // and a broad field of glints around it: the ripples catch the moon well off its line
+  float wide = exp(-da * da / 0.03) * exp(-de * de / 0.25);
   float glint = step(0.62, vnoise(vec2(p.x * 1.5, p.y * 7.0) + vec2(t * 0.2, t * 1.1)));
-  refl += vec3(0.8, 0.88, 1.0) * road * (0.4 + 1.6 * glint);
+  float spark = step(0.8, vnoise(vec2(p.x * 2.6, p.y * 11.0) + vec2(-t * 0.3, t * 1.6)));
+  refl += vec3(0.8, 0.88, 1.0) * (road * (0.4 + 1.6 * glint) + wide * spark * 1.1);
 
   col = mix(col, refl, fres);
   // fish shadows near the bridge
   float fish = fishShadow(p, t) * (1.0 - smoothstep(35.0, 90.0, dist));
-  col *= 1.0 - fish * 0.6;
+  col *= 1.0 - fish * 0.72;
   gl_FragColor = vec4(col, 1.0);
   gAux = vec4(0.0, 0.0, vViewZ, 0.0);
 }`;
@@ -145,9 +148,9 @@ export function buildWater(map: CityMap): THREE.Mesh {
     uniforms: {
       uTime: env.uTime,
       uMoonDir: env.uMoonDir,
-      uNear: { value: new THREE.Color(0x071729) },
-      uFar: { value: new THREE.Color(0x0f2850) },
-      uSkyLo: { value: new THREE.Color(0x122a58) },
+      uNear: { value: new THREE.Color(0x050f20) },
+      uFar: { value: new THREE.Color(0x0c2246) },
+      uSkyLo: { value: new THREE.Color(0x0e2250) },
       uSkyHi: { value: new THREE.Color(0x07143a) },
       uLantern: { value: WARM },
       uLamps: { value: new THREE.Vector4(SHORE_LAMPS.z, SHORE_LAMPS.y, SHORE_LAMPS.x0, SHORE_LAMPS.dx) },

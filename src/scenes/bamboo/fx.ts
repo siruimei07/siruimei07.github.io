@@ -226,8 +226,8 @@ export function buildMist(cam: THREE.Vector3, yawDeg: number, groundLevel: numbe
       {
         uCam: { value: new THREE.Vector3(cam.x, groundLevel, cam.z) },
         uFwd: { value: new THREE.Vector3(Math.sin(THREE.MathUtils.degToRad(yawDeg)), 0, -Math.cos(THREE.MathUtils.degToRad(yawDeg))) },
-        uColor: { value: new THREE.Color(0.018, 0.04, 0.09) },
-        uMoonC: { value: new THREE.Color(0.04, 0.075, 0.15) },
+        uColor: { value: new THREE.Color(0.015, 0.034, 0.078) },
+        uMoonC: { value: new THREE.Color(0.032, 0.062, 0.125) },
         uMoon: { value: moonDir },
       },
     ),

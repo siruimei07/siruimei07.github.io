@@ -232,12 +232,21 @@ export function buildMachiya(density: number, lanterns: Lanterns) {
                 float open = step(0.62, hsh);
                 float slat = smoothstep(0.28, 0.42, abs(fract(u / 0.1) - 0.5));
                 float nor = open * step(h - 1.35, y);
-                float inside = mix(0.16, 0.5, open) * (0.8 + 0.4 * hash11(hsh * 9.0));
-                float see = mix(slat * detail + (1.0 - detail) * 0.5, 1.0, open) * (1.0 - nor);
+                float inside = mix(0.16, 0.55, open) * (0.8 + 0.4 * hash11(hsh * 9.0));
+                // inside an open shop: a lamp-lit ceiling, shelves of wares, the counter
+                float yy = y - 0.45;
+                float shelf = step(0.8, fract(yy / 0.55)) * step(1.1, yy);
+                float counter = step(yy, 0.62);
+                float shopK = mix(1.0, 0.35 + 0.65 * smoothstep(0.0, h - 1.4, yy), open) * mix(1.0, 1.0 - 0.8 * max(counter, shelf), open * detail);
+                float see = mix(slat * detail + (1.0 - detail) * 0.5, 1.0, open) * (1.0 - nor) * shopK;
                 c = mix(wood, vec3(0.01, 0.012, 0.04), nor);
                 // noren: a pale crest in the middle of each curtain
-                float crest = nor * smoothstep(0.16, 0.12, length(vec2(fu - 0.5, (y - (h - 0.9)) / bw) * vec2(1.0, bw)));
-                c = mix(c, vec3(0.5, 0.47, 0.4), crest);
+                // noren: a family crest (紋) — a ring round a small diamond
+                vec2 cq = vec2((fu - 0.5) * bw, y - (h - 0.92));
+                float cr = length(cq);
+                float ring = smoothstep(0.03, 0.012, abs(cr - 0.2)) + smoothstep(0.07, 0.05, abs(cq.x) + abs(cq.y));
+                float crest = nor * min(1.0, ring) * detail;
+                c = mix(c, vec3(0.62, 0.6, 0.55), crest);
                 emis += glowC * inside * see;
               }
             } else {

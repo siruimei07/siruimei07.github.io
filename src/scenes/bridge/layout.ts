@@ -15,15 +15,23 @@ export const Z_NEAR = 36; // the bridge starts behind the viewer…
 export const Z_FAR = -120; // …and lands on the shrine plaza
 export const NBAYS = Math.round((Z_NEAR - Z_FAR) / BAY);
 export const TORII_Z = -126;
-export const TORII_HALF = 4.7; // pillar x
-export const TORII_H = 12.2; // pillar height
+export const TORII_HALF = 4.7; // pillar x (before scaling)
+export const TORII_H = 12.2; // pillar height (before scaling)
+export const TORII_S = 1.12; // the torii is built at base size, then scaled
 export const GATE_Z = -152;
 export const SHORE_Z = -121; // embankment line either side of the bridge end
 export const EYE = DECK_Y + 1.6;
 
-/** The wooden lantern post by the right railing (its base, in the water). */
-export const POST = new THREE.Vector3(4.4, -0.6, -9);
+/** Wooden lantern posts rising from the water just outside the right railing, every POST_DZ m. */
+export const POST_Z0 = -14; // the first one, by the viewer
+export const POST = new THREE.Vector3(4.4, -0.6, POST_Z0); // x, base y (in the water), z of the first
 export const POST_LIGHT_Y = DECK_Y + 3.66;
+export const POST_DZ = 28;
+export const POST_N = 4;
+export const POSTS: THREE.Vector3[] = [];
+for (let k = 0; k < POST_N; k++) {
+  POSTS.push(new THREE.Vector3(POST.x, POST.y, POST_Z0 - k * POST_DZ));
+}
 
 /** Shore lanterns along the far embankment: x = ±(X0 + k·DX). */
 export const SHORE_LAMPS = { z: SHORE_Z - 2.2, y: DECK_Y + 1.25, x0: 11, dx: 9, n: 44 };
@@ -44,7 +52,7 @@ export const ridgeZ = (x: number) => -1150 + 110 * Math.sin(x * 0.0016 + 0.7) - 
 export const ridgeH = (x: number) => 300 + 42 * Math.sin(x * 0.0029 + 1.2) + 26 * Math.sin(x * 0.0081 + 0.3) + 60 * smooth(Math.abs(x), 700, 2200);
 
 /** Table mountain behind the crest, a flat top over the city's centre. */
-export const MESA = { x: 20, z: -1360, top: 468, r0: 120, r1: 215 };
+export const MESA = { x: 10, z: -1540, top: 520, r0: 150, r1: 250 };
 
 /** Terrain height (shore forest → city slope → crest → mountains). */
 export function hillY(x: number, z: number): number {

@@ -24,13 +24,12 @@ export function build(ctx: SceneContext): StageScene {
   const opaque = new THREE.Scene();
   const fx = new THREE.Scene();
 
-  const sky = new Sky({ moonRadius: 3.8, zenith: 0x090818, mid: 0x1e0f30, horizon: 0x6a2442, glow: 0xff8e78, moonGain: 2.2, stars: 0.45, halo: 0.55 });
+  const sky = new Sky({ moonRadius: 3.8, zenith: 0x080716, mid: 0x1e1234, horizon: 0x6e2a40, glow: 0xb84c50, moonGain: 2.2, stars: 0.45, halo: 0.45 });
   const clouds = new Clouds({
     list: [
-      // a puff low across the moon and two small ones beside it
+      // a puff low across the moon and a wisp beside it
       [MOON_AZ + 1, 2.4, 11, 3.4],
       [MOON_AZ + 13, 1.2, 9, 2.6],
-      [MOON_AZ - 12, 1.0, 10, 2.4],
     ],
     // lit from below by the city: lighter than the sky, gold-pink linings toward the moon
     body: 0x7a3452,
@@ -59,16 +58,21 @@ export function build(ctx: SceneContext): StageScene {
   // warm air over the bright places
   const plaza = new THREE.Vector3((PLAZA.x0 + PLAZA.x1) / 2, 18, (PLAZA.z0 + PLAZA.z1) / 2);
   const domes = [
-    new GlowDome(plaza, new THREE.Vector3(120, 50, 150), 0xff8a5a, 0.2),
+    new GlowDome(plaza, new THREE.Vector3(120, 50, 150), 0xff8a5a, 0.26),
     new GlowDome(new THREE.Vector3(0, 25, -700), new THREE.Vector3(70, 40, 1000), 0xff7a66, 0.08),
+    // downtown's own light hanging in the air (reads mostly at grazing angles: the wide view)
+    new GlowDome(new THREE.Vector3(200, 60, 0), new THREE.Vector3(380, 110, 380), 0xff7458, 0.1),
   ];
-  for (const t of towers.lanterns) domes.push(new GlowDome(t.pos, new THREE.Vector3(t.size * 2.6, t.size * 2.4, t.size * 2.6), 0xff6a30, 0.45));
+  // a tight halo of lit air around each giant lantern (bloom does the rest)
+  for (const t of towers.lanterns) domes.push(new GlowDome(t.pos, new THREE.Vector3(t.size * 1.5, t.size * 1.6, t.size * 1.5), 0xff5a24, 0.45));
   for (const d of domes) fx.add(d.mesh);
 
-  // searchlights sweeping from two tower tops
+  // searchlights sweeping slowly from tower tops
   const lights = [
     new Searchlight(new THREE.Vector3(-260, 150, -420), { az: 30, el: 38, swing: 24, rate: 0.07, length: 2600, radius: 55, color: 0xffe0cc, intensity: 0.12, phase: 0 }),
     new Searchlight(new THREE.Vector3(520, 140, -520), { az: -10, el: 44, swing: 20, rate: 0.055, length: 2600, radius: 60, color: 0xd8ecff, intensity: 0.1, phase: 2.0 }),
+    // a low warm beam raking across the upper right of the close view
+    new Searchlight(new THREE.Vector3(470, 150, -40), { az: -62, el: 7, swing: 10, rate: 0.05, length: 2400, radius: 60, color: 0xffc8a0, intensity: 0.2, phase: 0.0 }),
   ];
   for (const l of lights) fx.add(l.mesh);
 
@@ -80,17 +84,15 @@ export function build(ctx: SceneContext): StageScene {
     skyAmb: new THREE.Color(0.9, 0.82, 1.0),
     groundAmb: new THREE.Color(1.4, 0.86, 0.72),
     rimCol: new THREE.Color(1.0, 0.74, 0.7),
-    fogCol: srgb(0x6a2840),
-    fogMoon: srgb(0xa8465c),
+    fogCol: srgb(0x561e36),
+    fogMoon: srgb(0x9c3448),
     fogDist: new THREE.Vector3(100, 2600, 0.9),
-    poleLight: hero ? new THREE.Vector4(hero.pos.x, hero.pos.y, hero.pos.z, hero.size * 3.2) : undefined,
+    poleLight: hero ? new THREE.Vector4(hero.pos.x, hero.pos.y, hero.pos.z, hero.size * 2.4) : undefined,
     poleCol: new THREE.Color(2.2, 0.7, 0.3),
     lamps: [new THREE.Vector4(plaza.x, 10, plaza.z, 110), new THREE.Vector4(GATE.x, 8, GATE.z, 45), new THREE.Vector4(PAGODA.x, 12, PAGODA.z, 45), new THREE.Vector4(HALL.x - 30, 8, HALL.z, 60)],
     lampCols: [new THREE.Color(1.0, 0.62, 0.36), new THREE.Color(1.0, 0.45, 0.25), new THREE.Color(1.0, 0.55, 0.35), new THREE.Color(1.0, 0.6, 0.4)],
   });
 
-  // AVDEBUG (temporary): expose the graphs for counting
-  if (import.meta.env.DEV) Object.assign(globalThis, { __avenue: { opaque, fx }, __avenueInfo: { heroes: towers.heroes, lanterns: towers.lanterns } });
   return {
     id: "avenue",
     opaque,

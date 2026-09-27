@@ -15,15 +15,15 @@ export function buildSakura(density: number): THREE.Object3D {
   type C = { x: number; y: number; z: number; w: number; h: number; glow: number };
   const list: C[] = [];
   // the band right under the balustrade (their crowns reach the deck)
-  for (let i = 0; i < Math.round(190 * (0.6 + 0.4 * density)); i++) {
+  for (let i = 0; i < Math.round(140 * (0.6 + 0.4 * density)); i++) {
     const x = -52 + rand() * 104;
     const z = RAIL.z - 2.5 - rand() * 14;
-    const w = 3.2 + rand() * 3.6;
+    const w = 3.8 + rand() * 4.0;
     const top = 1.6 + rand() * 2.2 - Math.max(0, Math.abs(x) - 20) * 0.03;
     list.push({ x, y: top - w * 0.36, z, w, h: w * 0.72, glow: 1 });
   }
   // lower on the slope (seen between the rails)
-  for (let i = 0; i < Math.round(130 * (0.6 + 0.4 * density)); i++) {
+  for (let i = 0; i < Math.round(90 * (0.6 + 0.4 * density)); i++) {
     const x = -60 + rand() * 120;
     const z = RAIL.z - 14 - rand() * 30;
     const w = 5 + rand() * 5;
@@ -132,6 +132,8 @@ export function buildSakura(density: number): THREE.Object3D {
       float sp = step(0.86, hash12(floor(p * 40.0 + s))) * step(-0.05, -d);
       emis += vec3(1.0, 0.95, 0.97) * sp * 0.5 * vGlow;`,
   });
+  // nearest first: the cards behind are rejected by the depth test before shading
+  list.sort((a, b) => Math.hypot(a.x, a.z) - Math.hypot(b.x, b.z));
   const im = new THREE.InstancedMesh(geo, mat, list.length);
   const glow = new Float32Array(list.length);
   const m = new THREE.Matrix4();
@@ -186,7 +188,7 @@ void main() {
   vec3 V = normalize(cameraPosition - wpos);
   vLight = 0.7 + 0.3 * abs(dot(nrm, V));
   // fade them out (alpha) very near the lens and in the far distance
-  vFade = smoothstep(1.2, 2.8, vViewZ) * smoothstep(40.0, 22.0, vViewZ);
+  vFade = smoothstep(2.0, 4.0, vViewZ) * smoothstep(40.0, 22.0, vViewZ);
   vTint = aQ.w;
 }`;
 
@@ -217,7 +219,7 @@ export class Petals {
   readonly mesh: THREE.Mesh;
 
   constructor(density: number) {
-    const n = Math.round(1100 * density);
+    const n = Math.round(800 * density);
     const rand = rng(88);
     const quad = new THREE.PlaneGeometry(2, 2);
     const g = new THREE.InstancedBufferGeometry();
@@ -239,7 +241,7 @@ export class Petals {
         ...fxShared,
         uTime: env.uTime,
         uMin: { value: new THREE.Vector3(-17, -0.5, -17) },
-        uSize: { value: new THREE.Vector3(34, 10, 30) },
+        uSize: { value: new THREE.Vector3(34, 7.5, 30) },
         uDrift: { value: new THREE.Vector3(0.55, 0, 0.35) },
         uCol: { value: new THREE.Color(1.0, 0.62, 0.74) },
         uCol2: { value: new THREE.Color(1.0, 0.88, 0.92) },

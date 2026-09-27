@@ -101,8 +101,9 @@ function plumeStrip(): THREE.BufferGeometry {
 
 // ------------------------------------------------------------------ materials
 
-function leafMaterial() {
+function leafMaterial(lights: number) {
   return toonMaterial({
+    lights,
     color: 0x3b7a92,
     shade: 0x0f2548,
     ink: 30,
@@ -142,6 +143,7 @@ function plumeMaterial(pxAngle: THREE.IUniform<number>) {
     rim: 0,
     step: 0.0,
     soft: 0.08,
+    lights: 0,
     side: THREE.DoubleSide,
     alphaToCoverage: true,
     uniforms: { uPxAngle: pxAngle },
@@ -158,6 +160,7 @@ function plumeMaterial(pxAngle: THREE.IUniform<number>) {
       varying float vSeed;
       varying float vSide;
       varying float vDist;
+      varying float vN;
       ${gustGlsl}`,
     vertex: /* glsl */ `
       float H = aRoot.w;
@@ -199,7 +202,11 @@ function plumeMaterial(pxAngle: THREE.IUniform<number>) {
       vSeed = seed;
       // which side of the ribbon hangs down: the strands droop on that side
       vSide = clamp(-across.y * 3.0, -1.0, 1.0);
-      vDist = dist;`,
+      vDist = dist;
+      // how many hairs this plume can show: one per ~6 px of panicle, constant over the plume
+      vec3 mid = aRoot.xyz + vec3(0.0, H * 0.85, 0.0);
+      float headPx = hf * H / max(length(cameraPosition - mid) * uPxAngle, 1e-6);
+      vN = clamp(floor(headPx / 6.0), 3.0, 60.0);`,
     fragmentHead: /* glsl */ `
       varying float vT;
       varying float vHf;
@@ -209,7 +216,8 @@ function plumeMaterial(pxAngle: THREE.IUniform<number>) {
       varying float vGust;
       varying float vSeed;
       varying float vSide;
-      varying float vDist;`,
+      varying float vDist;
+      varying float vN;`,
     fragment: /* glsl */ `
       float headT = (vT - (1.0 - vHf)) / vHf;
       float ax = abs(vAcross);
@@ -219,6 +227,7 @@ function plumeMaterial(pxAngle: THREE.IUniform<number>) {
       if (headT < 0.0) {
         // the culm: a thin blue-green stem
         alpha = smoothstep(vStemW * 1.05, vStemW * 0.7, ax);
+        if (alpha < 0.02) discard;
         base = mix(vec3(0.2, 0.36, 0.5) * (0.8 + 0.3 * vT), sil, nearK);
         shade = mix(vec3(0.05, 0.11, 0.25), sil * 0.8, nearK);
       } else {
@@ -227,33 +236,35 @@ function plumeMaterial(pxAngle: THREE.IUniform<number>) {
         float x = vAcross / vHalfW;
         float xr = -0.55 * vSide;
         float dx = x - xr;
+        float ad = abs(dx);
         float lower = step(0.0, dx * (vSide >= 0.0 ? 1.0 : -1.0));
         float reach = mix(1.0 - 0.55 * abs(vSide), 1.0 + 0.55 * abs(vSide), lower);
         float open = 0.8 + 0.4 * fract(vSeed * 7.31);
         float env = (sin(3.14159 * pow(h, 0.55)) * (1.0 - 0.25 * h) * 0.9 + 0.1) * open * reach;
+        // cheap early out: well outside the tuft
+        if (ad > env * 1.12 + 0.02) discard;
         env *= 0.8 + 0.3 * vnoise(vec2(h * 7.0, vSeed * 13.0 + lower * 5.0));
-        float ad = abs(dx);
         // hairs: gently curving, unevenly spaced
-        float N = 15.0 + 6.0 * fract(vSeed * 3.7);
+        float N = min(15.0 + 6.0 * fract(vSeed * 3.7), vN);
         float ph = h * N - ad * N * 0.5 - ad * ad * N * 0.3 + vnoise(vec2(h * 4.0, vSeed * 17.0)) * 1.2 + vSeed * 7.0;
         float fw = fwidth(ph);
         float strand = abs(fract(ph) - 0.5) * 2.0;
         float sA = smoothstep(0.34 + fw, 0.34 - fw, strand);
         // too fine to draw: a solid tuft whose edge stays ragged with a few coarse locks
-        float coarse = smoothstep(0.34, 0.46, fw);
+        float coarse = max(step(vN, 3.5), smoothstep(0.4, 0.55, fw));
         float len = env * (0.7 + 0.4 * hash11(floor(ph) + vSeed * 91.0));
-        float lock = vnoise(vec2(h * 9.0 + vSeed * 5.0, ad * 3.0));
-        len = mix(len, env * (0.62 + 0.3 * lock), coarse);
+        len = mix(len, env * (0.62 + 0.3 * vnoise(vec2(h * 9.0 + vSeed * 5.0, ad * 3.0))), coarse);
         sA = mix(sA, 1.0, coarse);
         float fwA = fwidth(ad) + 1e-4;
         float edge = smoothstep(len + fwA, len - fwA, ad);
         float spine = smoothstep(0.07 + fwA, 0.07 - fwA, ad) * step(h, 0.96);
         alpha = max(sA * edge, spine);
+        if (alpha < 0.02) discard;
         // silver florets in the field (a passing gust lends them a sheen), flat dark hairs up close
         float rosy = step(0.82, fract(vSeed * 5.1));
         vec3 silver = mix(vec3(0.5, 0.57, 0.82), vec3(0.6, 0.52, 0.72), rosy * 0.6);
         float tip = ad / max(len, 0.05);
-        base = silver * (0.6 + 0.3 * tip + 0.5 * vGust);
+        base = silver * (0.56 + 0.26 * tip + 0.38 * vGust);
         shade = mix(vec3(0.18, 0.23, 0.48), vec3(0.26, 0.22, 0.44), rosy * 0.5) * (0.85 + 0.3 * tip);
         base = mix(base, sil * (0.9 + 0.35 * tip), nearK);
         shade = mix(shade, sil * 0.85, nearK);
@@ -261,8 +272,7 @@ function plumeMaterial(pxAngle: THREE.IUniform<number>) {
         vec3 Vd = normalize(vWorldPos - cameraPosition);
         float back = pow(saturate(dot(Vd, uMoonDir)), 12.0);
         emis += vec3(0.5, 0.78, 1.0) * back * (0.3 + 0.5 * vGust) * (1.0 - nearK) * 0.6;
-      }
-      if (alpha < 0.02) discard;`,
+      }`,
   });
 }
 
@@ -297,13 +307,17 @@ const eyeDist = (x: number, z: number) => Math.min(Math.hypot(x - EYE_SCREEN[0],
 
 /** Hero clumps around the low viewpoint: (azimuth°, distance m, plume height m, plumes). */
 const HERO: [number, number, number, number][] = [
-  [27, 5.2, 2.3, 5],
-  [32, 4.2, 2.15, 5],
-  [37, 3.3, 1.9, 4],
-  [50, 2.3, 2.3, 6],
-  [54, 3.2, 2.5, 6],
-  [46, 1.7, 1.5, 3],
-  [42, 5.5, 1.7, 3],
+  // tall plumes under the moon
+  [26, 5.8, 2.2, 4],
+  [31, 4.6, 2.3, 5],
+  [35, 3.6, 1.95, 3],
+  // framing the right edge
+  [49, 2.3, 2.3, 3],
+  [52, 3.1, 2.45, 3],
+  // low clumps in the bottom-right corner, below the hall
+  [42, 2.6, 1.1, 2],
+  [47, 1.8, 1.15, 2],
+  [53, 2.0, 1.2, 3],
 ];
 
 export type SusukiField = { group: THREE.Group; update(camera: THREE.PerspectiveCamera, heightPx: number): void };
@@ -314,7 +328,7 @@ export function buildSusuki(density: number, extraPlumes: THREE.Vector4[] = []):
   const clumps: Clump[] = [];
   const bands: [number, number, number, number][] = [
     // cell size, min eye distance, max eye distance, lod
-    [1.05, 0, 30, 0],
+    [1.12, 0, 30, 0],
     [1.75, 30, 72, 1],
     [2.9, 72, 400, 2],
   ];
@@ -334,7 +348,8 @@ export function buildSusuki(density: number, extraPlumes: THREE.Vector4[] = []):
         const bloom = 0.5 + 0.3 * Math.sin(px * 0.13 + 1.1) * Math.sin(pz * 0.11 - 0.4) + 0.2 * Math.sin(px * 0.37 + pz * 0.29);
         const maxP = lod === 0 ? 3 : 2;
         let plumes = 0;
-        for (let k = 0; k < maxP; k++) if (rand() < bloom * (k === 0 ? 1 : 0.55)) plumes++;
+        const thin = lod === 2 ? 0.55 : lod === 1 ? 0.85 : 1;
+        for (let k = 0; k < maxP; k++) if (rand() < bloom * thin * (k === 0 ? 1 : 0.55)) plumes++;
         clumps.push({ x: px, z: pz, y: groundY(px, pz), s, lod, plumes, tall: 1.3 + rand() * 0.75 });
       }
     }
@@ -347,15 +362,16 @@ export function buildSusuki(density: number, extraPlumes: THREE.Vector4[] = []):
 
   // ---- leaves
   const group = new THREE.Group();
-  const geos = [clumpGeometry(12, 1, 11), clumpGeometry(7, 1.7, 12), clumpGeometry(4, 2.8, 13)];
-  const mat = leafMaterial();
+  const geos = [clumpGeometry(12, 1, 11), clumpGeometry(6, 1.9, 12), clumpGeometry(3, 3.4, 13)];
+  // lantern light only reaches the near grass (the pond bank); far clumps skip the point lights
+  const mats = [leafMaterial(1), leafMaterial(0)];
   const m = new THREE.Matrix4();
   const q = new THREE.Quaternion();
   const col = new THREE.Color();
   const up = new THREE.Vector3(0, 1, 0);
   for (let lod = 0; lod < 3; lod++) {
     const list = clumps.filter((c) => c.lod === lod);
-    const mesh = new THREE.InstancedMesh(geos[lod], mat, list.length);
+    const mesh = new THREE.InstancedMesh(geos[lod], mats[lod === 0 ? 0 : 1], list.length);
     list.forEach((c, i) => {
       q.setFromAxisAngle(up, rand() * Math.PI * 2);
       const sy = c.s * (c.hero ? 1.25 : 1);
@@ -365,6 +381,7 @@ export function buildSusuki(density: number, extraPlumes: THREE.Vector4[] = []):
       mesh.setColorAt(i, col);
     });
     mesh.frustumCulled = false;
+    mesh.renderOrder = -30;
     group.add(mesh);
   }
 
@@ -378,10 +395,12 @@ export function buildSusuki(density: number, extraPlumes: THREE.Vector4[] = []):
       const x = c.x + Math.cos(a) * r;
       const z = c.z + Math.sin(a) * r;
       const H = c.tall * (0.82 + rand() * 0.3) * (c.hero ? 1 : c.s * 0.85 + 0.15);
-      const la = rand() * Math.PI * 2;
-      const lean = 0.05 + rand() * 0.14;
+      // hero plumes lean downwind (and so away from the moon); the rest every which way
+      const la = c.hero ? Math.atan2(-0.25, 1) + (rand() - 0.5) * 1.1 : rand() * Math.PI * 2;
+      const lean = c.hero ? 0.07 + rand() * 0.08 : 0.05 + rand() * 0.14;
       roots.push(x, c.y, z, H);
-      shapes.push(Math.cos(la) * lean + Math.cos(a) * 0.05, Math.sin(la) * lean + Math.sin(a) * 0.05, 0.19 + rand() * 0.09, rand());
+      const outK = c.hero ? 0 : 0.05;
+      shapes.push(Math.cos(la) * lean + Math.cos(a) * outK, Math.sin(la) * lean + Math.sin(a) * outK, 0.19 + rand() * 0.09, rand());
     }
   }
   for (const e of extraPlumes) {
@@ -404,8 +423,8 @@ export function buildSusuki(density: number, extraPlumes: THREE.Vector4[] = []):
   const pxAngle = { value: 0.001 };
   const plumes = new THREE.Mesh(pg, plumeMaterial(pxAngle));
   plumes.frustumCulled = false;
+  plumes.renderOrder = -20;
   group.add(plumes);
-  group.userData.counts = { clumps: clumps.length, plumes: roots.length / 4 };
 
   return {
     group,

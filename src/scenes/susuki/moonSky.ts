@@ -150,7 +150,7 @@ void main() {
   float glow = exp(-md / (uMoonR * 3.6)) * 0.7 + exp(-md / (uMoonR * 1.1)) * 0.8;
   col += uGlow * glow * gk;
   col += uGlow * 0.14 * uHalo * gk * exp(-pow((md - uMoonR * 2.3) / (uMoonR * 0.1), 2.0));
-  col += stars(dir, md);
+  if (uStars > 0.0) col += stars(dir, md);
   col = mix(col, uHorizon * 0.8, smoothstep(0.0, -0.06, el));
   if (md < uMoonR * 1.04) {
     vec3 right = normalize(cross(uMoonDir, vec3(0.0, 1.0, 0.0)));

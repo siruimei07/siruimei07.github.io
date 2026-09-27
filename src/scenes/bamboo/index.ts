@@ -30,11 +30,11 @@ export function build(ctx: SceneContext): StageScene {
     rimCol: new THREE.Color(0.55, 0.75, 1.0),
     fogCol: new THREE.Color(0.02, 0.055, 0.17),
     fogMoon: new THREE.Color(0.07, 0.15, 0.38),
-    fogDist: new THREE.Vector3(8, 110, 0.92),
+    fogDist: new THREE.Vector3(4, 78, 0.9),
     wind: new THREE.Vector3(1, 0, 0.35),
   });
 
-  const sky = new Sky({ moonRadius: MOON_R, zenith: 0x050b24, mid: 0x0c2260, horizon: 0x1d4b98, glow: 0x3a6cd0, moonGain: 2.4, stars: 0.7 });
+  const sky = new Sky({ moonRadius: MOON_R, zenith: 0x050b24, mid: 0x0c2260, horizon: 0x1d4b98, glow: 0x24509e, moonGain: 2.4, stars: 0.7 });
   const clouds = new Clouds({
     list: [
       [37, MOON_EL - 2.8, 14, 1.8],
@@ -62,7 +62,7 @@ export function build(ctx: SceneContext): StageScene {
     opaque.add(layer);
   });
 
-  // the lantern and the candle in the hokora
+  // the stone lantern is the one lamp (the candle in the hokora is painted into its doors)
   env.lamps[0].set(shrine.lanternLight.x, shrine.lanternLight.y, shrine.lanternLight.z, 3.2);
   env.lampCols[0].setRGB(1.3, 0.78, 0.36);
 
@@ -127,16 +127,13 @@ export function build(ctx: SceneContext): StageScene {
   ];
   fx.add(buildMist(MAIN_CAMS[1].position, SHOTS.screen.yaw, base.y), buildShafts(), motes.mesh, stalk.fx, ...fish.map((f) => f.mesh));
 
-  // DEBUG (temporary): expose for the authoring scripts
-  (globalThis as unknown as { __bamboo: unknown }).__bamboo = { opaque, fx };
-
   return {
     id: "bamboo",
     opaque,
     fx,
     env,
     shots: SHOTS,
-    post: { exposure: 1.0, bloom: 1.25, inkFade: [18, 100], inkWidth: 1.3, rim: new THREE.Color(0.62, 0.82, 1.0) },
+    post: { exposure: 1.0, bloom: 1.25, inkFade: [12, 55], inkWidth: 1.3, rim: new THREE.Color(0.62, 0.82, 1.0) },
     moonRadius: sky.moonRadius,
     update(t, _dt, camera, heightPx) {
       sky.update(camera, heightPx);

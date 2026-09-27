@@ -46,21 +46,16 @@ export function build(ctx: SceneContext): StageScene {
     wind: new THREE.Vector3(1, 0, 0.4),
   });
 
+  const lampBase = env.lampCols.map((c) => c.clone());
+
   const sky = new Sky({ moonRadius: 4.2, zenith: 0x030817, mid: 0x08163f, horizon: 0x24438a, glow: 0x2e58b0, stars: 0.5, halo: 0.9 });
   const clouds = new Clouds({
     list: [
-      [21, 16.5, 22, 3.0],
-      [47, 27, 18, 2.4],
-      [-28, 29, 30, 4.2],
-      [-2, 21, 24, 3.2],
-      [66, 19, 26, 3.4],
-      [-52, 8, 34, 3.0],
-      [6, 9.5, 28, 2.4],
-      [82, 8, 30, 3.0],
-      [34, 36, 24, 3.6],
-      [-38, 6.5, 30, 2.6],
-      [-14, 13, 22, 2.4],
-      [58, 11, 24, 2.8],
+      // one across the moon's lower half, a bank over the left, one low behind the mesa
+      [27, 15.5, 20, 3.6],
+      [-26, 19.5, 28, 5.0],
+      [2, 9.0, 26, 3.4],
+      [-50, 8, 30, 4.0],
     ],
     seed: 2718,
     body: 0x0f214f,
@@ -84,9 +79,9 @@ export function build(ctx: SceneContext): StageScene {
   const fish = [
     // a school weaving low over the near town, just past the blossom
     new FishStream({
-      path: [V(-420, 18, -300), V(-230, 32, -210), V(-60, 12, -170), V(90, 30, -230), V(260, 20, -200), V(420, 44, -300), V(330, 60, -470), V(120, 38, -420), V(-100, 58, -520), V(-330, 40, -470)],
-      count: Math.round(300 * d),
-      radius: 12,
+      path: [V(-60, 14, -260), V(70, 26, -200), V(190, 12, -190), V(330, 30, -250), V(480, 22, -330), V(560, 46, -470), V(420, 60, -560), V(250, 40, -470), V(90, 56, -520), V(-40, 38, -430)],
+      count: Math.round(220 * d),
+      radius: 11,
       flatten: 0.5,
       size: 3.2,
       speed: 22,
@@ -100,7 +95,7 @@ export function build(ctx: SceneContext): StageScene {
     // a longer river further out, sweeping in from the left over the town
     new FishStream({
       path: [V(-1100, 70, -560), V(-700, 95, -620), V(-360, 80, -700), V(-80, 110, -640), V(180, 90, -560), V(60, 70, -430), V(-240, 60, -420), V(-560, 75, -460), V(-900, 60, -420)],
-      count: Math.round(300 * d),
+      count: Math.round(200 * d),
       radius: 22,
       flatten: 0.45,
       size: 5.5,
@@ -116,9 +111,9 @@ export function build(ctx: SceneContext): StageScene {
     // right lantern and over the gate, back out high and down into the valley
     new FishStream({
       path: [
-        V(8.5, -4.0, -24),
-        V(7.2, 1.2, -18),
-        V(6.2, 4.6, -14.5),
+        V(-4.0, -5.0, -26),
+        V(-0.5, 0.6, -19),
+        V(3.4, 4.2, -15.5),
         V(4.6, 7.4, -12.5),
         V(4.9, 9.6, -15.0),
         V(7.4, 10.2, -16.0),
@@ -132,6 +127,7 @@ export function build(ctx: SceneContext): StageScene {
         V(26, 8.0, 10.0),
         V(30, -6.0, -10.0),
         V(20, -10.0, -26.0),
+        V(4, -12.0, -40.0),
       ],
       count: Math.round(260 * d),
       radius: 0.55,
@@ -156,6 +152,11 @@ export function build(ctx: SceneContext): StageScene {
     post: { exposure: 1.0, bloom: 1.35, inkFade: [70, 480], inkWidth: 1.2, rim: new THREE.Color(0.68, 0.82, 1.0) },
     moonRadius: sky.moonRadius,
     update(t, _dt, camera, heightPx) {
+      // the lanterns' light breathes a little (flame behind paper and stone)
+      for (let i = 0; i < 4; i++) {
+        const k = 0.9 + 0.06 * Math.sin(t * (5.3 + i) + i * 1.7) + 0.04 * Math.sin(t * (11.1 + i * 0.7));
+        env.lampCols[i].copy(lampBase[i]).multiplyScalar(k);
+      }
       city.update(t);
       sky.update(camera, heightPx);
       town.update(camera, heightPx);

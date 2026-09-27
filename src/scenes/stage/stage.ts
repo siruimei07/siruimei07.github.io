@@ -20,6 +20,12 @@ export const RAIL_SP = (DECK.x1 - RAIL_X0) / FRONT_SPANS;
 const SIDE_Z1 = -0.4;
 const SIDE_SPANS = Math.round((SIDE_Z1 - RAIL.z) / RAIL.spacing);
 const SIDE_SP = (SIDE_Z1 - RAIL.z) / SIDE_SPANS;
+/** Small lanterns sitting on the top rail (every other span), as on the film's railings. */
+export const RAIL_LANTERNS: THREE.Vector3[] = [];
+for (const s of [-1, 1]) {
+  for (const k of [1, 3, 5]) if (k < FRONT_SPANS) RAIL_LANTERNS.push(new THREE.Vector3(s * (RAIL_X0 + (k + 0.5) * RAIL_SP), RAIL.top + 0.16, RAIL.z));
+  for (const k of [1, 3, 5]) if (k < SIDE_SPANS) RAIL_LANTERNS.push(new THREE.Vector3(s * RAIL.side, RAIL.top + 0.16, RAIL.z + (k + 0.5) * SIDE_SP));
+}
 
 const deckFrag = /* glsl */ `
   vec3 P = vWorldPos;
@@ -109,19 +115,19 @@ const deckFrag = /* glsl */ `
       if (t > 0.0 && t < tHit && hy < 2.2) refl = vec3(0.07, 0.07, 0.13);
     }
   }
-  // lights: long, soft streaks
+  // lights: long, soft streaks of the stone lanterns and the rail lanterns
   vec3 streak = vec3(0.0);
   for (int i = 0; i < 2; i++) {
     vec3 Ld = normalize(uStone[i].xyz - P);
     float dh = length(normalize(Ld.xz) - normalize(R.xz));
     float dv = abs(Ld.y - R.y);
-    streak += vec3(1.0, 0.6, 0.28) * exp(-dh * dh * 700.0 - dv * dv * 22.0) * 1.8;
+    streak += vec3(1.0, 0.6, 0.28) * exp(-dh * dh * 900.0 - dv * dv * 26.0) * 1.2;
   }
-  for (int i = 0; i < ${LANTERNS.length}; i++) {
-    vec3 Ld = normalize(uLant[i].xyz - P);
+  for (int i = 0; i < ${RAIL_LANTERNS.length}; i++) {
+    vec3 Ld = normalize(uRailL[i].xyz - P);
     float dh = length(normalize(Ld.xz) - normalize(R.xz));
     float dv = abs(Ld.y - R.y);
-    streak += vec3(1.0, 0.58, 0.3) * exp(-dh * dh * 420.0 - dv * dv * 14.0) * 1.3;
+    streak += vec3(1.0, 0.56, 0.26) * exp(-dh * dh * 1800.0 - dv * dv * 34.0) * 0.8;
   }
   emis += (refl + streak) * F;
   base *= 1.0 - F * 0.55;
@@ -143,18 +149,23 @@ const deckFrag = /* glsl */ `
   base *= 1.0 - sh * 0.35 * glowK;
   vec3 pool = vec3(0.0);
   for (int i = 0; i < ${LANTERNS.length}; i++) {
-    float dd = length(P.xz - uLant[i].xz) / 3.6;
-    float v = saturate(1.0 - dd);
+    float v = saturate(1.0 - length(P.xz - uLant[i].xz) / 4.6);
     v *= v;
     pool += vec3(1.0, 0.55, 0.26) * (floor(v * 3.0 + 0.4) / 3.0 * 0.8 + v * 0.2);
   }
   for (int i = 0; i < 2; i++) {
-    float dd = length(P.xz - uStone[i].xz) / 2.8;
-    float v = saturate(1.0 - dd);
+    float v = saturate(1.0 - length(P.xz - uStone[i].xz) / 3.2);
     v *= v;
     pool += vec3(1.0, 0.6, 0.3) * (floor(v * 3.0 + 0.4) / 3.0 * 0.8 + v * 0.2) * 1.2;
   }
-  emis += pool * base * 0.8;`;
+  for (int i = 0; i < ${RAIL_LANTERNS.length}; i++) {
+    float v = saturate(1.0 - length(P.xz - uRailL[i].xz) / 2.4);
+    v *= v;
+    pool += vec3(1.0, 0.58, 0.28) * (floor(v * 3.0 + 0.4) / 3.0 * 0.8 + v * 0.2) * 0.75;
+  }
+  // lantern light on waxed wood: warm pools, plus a low warm ambience everywhere
+  emis += pool * (base * 1.1 + vec3(0.07, 0.035, 0.015)) * (1.0 - seam * 0.4);
+  emis += vec3(0.05, 0.022, 0.01) * (1.0 - F) * (stone ? 0.3 : 1.0);`;
 
 /** The deck (wood) and the threshold (stone): one mesh, one shader. */
 function deck(): THREE.Mesh {
@@ -162,8 +173,8 @@ function deck(): THREE.Mesh {
   g.rotateX(-Math.PI / 2);
   g.translate((DECK.x0 + DECK.x1) / 2, 0, (SILL.z1 + DECK.zFront) / 2 - 0.15);
   const mat = toonMaterial({
-    color: 0x6a4538,
-    shade: 0x2a1a2a,
+    color: 0x5c3826,
+    shade: 0x24141c,
     ink: 3,
     rim: 0,
     step: -0.5,
@@ -171,13 +182,15 @@ function deck(): THREE.Mesh {
     uniforms: {
       uLant: { value: LANTERNS.map((p) => new THREE.Vector4(p.x, p.y, p.z, 1)) },
       uStone: { value: STONE_LANTERNS.map((p) => new THREE.Vector4(p.x, p.y, p.z, 1)) },
-      uGlow: { value: new THREE.Color(0.95, 0.46, 0.3) },
+      uRailL: { value: RAIL_LANTERNS.map((p) => new THREE.Vector4(p.x, p.y, p.z, 1)) },
+      uGlow: { value: new THREE.Color(1.0, 0.5, 0.28) },
       uSky: { value: new THREE.Color(0.015, 0.035, 0.11) },
       uRailC: { value: new THREE.Color(0.2, 0.035, 0.04) },
     },
     fragmentHead: /* glsl */ `
       uniform vec4 uLant[${LANTERNS.length}];
       uniform vec4 uStone[2];
+      uniform vec4 uRailL[${RAIL_LANTERNS.length}];
       uniform vec3 uGlow;
       uniform vec3 uSky;
       uniform vec3 uRailC;`,
@@ -399,6 +412,46 @@ function balustrade(): THREE.Object3D {
   rails.renderOrder = 4;
   grp.add(rails);
 
+  // small lanterns sitting on the top rail: a glowing paper box under a dark cap
+  const rlBody = new THREE.BoxGeometry(0.17, 0.22, 0.17);
+  const rlBodies = new THREE.InstancedMesh(
+    rlBody,
+    toonMaterial({
+      color: 0x000000,
+      shade: 0x000000,
+      ink: 14,
+      rim: 0,
+      lights: 0,
+      fog: 0.3,
+      fragment: /* glsl */ `
+        // paper panes in a thin wooden frame, flickering softly
+        vec2 q = abs(vUv - 0.5) * 2.0;
+        float frame = max(step(0.8, max(q.x, q.y)), step(q.x, 0.07));
+        float fl = 0.88 + 0.12 * sin(uTime * 6.0 + vWorldPos.x * 3.0 + vWorldPos.z);
+        float side = step(abs(n.y), 0.5);
+        emis += side * mix(vec3(1.0, 0.66, 0.34) * 2.6 * fl * (1.1 - q.y * 0.3), vec3(0.06, 0.025, 0.02), frame);`,
+    }),
+    RAIL_LANTERNS.length,
+  );
+  const rlCapGeo = merge([
+    (() => {
+      const g = new THREE.CylinderGeometry(0.02, 0.15, 0.09, 4);
+      g.rotateY(Math.PI / 4);
+      g.translate(0, 0.155, 0);
+      return g;
+    })(),
+    new THREE.BoxGeometry(0.2, 0.03, 0.2).translate(0, -0.125, 0),
+  ]);
+  const rlCaps = new THREE.InstancedMesh(rlCapGeo, capMat, RAIL_LANTERNS.length);
+  RAIL_LANTERNS.forEach((p, i) => {
+    m.makeTranslation(p.x, p.y, p.z);
+    rlBodies.setMatrixAt(i, m);
+    rlCaps.setMatrixAt(i, m);
+  });
+  rlBodies.frustumCulled = rlCaps.frustumCulled = false;
+  rlBodies.renderOrder = rlCaps.renderOrder = 4;
+  grp.add(rlBodies, rlCaps);
+
   // the lower panels (腰板): dark boards with battens, glowing faintly at the seams
   const panelParts: THREE.BufferGeometry[] = [];
   const panelRun = (a: THREE.Vector3, b: THREE.Vector3) => {
@@ -424,8 +477,7 @@ function balustrade(): THREE.Object3D {
       fragment: /* glsl */ `
         float u = (abs(n.x) > 0.5 ? vWorldPos.z : vWorldPos.x) / 0.34;
         float bat = smoothstep(0.1, 0.0, abs(fract(u) - 0.5) - 0.38);
-        base = mix(base, base * 1.5 + vec3(0.04, 0.01, 0.01), bat); shade = mix(shade, shade * 1.4, bat);
-        emis += vec3(0.5, 0.2, 0.12) * smoothstep(0.34, 0.0, abs(fract(u) - 0.5)) * 0.0;`,
+        base = mix(base, base * 1.5 + vec3(0.04, 0.01, 0.01), bat); shade = mix(shade, shade * 1.4, bat);`,
     }),
   );
   panels.renderOrder = 4;

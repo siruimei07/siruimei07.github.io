@@ -52,60 +52,45 @@ float sdSeg(vec2 p, vec2 a, vec2 b) { vec2 pa = p - a, ba = b - a; float h = cla
 
 // outline distance (0 on the tube) of each glyph; dots add small filled marks
 float glyph(vec2 p, float id, out float dots) {
+  float d = 1e3;
   dots = 1e3;
   if (id < 0.5) {
     // octopus: round head, a skirt of four tentacle curls
-    float head = sdCircle(p - vec2(0.0, 0.18), 0.5);
-    float body = sdBox(p - vec2(0.0, -0.18), vec2(0.42, 0.26));
-    float d = min(head, body);
-    for (int i = 0; i < 4; i++) {
-      float x = -0.36 + float(i) * 0.24;
-      d = min(d, sdCircle(p - vec2(x, -0.46), 0.13));
-    }
+    float sil = min(sdCircle(p - vec2(0.0, 0.18), 0.5), sdBox(p - vec2(0.0, -0.18), vec2(0.42, 0.26)));
+    for (int i = 0; i < 4; i++) sil = min(sil, sdCircle(p - vec2(-0.36 + float(i) * 0.24, -0.46), 0.13));
+    d = abs(sil);
     dots = min(sdCircle(p - vec2(-0.17, 0.2), 0.07), sdCircle(p - vec2(0.17, 0.2), 0.07));
     dots = min(dots, sdSeg(p, vec2(-0.08, 0.02), vec2(0.08, 0.02)) - 0.02);
-    return abs(d);
   } else if (id < 1.5) {
     // fish: body, forked tail, eye, a gill line
-    float body = sdEllipse(p - vec2(0.12, 0.0), vec2(0.58, 0.32));
     vec2 q = p - vec2(-0.5, 0.0);
-    float tail = max(sdBox(q + vec2(0.2, 0.0), vec2(0.2, 0.34)), abs(q.y) - 0.1 - (-q.x) * 1.2);
-    float d = min(body, tail);
+    float tail = max(sdBox(q + vec2(0.2, 0.0), vec2(0.2, 0.34)), abs(q.y) - 0.1 + q.x * 1.2);
+    float gill = max(abs(sdCircle(p - vec2(0.62, 0.0), 0.36)), 0.3 - p.x);
+    d = min(abs(min(sdEllipse(p - vec2(0.12, 0.0), vec2(0.58, 0.32)), tail)), gill + 0.01);
     dots = sdCircle(p - vec2(0.44, 0.08), 0.06);
-    float gill = abs(sdCircle(p - vec2(0.62, 0.0), 0.36));
-    gill = max(gill, -(p.x - 0.3));
-    return min(abs(d), gill + 0.01);
   } else if (id < 2.5) {
     // swirl: a curling spiral with a round head
     float r = length(p);
     float a = atan(p.y, p.x);
-    float best = 1e3;
     for (int k = 0; k < 3; k++) {
       float th = a + 6.2832 * float(k);
-      float rs = 0.1 + 0.055 * th;
-      if (th < 13.0) best = min(best, abs(r - rs));
+      if (th < 13.0) d = min(d, abs(r - (0.1 + 0.055 * th)));
     }
     dots = sdCircle(p - vec2(0.28, 0.42), 0.07);
-    return best;
   } else if (id < 3.5) {
     // cat face: head, ears, eyes, whiskers
-    float head = sdEllipse(p - vec2(0.0, -0.05), vec2(0.55, 0.45));
-    float earL = max(sdSeg(p, vec2(-0.48, 0.2), vec2(-0.36, 0.62)), 0.0);
-    float earR = max(sdSeg(p, vec2(0.48, 0.2), vec2(0.36, 0.62)), 0.0);
-    float earL2 = sdSeg(p, vec2(-0.36, 0.62), vec2(-0.14, 0.38));
-    float earR2 = sdSeg(p, vec2(0.36, 0.62), vec2(0.14, 0.38));
-    float d = min(abs(head), min(min(earL, earR), min(earL2, earR2)));
+    d = abs(sdEllipse(p - vec2(0.0, -0.05), vec2(0.55, 0.45)));
+    d = min(d, min(sdSeg(p, vec2(-0.48, 0.2), vec2(-0.36, 0.62)), sdSeg(p, vec2(0.48, 0.2), vec2(0.36, 0.62))));
+    d = min(d, min(sdSeg(p, vec2(-0.36, 0.62), vec2(-0.14, 0.38)), sdSeg(p, vec2(0.36, 0.62), vec2(0.14, 0.38))));
+    d = min(d, min(sdSeg(p, vec2(0.3, -0.12), vec2(0.7, -0.05)), sdSeg(p, vec2(-0.3, -0.12), vec2(-0.7, -0.05))));
     dots = min(sdCircle(p - vec2(-0.2, 0.0), 0.07), sdCircle(p - vec2(0.2, 0.0), 0.07));
-    d = min(d, sdSeg(p, vec2(0.3, -0.12), vec2(0.7, -0.05)));
-    d = min(d, sdSeg(p, vec2(-0.3, -0.12), vec2(-0.7, -0.05)));
-    return d;
+  } else {
+    // a lantern-and-wave emblem
+    float wave = max(abs(p.y - 0.12 * sin(p.x * 9.0)), abs(p.x) - 0.4);
+    d = min(abs(sdCircle(p, 0.55)), wave);
+    dots = sdCircle(p - vec2(0.0, 0.3), 0.08);
   }
-  // 4: a lantern-and-wave emblem
-  float ring = abs(sdCircle(p, 0.55));
-  float wave = abs(p.y - 0.12 * sin(p.x * 9.0)) ;
-  wave = max(wave, abs(p.x) - 0.4);
-  dots = sdCircle(p - vec2(0.0, 0.3), 0.08);
-  return min(ring, wave);
+  return d;
 }
 
 void main() {

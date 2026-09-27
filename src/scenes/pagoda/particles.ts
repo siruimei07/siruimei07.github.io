@@ -62,6 +62,8 @@ void main() {
   vFade = smoothstep(0.0, 0.08, h) * smoothstep(1.0, 0.85, h);
   vec4 vp = viewMatrix * vec4(p, 1.0);
   float depth = max(-vp.z, 0.01);
+  // nothing drifts right in front of the lens
+  vFade *= smoothstep(3.0, 8.0, depth);
   float minPx = type < 0.5 ? 1.6 : type < 1.5 ? 2.5 : type < 2.5 ? 1.8 : 1.3;
   size = max(size, depth * uPxAngle * minPx);
   // petals tumble: squash the quad along a turning axis
@@ -83,13 +85,14 @@ const frag = /* glsl */ `
 ${common}
 ${fxDepthTest}
 uniform float uTime;
+uniform float uGain;
 varying vec2 vQ;
 varying float vType;
 varying float vViewZ;
 varying float vSeed;
 varying float vFade;
 void main() {
-  float vis = sceneVisible(vViewZ);
+  float vis = sceneVisible(vViewZ) * uGain;
   if (vis <= 0.0) discard;
   float r = length(vQ);
   vec3 c;
@@ -142,7 +145,7 @@ export function buildParticles(volumes: ParticleVolume[], density: number) {
   const mat = new THREE.ShaderMaterial({
     vertexShader: vert,
     fragmentShader: frag,
-    uniforms: { ...fxShared, uTime: env.uTime, uPxAngle: { value: 0.001 } },
+    uniforms: { ...fxShared, uTime: env.uTime, uPxAngle: { value: 0.001 }, uGain: { value: 1 } },
     transparent: true,
     depthTest: false,
     depthWrite: false,
@@ -154,6 +157,9 @@ export function buildParticles(volumes: ParticleVolume[], density: number) {
     mesh,
     update(camera: THREE.PerspectiveCamera, heightPx: number) {
       mat.uniforms.uPxAngle.value = THREE.MathUtils.degToRad(camera.fov) / Math.max(1, heightPx);
+    },
+    gain(v: number) {
+      mat.uniforms.uGain.value = v;
     },
   };
 }

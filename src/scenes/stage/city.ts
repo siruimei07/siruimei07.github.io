@@ -220,8 +220,8 @@ export function buildCity(density: number): CityResult {
         float d = length(vWorldPos.xz);
         float nearK = 1.0 - smoothstep(500.0, 2600.0, d);
         // the valley glows warm where it is close; a cool, violet cast far away
-        base = mix(base, vec3(0.2, 0.1, 0.14), nearK * 0.7);
-        shade = mix(shade, vec3(0.13, 0.06, 0.1), nearK * 0.7);
+        base = mix(base, vec3(0.14, 0.07, 0.11), nearK * 0.7);
+        shade = mix(shade, vec3(0.09, 0.04, 0.08), nearK * 0.7);
         float dens = smoothstep(120.0, 260.0, d) * smoothstep(0.62, 0.86, n.y);
         // a carpet of little lights on a jittered grid
         vec2 g = vWorldPos.xz / 9.0;
@@ -232,7 +232,7 @@ export function buildCity(density: number): CityResult {
         float px = max(fwidth(g.x), fwidth(g.y));
         float rad = 0.13 + 0.1 * hash11(h * 91.0);
         float dotm = smoothstep(rad, rad * 0.45, length(f - c));
-        float on = step(1.0 - 0.6 * dens, h);
+        float on = step(1.0 - 0.72 * dens, h);
         float detail = smoothstep(1.1, 0.4, px);
         float avg = 0.6 * dens * 0.05;
         float e = mix(avg, dotm * on, detail);
@@ -255,12 +255,14 @@ export function buildCity(density: number): CityResult {
 
   // ---------------------------------------------------------------- buildings
   const lots = place(rand, density);
+  // near to far, so the depth test rejects most of what stands behind
+  lots.sort((a, b) => Math.hypot(a.x, a.z) - Math.hypot(b.x, b.z));
   const n = lots.length;
   const bodies = new THREE.InstancedMesh(
     unitBox(),
     toonMaterial({
-      color: 0x1a1c40,
-      shade: 0x0b0d27,
+      color: 0x15123c,
+      shade: 0x0a0826,
       ink: 0,
       rim: 1.0,
       step: 0.2,
@@ -292,35 +294,38 @@ export function buildCity(density: number): CityResult {
           float faceW = sideX ? vSize.z : vSize.x;
           float u = (sideX ? vObj.z : vObj.x) + faceW * 0.5;
           float v = vObj.y;
-          vec2 cs = mix(vec2(3.2, 3.5), vec2(2.5, 3.8), tower);
+          vec2 cs = mix(vec2(3.0, 3.4), vec2(2.4, 3.6), tower);
           vec2 cell = vec2(u, v) / cs;
           vec2 ci = floor(cell);
           vec2 cf = fract(cell);
-          float win = step(0.3, cf.x) * step(cf.x, 0.72) * step(0.34, cf.y) * step(cf.y, 0.78);
+          float win = step(0.32, cf.x) * step(cf.x, 0.7) * step(0.36, cf.y) * step(cf.y, 0.76);
           win *= step(3.0, v) * step(v, vSize.y - 2.5);
           float h = hash13(vec3(ci, vSeed.x * 57.0 + (ln.x + ln.z * 3.0) * 7.0));
-          float litP = mix(0.24, 0.66, hash11(vSeed.x * 3.1));
+          float litP = mix(0.22, 0.72, hash11(vSeed.x * 3.1)) * mix(0.75, 1.0, nearK);
           float lit = step(1.0 - litP, h);
           // whole floors dark, like offices after hours
-          lit *= step(0.22, hash12(vec2(ci.y, vSeed.x * 13.0)));
+          lit *= step(0.12, hash12(vec2(ci.y, vSeed.x * 13.0)));
           float px = max(fwidth(cell.x), fwidth(cell.y));
           float detail = smoothstep(0.8, 0.35, px);
-          float avg = 0.42 * 0.44 * litP * 0.78;
+          float avg = 0.38 * 0.4 * litP * 0.88;
           float e = mix(avg, win * lit, detail);
-          vec3 warm = mix(vec3(1.0, 0.6, 0.3), vec3(1.0, 0.82, 0.6), hash11(h * 31.0));
-          if (hash11(h * 5.7) < 0.2) warm = vec3(1.0, 0.45, 0.5);
-          vec3 cool = mix(vec3(0.5, 0.8, 1.0), vec3(0.8, 0.86, 1.0), hash11(h * 17.0));
-          if (hash11(h * 2.9) < 0.25) cool = vec3(0.62, 0.5, 1.0);
+          // saturated window colours: amber and rose near the stage, blue, violet and cyan far away
+          vec3 warm = mix(vec3(1.0, 0.46, 0.16), vec3(1.0, 0.64, 0.3), hash11(h * 31.0));
+          if (hash11(h * 5.7) < 0.22) warm = vec3(1.0, 0.34, 0.38);
+          if (hash11(h * 8.3) < 0.08) warm = vec3(1.0, 0.85, 0.62);
+          vec3 cool = mix(vec3(0.28, 0.6, 1.0), vec3(0.42, 0.78, 1.0), hash11(h * 17.0));
+          if (hash11(h * 2.9) < 0.25) cool = vec3(0.5, 0.36, 1.0);
+          if (hash11(h * 4.1) < 0.15) cool = vec3(0.3, 0.92, 0.92);
           float wk = clamp(nearK * 1.25 + (hash11(vSeed.x * 7.7) - 0.5) * 0.7, 0.0, 1.0);
           vec3 wc = mix(cool, warm, wk);
-          emis += wc * e * mix(3.0, 4.6, hash11(h * 3.0));
+          emis += wc * e * mix(3.2, 5.0, hash11(h * 3.0));
           vec3 glass = vec3(0.04, 0.05, 0.12);
           float gw = mix(0.2, win, detail) * 0.7;
           base = mix(base, glass, gw);
           shade = mix(shade, glass * 0.8, gw);
           // warm street glow washing up the lower floors
-          float street = exp(-v / 9.0) * (0.35 + 0.65 * nearK);
-          emis += mix(vec3(0.22, 0.3, 0.7), vec3(1.0, 0.42, 0.2), nearK) * street * 0.55;
+          float street = exp(-v / 7.0) * (0.3 + 0.7 * nearK);
+          emis += mix(vec3(0.2, 0.28, 0.66), vec3(1.0, 0.42, 0.2), nearK) * street * 0.45;
           // towers wear a lit crown
           float crown = tower * step(0.45, hash11(vSeed.x * 9.1)) * smoothstep(vSize.y - 2.4, vSize.y - 2.0, v) * step(v, vSize.y - 1.3);
           vec3 cc = hsv2rgb(vec3(fract(vSeed.x * 0.37 + 0.5), 0.5, 1.0));
@@ -349,7 +354,7 @@ export function buildCity(density: number): CityResult {
     sizes.set([l.w, l.h + sink, l.d], i * 3);
     seeds.set([rand() * 100, l.kind], i * 2);
     const far = THREE.MathUtils.smoothstep(Math.hypot(l.x, l.z), 900, 3500);
-    col.setHSL(0.68 + (rand() - 0.5) * 0.1, 0.3, 0.72 + rand() * 0.22 - far * 0.12);
+    col.setHSL(0.7 + (rand() - 0.5) * 0.1, 0.35, 0.62 + rand() * 0.25 - far * 0.1);
     bodies.setColorAt(i, col);
   });
   bodies.geometry.setAttribute("aSize", new THREE.InstancedBufferAttribute(sizes, 3));

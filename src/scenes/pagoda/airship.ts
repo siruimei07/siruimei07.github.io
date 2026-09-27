@@ -217,10 +217,13 @@ export function buildAirship(pos: THREE.Vector3, heading: THREE.Quaternion, leng
         shade = base * 0.6;
         emis += stripeC * rays * 0.25 + vec3(0.2, 0.5, 0.6) * 0.05;
       } else if (kind < 2.5) {
-        // pods: lacquer with gold bands
-        float band = step(0.8, fract(vObj.x * 0.3 + vObj.y * 0.3));
-        base = mix(vec3(0.012, 0.008, 0.016), vec3(0.6, 0.28, 0.05), band);
+        // lantern pods: black lacquer, glowing rings and rows of lit windows
+        float ring = step(0.86, fract(vUv.y * 4.0 + 0.1));
+        float win = step(0.55, fract(vUv.x * 14.0)) * step(0.3, fract(vUv.y * 4.0 + 0.1)) * step(fract(vUv.y * 4.0 + 0.1), 0.62);
+        vec3 pc = hsv2rgb(vec3(fract(0.9 + vPart.y * 0.07), 0.7, 1.0));
+        base = vec3(0.02, 0.006, 0.01);
         shade = base * 0.5;
+        emis += pc * ring * 3.0 + vec3(1.0, 0.45, 0.12) * win * 1.6;
       } else if (kind < 3.5) {
         // pod ends glow
         vec3 pc = hsv2rgb(vec3(fract(0.83 + vPart.y * 0.13 + uHue * 0.3), 0.75, 1.0));

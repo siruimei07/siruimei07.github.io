@@ -2,12 +2,12 @@ import * as THREE from "three";
 import { toonMaterial } from "../../engine/toon";
 import { box, cyl, giboshi, hipRoof, merge, prep } from "./geo";
 import { bridgeDefs, cityMapGlsl, lanternGlsl, reflectGlsl } from "./glsl";
-import { BAY, DECK_Y, EDGE_X, NBAYS, POST, POST_LIGHT_Y, RAIL_X, Z_FAR, Z_NEAR } from "./layout";
+import { BAY, DECK_Y, EDGE_X, NBAYS, POST, POST_LIGHT_Y, POSTS, RAIL_X, Z_FAR, Z_NEAR } from "./layout";
 
 // 月見橋 itself: a long wooden deck, wet from the evening rain, mirroring the
 // railings, the lanterns, the torii and the city; vermilion 高欄 railings
-// with bronze 擬宝珠 caps and a little lantern in every bay; and the tall
-// wooden lantern post by the right railing near the viewer.
+// with bronze 擬宝珠 caps and a little lantern in every bay; and a row of tall
+// wooden lantern posts (木灯籠) rising from the water along the right railing.
 
 export const WARM = new THREE.Color(1.0, 0.56, 0.24);
 
@@ -29,8 +29,8 @@ export function buildBridge(map: CityMap): THREE.Group {
   const deck = new THREE.Mesh(
     deckGeo,
     toonMaterial({
-      color: 0x625c6c,
-      shade: 0x2a2b44,
+      color: 0x4d4858,
+      shade: 0x1d1e32,
       ink: 1,
       rim: 0.2,
       step: 0.0,
@@ -42,7 +42,6 @@ export function buildBridge(map: CityMap): THREE.Group {
         uSkyLo: { value: new THREE.Color(0x10224a) },
         uSkyHi: { value: new THREE.Color(0x050e28) },
         uShadowDir: { value: new THREE.Vector3(0.5, 0.52, -0.69).normalize() },
-        uPostL: { value: new THREE.Vector3(POST.x, POST_LIGHT_Y, POST.z) },
       },
       fragmentHead: /* glsl */ `
         ${bridgeDefs}
@@ -51,7 +50,6 @@ export function buildBridge(map: CityMap): THREE.Group {
         uniform vec3 uSkyLo;
         uniform vec3 uSkyHi;
         uniform vec3 uShadowDir;
-        uniform vec3 uPostL;
         ${cityMapGlsl}
         ${lanternGlsl}
         ${reflectGlsl}
@@ -86,15 +84,18 @@ export function buildBridge(map: CityMap): THREE.Group {
               vec3 c = mix(rc, uLanternCol * 3.0, lant);
               acc += c * s * keep;
               keep *= 1.0 - s;
-              // the lantern post beyond the right railing
+              // the wooden lantern posts beyond the right railing
               if (sx > 0.0) {
-                float tp = (uPostL.x - P.x) / R.x;
+                float tp = (sx * POST_X - P.x) / R.x;
                 float hp = tp * R.y;
                 float zp = P.z + tp * R.z;
+                float z0 = POST_Z0;
+                float k = clamp(floor((z0 - zp) / POST_DZ + 0.5), 0.0, POST_N - 1.0);
+                float dz = abs(zp - (z0 - k * POST_DZ));
                 float bl = 0.02 + tp * 0.04;
-                float boxL = nearS(abs(zp - uPostL.z), 0.3, bl) * bandS(hp, uPostL.y - DECK_Y - 0.36, uPostL.y - DECK_Y + 0.36, bl);
-                float pil = nearS(abs(zp - uPostL.z), 0.13, bl * 0.5) * step(hp, uPostL.y - DECK_Y);
-                acc += (uLanternCol * 3.5 * boxL + vec3(0.02, 0.012, 0.012) * pil) * keep;
+                float boxL = nearS(dz, 0.3, bl) * bandS(hp, POST_LY - DECK_Y - 0.36, POST_LY - DECK_Y + 0.36, bl);
+                float pil = nearS(dz, 0.13, bl * 0.5) * step(hp, POST_LY - DECK_Y);
+                acc += (uLanternCol * 3.0 * boxL + vec3(0.02, 0.012, 0.012) * pil) * keep;
                 keep *= 1.0 - max(boxL, pil);
               }
             }
@@ -120,7 +121,7 @@ export function buildBridge(map: CityMap): THREE.Group {
           float md = acos(clamp(dot(R, uMoonDir), -1.0, 1.0));
           sky += vec3(0.45, 0.58, 0.95) * exp(-md / 0.1) * 0.5;
           vec4 cm = cityMap(P, R, 0.012);
-          vec3 farC = mix(sky, vec3(0.006, 0.008, 0.02) + cm.rgb, cm.a);
+          vec3 farC = mix(sky, vec3(0.006, 0.008, 0.02) + cm.rgb * 0.45, cm.a);
           // glossy moon streak: tight in azimuth, long in elevation
           float da = atan(R.x, -R.z) - atan(uMoonDir.x, -uMoonDir.z);
           float de = asin(clamp(R.y, -1.0, 1.0)) - asin(uMoonDir.y);
@@ -158,13 +159,17 @@ export function buildBridge(map: CityMap): THREE.Group {
           float sh = railShadow(P, uShadowDir);
           base = mix(base, shade * 1.1, sh * 0.85);
           // painted light pools under the rail lanterns
-          float pool = lanternLight(P, 3.3);
+          float pool = lanternLight(P, 4.0);
           pool = floor(pool * 3.0 + 0.3) / 3.0 * 0.8 + pool * 0.3;
-          emis += uLanternCol * pool * (base * 1.8 + 0.02);
+          emis += uLanternCol * pool * (base * 2.6 + 0.03);
+          // and the big warm pools of the lantern posts
+          float pp = postLight(P, 7.0);
+          pp = floor(pp * 3.0 + 0.3) / 3.0 * 0.7 + pp * 0.3;
+          emis += uLanternCol * pp * (base * 2.2 + 0.02);
           // wet sheen: the deck mirrors the railing, the lanterns, the torii, the city
           vec3 Vd = normalize(P - cameraPosition);
           vec2 jit = vec2(vnoise(P.xz * vec2(2.2, 0.9)), vnoise(P.xz * vec2(0.9, 2.6) + 4.0)) - 0.5;
-          vec3 nw = normalize(vec3(jit.x * 0.035, 1.0, jit.y * 0.06));
+          vec3 nw = normalize(vec3(jit.x * 0.025, 1.0, jit.y * 0.045));
           vec3 R = reflect(Vd, nw);
           float fres = 0.04 + 0.96 * pow(1.0 - saturate(-Vd.y), 5.0);
           emis += reflScene(P, R) * fres * mix(0.22, 0.9, wet);
@@ -199,7 +204,7 @@ export function buildBridge(map: CityMap): THREE.Group {
       uniform vec3 uLanternCol;
       ${lanternGlsl}`,
     fragment: /* glsl */ `
-      float g = lanternLight(vWorldPos, 2.7);
+      float g = lanternLight(vWorldPos, 2.7) + postLight(vWorldPos, 5.0) * 1.2;
       g = floor(g * 3.0 + 0.35) / 3.0 * 0.6 + g * 0.3;
       emis += uLanternCol * g * (base * 1.2 + 0.01);
       // a little lacquer sheen on the round top rail
@@ -274,7 +279,9 @@ export function buildBridge(map: CityMap): THREE.Group {
           vec2 q = abs(vec2(abs(n.x) > 0.5 ? vWorldPos.z - (Z_NEAR - (k + 0.5) * BAY) : vWorldPos.x - sign(vWorldPos.x) * RAIL_X, yy - 0.67));
           float frame = step(0.052, q.x) + step(0.088, q.y);
           float core = 1.0 - smoothstep(0.0, 0.1, q.y);
-          emis += uLanternCol * fl * (1.9 + 1.8 * core) * (1.0 - 0.75 * min(frame, 1.0));
+          // orange paper, a hot yellow heart
+          vec3 paper = uLanternCol * (0.7 + 0.5 * core) + vec3(1.0, 0.85, 0.55) * core * core * 1.4;
+          emis += paper * fl * (1.0 - 0.8 * min(frame, 1.0));
         }`,
     }),
     nb,
@@ -322,7 +329,7 @@ export function buildBridge(map: CityMap): THREE.Group {
   return group;
 }
 
-/** 木灯籠: a tall wooden pillar rising from the water with a paper lantern box and a little roof. */
+/** 木灯籠: tall wooden pillars rising from the water with a paper lantern box and a little roof (one per POSTS entry). */
 function buildLanternPost(): THREE.Group {
   const g = new THREE.Group();
   const boxY = POST_LIGHT_Y; // centre of the light box
@@ -330,6 +337,7 @@ function buildLanternPost(): THREE.Group {
   const dark = 0x1a1418;
   const parts: THREE.BufferGeometry[] = [];
   const pillarTop = boxY - 0.44;
+  // local frame: the post at x = 0, the railing toward −x
   parts.push(prep(box(0.27, pillarTop - POST.y, 0.27, 0, (pillarTop + POST.y) / 2, 0), wood));
   // a collar where it passes the deck and a brace to the railing post
   parts.push(prep(box(0.34, 0.16, 0.34, 0, DECK_Y - 0.25, 0), dark));
@@ -354,7 +362,7 @@ function buildLanternPost(): THREE.Group {
   parts.push(prep(roof, 0x2a2430));
   parts.push(prep(cyl(0.03, 0.05, 0.1, 8, 0, boxY + 0.78, 0), dark));
   parts.push(prep(new THREE.SphereGeometry(0.06, 10, 8).translate(0, boxY + 0.92, 0), 0x4a7c6c));
-  const frame = new THREE.Mesh(
+  const frame = new THREE.InstancedMesh(
     merge(parts),
     toonMaterial({
       color: 0xffffff,
@@ -373,8 +381,9 @@ function buildLanternPost(): THREE.Group {
         emis += uLanternCol * base * nearG * 1.6;
         if (!gl_FrontFacing) emis += uLanternCol * 0.5 * step(0.3, dy);`,
     }),
+    POSTS.length,
   );
-  const paper = new THREE.Mesh(
+  const paper = new THREE.InstancedMesh(
     prep(box(0.5, 0.68, 0.5, 0, boxY, 0)),
     toonMaterial({
       color: 0xfff0d8,
@@ -382,20 +391,34 @@ function buildLanternPost(): THREE.Group {
       ink: 8,
       rim: 0.2,
       lights: 0,
-      uniforms: { uLanternCol: { value: WARM }, uBoxY: { value: boxY }, uC: { value: new THREE.Vector2(POST.x, POST.z) } },
-      fragmentHead: /* glsl */ `uniform vec3 uLanternCol; uniform float uBoxY; uniform vec2 uC;`,
+      uniforms: { uLanternCol: { value: WARM }, uBoxY: { value: boxY } },
+      vertexHead: /* glsl */ `varying vec3 vC;`,
+      vertex: /* glsl */ `vC = (m * vec4(0.0, 0.0, 0.0, 1.0)).xyz;`,
+      fragmentHead: /* glsl */ `uniform vec3 uLanternCol; uniform float uBoxY; varying vec3 vC;`,
       fragment: /* glsl */ `
         // shoji: a kumiko lattice over glowing paper, brighter at the heart
-        vec2 q = vec2(abs(n.x) > 0.5 ? vWorldPos.z - uC.y : vWorldPos.x - uC.x, vWorldPos.y - uBoxY);
+        vec2 q = vec2(abs(n.x) > 0.5 ? vWorldPos.z - vC.z : vWorldPos.x - vC.x, vWorldPos.y - uBoxY);
         vec2 cell = abs(fract(q / vec2(0.125, 0.17) + 0.5) - 0.5);
         float bar = max(1.0 - smoothstep(0.035, 0.07, cell.x), 1.0 - smoothstep(0.035, 0.07, cell.y));
-        float fl = 0.9 + 0.06 * sin(uTime * 7.3) + 0.04 * sin(uTime * 17.1 + 1.3);
+        float ph = vC.z * 0.37;
+        float fl = 0.9 + 0.06 * sin(uTime * 7.3 + ph) + 0.04 * sin(uTime * 17.1 + 1.3 + ph);
         float heart = exp(-dot(q, q) * 9.0);
-        emis += uLanternCol * fl * (1.8 + 3.2 * heart) * (1.0 - bar * 0.75);
+        emis += (uLanternCol * (1.0 + 0.8 * heart) + vec3(1.0, 0.85, 0.55) * heart * heart * 2.0) * fl * (1.0 - bar * 0.8);
         if (n.y > 0.5 || n.y < -0.5) emis *= 0.4;`,
     }),
+    POSTS.length,
   );
+  const m = new THREE.Matrix4();
+  const flip = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI);
+  POSTS.forEach((p, i) => {
+    m.compose(new THREE.Vector3(p.x, 0, p.z), p.x < 0 ? flip : new THREE.Quaternion(), new THREE.Vector3(1, 1, 1));
+    frame.setMatrixAt(i, m);
+    paper.setMatrixAt(i, m);
+  });
+  frame.frustumCulled = false;
+  paper.frustumCulled = false;
+  frame.name = "posts";
+  paper.name = "posts";
   g.add(frame, paper);
-  g.position.set(POST.x, 0, POST.z);
   return g;
 }
