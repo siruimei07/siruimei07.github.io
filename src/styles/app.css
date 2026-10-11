@@ -1,0 +1,905 @@
+/* The terminal layout (html.js): fixed chrome around full-viewport screens,
+   measured in --u from the PV's 1920×1080 frames. Section frame shared by all
+   six files lives here too. Phones get their own flow at the bottom. */
+
+html.js,
+html.js body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+html.js body {
+  background:
+    radial-gradient(120% 90% at 50% 40%, var(--bg-hi) 0%, var(--bg) 55%, var(--bg-lo) 120%);
+}
+
+html.js .screens {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-screen);
+}
+
+html.js .screen {
+  position: absolute;
+  inset: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+html.js .screen.is-active {
+  visibility: visible;
+  pointer-events: auto;
+}
+
+html.js .screen:focus {
+  outline: none;
+}
+
+.credits-foot {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 32px 0;
+  font-size: 12px;
+  color: var(--sub);
+}
+
+html.js .credits-foot {
+  display: none;
+}
+
+/* ───────── brand lockup (RHINE LAB / SYNTHESIZE INFORMATION / ANALYSIS OS) ───────── */
+
+.brand {
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.brand a {
+  display: inline-flex;
+  flex-direction: column;
+  width: max(150px, calc(268 * var(--u)));
+  line-height: 1;
+  color: var(--ink);
+  user-select: none;
+}
+
+.brand a > b {
+  font-weight: 700;
+  font-size: max(24px, calc(44 * var(--u)));
+  line-height: 1.04;
+  letter-spacing: 0.035em;
+  white-space: nowrap;
+}
+
+.brand a > span {
+  font-weight: 500;
+  font-size: max(10.4px, calc(18.6 * var(--u)));
+  line-height: 1.26;
+  letter-spacing: 0.012em;
+  white-space: nowrap;
+}
+
+.brand a > i {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-style: normal;
+  font-size: max(19.6px, calc(35 * var(--u)));
+  line-height: 1.12;
+  white-space: nowrap;
+}
+
+.brand a > i > span {
+  font-weight: 400;
+  letter-spacing: 0.05em;
+}
+
+.brand a > i > b {
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.brand a:hover > b,
+.brand a:focus-visible > b {
+  color: var(--hover);
+}
+
+html.js .chrome {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: var(--z-chrome);
+  height: 0;
+}
+
+html.js .brand {
+  position: fixed;
+  left: calc(60 * var(--u));
+  top: calc(114 * var(--u));
+}
+
+/* ───────── pager (the PV's orange • •—○ • •) ───────── */
+
+.pager {
+  display: flex;
+  gap: 4px;
+}
+
+html.js .pager {
+  position: fixed;
+  right: calc(52 * var(--u));
+  top: calc(110 * var(--u));
+  align-items: center;
+}
+
+/* the PV shows the dots only where no glass plate sits: the overview */
+html.js[data-view="sect"] .pager {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.pager a {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: max(26px, calc(30 * var(--u)));
+  height: max(26px, calc(30 * var(--u)));
+}
+
+.pager a > i {
+  width: max(7px, calc(9 * var(--u)));
+  height: max(7px, calc(9 * var(--u)));
+  border-radius: 50%;
+  background: var(--orange);
+  transition:
+    transform var(--t-mid) var(--ease-out),
+    background-color var(--t-mid) var(--ease-out),
+    box-shadow var(--t-mid) var(--ease-out);
+}
+
+.pager a > span {
+  position: absolute;
+  top: 100%;
+  right: 50%;
+  translate: 50% 0;
+  padding-top: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  color: var(--ink);
+  opacity: 0;
+  transition: opacity var(--t-fast);
+  pointer-events: none;
+}
+
+.pager a:hover > span,
+.pager a:focus-visible > span {
+  opacity: 1;
+}
+
+.pager a[aria-current="page"] > i {
+  background: transparent;
+  box-shadow: inset 0 0 0 max(1.6px, calc(2.4 * var(--u))) var(--orange);
+  transform: scale(1.55);
+}
+
+/* the short line that ties the previous dot to the current ring */
+.pager a[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  right: 50%;
+  top: 50%;
+  width: calc(100% - 4px);
+  height: max(1.5px, calc(2 * var(--u)));
+  margin-right: max(6px, calc(7 * var(--u)));
+  background: var(--orange);
+  transform: translateY(-50%);
+}
+
+.pager a:first-child[aria-current="page"]::before {
+  display: none;
+}
+
+/* ───────── left rail, rule and lime marker ───────── */
+
+.rail {
+  display: none;
+}
+
+html.js .rail {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  z-index: var(--z-chrome);
+  width: calc(430 * var(--u));
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: calc(250 * var(--u)) 0 calc(250 * var(--u)) calc(46 * var(--u));
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--t-mid) var(--ease-out);
+}
+
+html.js[data-view="sect"] .rail {
+  opacity: 1;
+}
+
+html.js[data-view="sect"] .rail > * {
+  pointer-events: auto;
+}
+
+.rail__band {
+  position: absolute;
+  left: 0;
+  top: calc(407 * var(--u));
+  width: calc(12 * var(--u));
+  height: calc(291 * var(--u));
+  background: var(--ink);
+}
+
+.rail__dash {
+  display: block;
+  width: calc(14 * var(--u));
+  height: max(1.5px, calc(2 * var(--u)));
+  background: var(--ink);
+  margin: calc(22 * var(--u)) 0 calc(26 * var(--u));
+}
+
+.rail__cmd {
+  margin-top: auto;
+}
+
+.rail .tag--xs {
+  position: relative;
+}
+
+.rail .tag--xs::before {
+  content: "";
+  position: absolute;
+  left: calc(-6 * var(--u));
+  top: 0;
+  bottom: 0;
+  width: max(1.5px, calc(2.5 * var(--u)));
+  background: var(--ink);
+}
+
+.rail__note {
+  width: calc(186 * var(--u));
+  min-width: 132px;
+  margin: calc(12 * var(--u)) 0 calc(28 * var(--u)) calc(14 * var(--u));
+  font-size: max(7.5px, calc(8.6 * var(--u)));
+  font-weight: 500;
+  line-height: 1.75;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sub);
+}
+
+.rail__nav ol {
+  display: flex;
+  flex-direction: column;
+  gap: max(1px, calc(2 * var(--u)));
+}
+
+.rail__nav a {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2.2em auto auto;
+  align-items: baseline;
+  column-gap: 0.5em;
+  padding: max(2px, calc(3 * var(--u))) 0;
+  font-size: max(11px, calc(13.5 * var(--u)));
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1.15;
+  color: var(--sub);
+  transition: color var(--t-fast);
+}
+
+.rail__nav a > b {
+  font-family: var(--f-mono);
+  font-weight: 500;
+  font-size: 0.86em;
+  letter-spacing: 0;
+}
+
+.rail__nav a > small {
+  font-size: 0.78em;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  opacity: 0.8;
+}
+
+.rail__nav a:hover,
+.rail__nav a:focus-visible {
+  color: var(--ink);
+}
+
+.rail__nav a[aria-current="page"] {
+  color: var(--ink);
+}
+
+.rail__nav a[aria-current="page"] > span {
+  font-weight: 800;
+}
+
+.rail__nav a[aria-current="page"]::after {
+  content: "";
+  position: absolute;
+  left: -1.1em;
+  top: 50%;
+  width: 0.55em;
+  height: 0.55em;
+  background: var(--ink);
+  transform: translateY(-50%);
+}
+
+.rail__log {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: calc(12 * var(--u)) 0 calc(14 * var(--u)) 0;
+  padding-left: calc(10 * var(--u));
+  border-left: 1px dotted var(--sub);
+  font-family: var(--f-mono);
+  font-size: max(8px, calc(9 * var(--u)));
+  line-height: 1.5;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--sub);
+  max-height: calc(110 * var(--u));
+  min-height: 40px;
+  overflow: hidden;
+  width: calc(214 * var(--u));
+  min-width: 150px;
+}
+
+.rail__log li {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rail__log li:last-child {
+  color: var(--ink);
+}
+
+.rail__end {
+  display: block;
+  width: calc(214 * var(--u));
+  height: 1px;
+  background: linear-gradient(90deg, var(--ink) 0 calc(14 * var(--u)), transparent calc(14 * var(--u)) calc(24 * var(--u)), var(--ink) calc(24 * var(--u)));
+}
+
+.rule {
+  display: none;
+}
+
+html.js .rule {
+  display: block;
+  position: fixed;
+  left: calc(430 * var(--u));
+  top: 0;
+  bottom: 0;
+  /* behind the screens: section tiles cover it, as in the PV */
+  z-index: calc(var(--z-screen) - 1);
+  width: max(1px, calc(2 * var(--u)));
+  background: color-mix(in srgb, var(--ink) 88%, transparent);
+  transform-origin: top;
+  transform: scaleY(0);
+  transition: transform 700ms var(--ease-out);
+  pointer-events: none;
+}
+
+html.js[data-view="sect"] .rule {
+  transform: scaleY(1);
+}
+
+.rule__mark {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: calc(38 * var(--u));
+  height: calc(22 * var(--u));
+  min-width: 18px;
+  min-height: 10px;
+  background: var(--lime);
+  transform: translate(-50%, calc(var(--mark-y, 336px) - 50%));
+  transition: transform 520ms var(--ease-snap);
+}
+
+/* ───────── foot lines, clock, caption ───────── */
+
+.foot-sect,
+.foot-sign,
+.caption {
+  display: none;
+}
+
+html.js .foot-sect {
+  position: fixed;
+  left: 0;
+  bottom: calc(112 * var(--u));
+  z-index: var(--z-chrome);
+  display: flex;
+  align-items: center;
+  gap: calc(27 * var(--u));
+  font-weight: 700;
+  font-size: max(11px, calc(19 * var(--u)));
+  letter-spacing: 0.01em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.foot-sect > i {
+  width: calc(46 * var(--u));
+  height: max(6px, calc(13 * var(--u)));
+  background: var(--ink);
+}
+
+html.js .foot-sign {
+  position: fixed;
+  right: calc(60 * var(--u));
+  bottom: calc(112 * var(--u));
+  z-index: var(--z-chrome);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: calc(10 * var(--u));
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.foot-clock {
+  font-family: var(--f-mono);
+  font-size: max(9.5px, calc(12 * var(--u)));
+  letter-spacing: 0.12em;
+  color: var(--sub);
+  font-variant-numeric: tabular-nums;
+}
+
+.foot-powered {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 500;
+  font-size: max(10.5px, calc(19 * var(--u)));
+  letter-spacing: 0.01em;
+}
+
+.foot-powered b {
+  margin-left: 0.32em;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.foot-powered i {
+  width: calc(24 * var(--u));
+  height: max(3px, calc(6 * var(--u)));
+  margin-left: calc(18 * var(--u));
+  background: var(--ink);
+}
+
+html.js .caption {
+  position: fixed;
+  left: 50%;
+  bottom: calc(30 * var(--u));
+  z-index: var(--z-chrome);
+  display: block;
+  max-width: min(92vw, calc(1100 * var(--u)));
+  transform: translateX(-50%);
+  font-family: var(--f-cjk);
+  font-weight: 500;
+  font-size: max(13px, calc(23 * var(--u)));
+  line-height: 1.3;
+  letter-spacing: 0.04em;
+  text-align: center;
+  color: var(--ink);
+  text-shadow:
+    0 0 6px var(--bg),
+    0 0 2px var(--bg);
+  pointer-events: none;
+}
+
+/* chrome stays out of the way during the opening */
+html.js.is-booting .chrome,
+html.js.is-booting .rail,
+html.js.is-booting .rule,
+html.js.is-booting .foot-sect,
+html.js.is-booting .foot-sign,
+html.js.is-booting .caption,
+html.js.is-booting .screens {
+  opacity: 0;
+  visibility: hidden;
+}
+
+html.js .chrome,
+html.js .foot-sect,
+html.js .foot-sign,
+html.js .caption,
+html.js .screens {
+  transition: opacity 500ms var(--ease-out);
+}
+
+/* ───────── toast ───────── */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  top: calc(40 * var(--u) + 12px);
+  z-index: var(--z-toast);
+  padding: 0.5em 1em 0.42em;
+  background: var(--tag-bg);
+  color: var(--tag-ink);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  transform: translate(-50%, -12px);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity var(--t-mid) var(--ease-out),
+    transform var(--t-mid) var(--ease-out);
+}
+
+.toast.is-on {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+html:not(.js) .toast {
+  display: none;
+}
+
+/* ───────── shared section frame ───────── */
+
+html.js .sect__tile {
+  position: absolute;
+  left: calc(253 * var(--u));
+  top: calc(50% - 135 * var(--u));
+  width: calc(400 * var(--u));
+  height: calc(288 * var(--u));
+  z-index: 2;
+}
+
+.sect__tile .tile {
+  width: 100%;
+  height: 100%;
+}
+
+.sect__tile .lt {
+  --lt-size: calc(146 * var(--u));
+}
+
+.sect__tile .lt--two {
+  --lt-size: calc(118 * var(--u));
+}
+
+.sect__tab {
+  position: absolute;
+  left: calc(46 * var(--u));
+  top: calc(-24 * var(--u));
+  z-index: 3;
+  padding: calc(6 * var(--u)) calc(26 * var(--u)) calc(4 * var(--u));
+  background: color-mix(in srgb, var(--bg-hi) 82%, transparent);
+  font-weight: 400;
+  font-size: max(11px, calc(22 * var(--u)));
+  letter-spacing: 0.04em;
+  line-height: 1.3;
+  color: var(--ink-2);
+}
+
+.tile__alt {
+  display: none;
+}
+
+.tile__alt.is-on {
+  display: contents;
+}
+
+html.js .sect__panel {
+  position: absolute;
+  left: calc(805 * var(--u));
+  right: calc(35 * var(--u));
+  top: calc(45 * var(--u));
+  bottom: calc(50 * var(--u));
+  perspective: calc(2600 * var(--u));
+  perspective-origin: 70% 50%;
+}
+
+html.js .sect__glass {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: calc(64 * var(--u)) calc(72 * var(--u)) calc(56 * var(--u)) calc(96 * var(--u));
+  transform: rotateY(-6deg);
+  transform-origin: 100% 50%;
+}
+
+.sect__ghost {
+  position: absolute;
+  z-index: -1;
+  top: calc(30 * var(--u));
+  left: 21%;
+  right: 0;
+  overflow: hidden;
+  font-size: calc(118 * var(--u));
+  color: color-mix(in srgb, var(--ink) 5%, transparent);
+  text-shadow: none;
+}
+
+.sect__orb {
+  position: absolute;
+  left: calc(64 * var(--u));
+  top: calc(130 * var(--u));
+  width: calc(34 * var(--u));
+  height: calc(34 * var(--u));
+  border-radius: 50%;
+  box-shadow:
+    inset 0 0 0 max(1px, calc(2 * var(--u))) var(--glass-edge),
+    0 0 calc(12 * var(--u)) rgba(0, 0, 0, 0.06);
+}
+
+.sect__orb > i {
+  position: absolute;
+  inset: 22%;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 max(1px, calc(2.5 * var(--u))) color-mix(in srgb, var(--ink) 30%, transparent);
+}
+
+.sect__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: calc(26 * var(--u));
+}
+
+.sect__h {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.7em;
+  min-width: calc(300 * var(--u));
+  padding: calc(5 * var(--u)) calc(22 * var(--u)) calc(4 * var(--u)) calc(20 * var(--u));
+  background: color-mix(in srgb, var(--bg-hi) 78%, transparent);
+  box-shadow: 0 calc(6 * var(--u)) calc(14 * var(--u)) rgba(40, 32, 24, 0.07);
+  font-weight: 500;
+  font-size: max(12px, calc(16 * var(--u)));
+  letter-spacing: 0.06em;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+.sect__no {
+  font-family: var(--f-mono);
+  font-size: 0.86em;
+  color: var(--sub);
+}
+
+.sect__h small {
+  font-weight: 400;
+  font-size: 0.9em;
+  color: var(--sub);
+  letter-spacing: 0.12em;
+}
+
+.sect__access {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: calc(10 * var(--u));
+}
+
+.sect__access .tag--grey {
+  font-size: max(12px, calc(20 * var(--u)));
+  padding-inline: 0.8em;
+}
+
+.sect__body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+  padding-right: calc(8 * var(--u));
+}
+
+.sect__foot {
+  margin-top: calc(18 * var(--u));
+}
+
+/* ───────── narrow screens & phones ───────── */
+
+@media (max-width: 899px), (max-aspect-ratio: 1/1) {
+  /* a frosted top bar holds the lockup while screens scroll beneath it */
+  html.js .chrome {
+    height: calc(84px + env(safe-area-inset-top));
+    background: color-mix(in srgb, var(--bg) 86%, transparent);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 1px 0 var(--hair);
+  }
+
+  html.js .brand {
+    left: 16px;
+    top: calc(12px + env(safe-area-inset-top));
+  }
+
+  .brand a {
+    width: 136px;
+  }
+
+  .brand a > b {
+    font-size: 22px;
+  }
+
+  .brand a > span {
+    font-size: 9.4px;
+  }
+
+  .brand a > i {
+    font-size: 17.6px;
+  }
+
+  html.js .pager {
+    display: none;
+  }
+
+  html.js .rule,
+  html.js .foot-sect,
+  html.js .foot-sign,
+  html.js .caption {
+    display: none;
+  }
+
+  /* the rail becomes a bottom tab bar */
+  html.js .rail {
+    top: auto;
+    right: 0;
+    width: auto;
+    height: auto;
+    padding: 0 0 env(safe-area-inset-bottom);
+    flex-direction: row;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 -1px 0 var(--hair);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  html.js .rail > * {
+    pointer-events: auto;
+  }
+
+  html.js .rail > :not(.rail__nav) {
+    display: none;
+  }
+
+  html.js .rail__nav {
+    width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  html.js .rail__nav ol {
+    flex-direction: row;
+    gap: 0;
+    margin: 0;
+    min-width: max-content;
+  }
+
+  html.js .rail__nav li {
+    flex: 1;
+  }
+
+  html.js .rail__nav a {
+    grid-template-columns: auto;
+    justify-items: center;
+    flex: 1;
+    min-width: 62px;
+    min-height: 54px;
+    padding: 8px 10px 6px;
+    font-size: 11px;
+    text-align: center;
+  }
+
+  html.js .rail__nav a > b {
+    font-size: 10px;
+  }
+
+  /* short Chinese names fit the tab bar; the English label stays for screen readers */
+  html.js .rail__nav a > span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  html.js .rail__nav a > small {
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    opacity: 1;
+  }
+
+  html.js .rail__nav a[aria-current="page"] > small {
+    font-weight: 700;
+  }
+
+  html.js .rail__nav a[aria-current="page"]::after {
+    left: 50%;
+    top: 0;
+    width: 28px;
+    height: 3px;
+    background: var(--lime-ink);
+    transform: translateX(-50%);
+  }
+
+  html.js .screen {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: calc(104px + env(safe-area-inset-top)) 16px calc(84px + env(safe-area-inset-bottom));
+  }
+
+  html.js .sect__tile {
+    position: relative;
+    left: auto;
+    top: auto;
+    width: min(100%, 340px);
+    height: 168px;
+    margin: 0 0 22px;
+  }
+
+  .sect__tile .lt {
+    --lt-size: 82px;
+  }
+
+  .sect__tile .lt--two {
+    --lt-size: 64px;
+  }
+
+  .sect__tab {
+    left: 18px;
+    top: -14px;
+    font-size: 11px;
+    padding: 3px 14px 2px;
+  }
+
+  html.js .sect__panel {
+    position: relative;
+    inset: auto;
+    perspective: none;
+  }
+
+  html.js .sect__glass {
+    height: auto;
+    padding: 22px 18px 20px;
+    transform: none;
+  }
+
+  .sect__ghost {
+    font-size: 58px;
+    top: 10px;
+    left: 18px;
+  }
+
+  .sect__orb {
+    display: none;
+  }
+
+  .sect__body {
+    overflow: visible;
+    padding-right: 0;
+  }
+
+  .sect__h {
+    min-width: 0;
+  }
+}

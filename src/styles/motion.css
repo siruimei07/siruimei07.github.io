@@ -1,0 +1,220 @@
+/* Screen transitions. The app adds .is-leaving to the outgoing screen and
+   .is-entering to the incoming one; everything here keys off those. Animated
+   with `translate`/`opacity`/`filter` so each element's own `transform`
+   (the glass tilt) is left alone. Reduced motion turns it all off. */
+
+html.js .screen.is-leaving {
+  opacity: 0;
+  translate: calc(-24 * var(--u)) 0;
+  transition:
+    opacity 240ms var(--ease-io),
+    translate 240ms var(--ease-io);
+}
+
+/* tile: slides in along the rule with a grain flash */
+html.js .screen.is-entering .sect__tile {
+  animation: m-tile-in 720ms var(--ease-out) both;
+}
+
+html.js .screen.is-entering .sect__tile .tile::after {
+  animation: m-grain-flash 520ms steps(4) 120ms both;
+}
+
+html.js .screen.is-entering .sect__tab {
+  animation: m-wipe-in 380ms var(--ease-out) 360ms both;
+}
+
+/* glass: drifts in from the right, out of focus, and settles */
+html.js .screen.is-entering .sect__glass {
+  animation: m-glass-in 860ms var(--ease-out) 90ms both;
+}
+
+html.js .screen.is-entering .sect__head,
+html.js .screen.is-entering .sect__foot {
+  animation: m-fade-up 520ms var(--ease-out) 420ms both;
+}
+
+html.js .screen.is-entering .sect__ghost {
+  animation: m-ghost-in 1200ms var(--ease-out) 260ms both;
+}
+
+/* content blocks reveal one after another, each behind a retreating bar */
+html.js .screen.is-entering [data-reveal] {
+  animation: m-reveal 620ms var(--ease-out) both;
+  animation-delay: calc(360ms + var(--i, 0) * 80ms);
+}
+
+html.js .screen.is-entering [data-reveal]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background: var(--ink);
+  transform-origin: right;
+  animation: m-bar-off 520ms var(--ease-io) both;
+  animation-delay: calc(380ms + var(--i, 0) * 80ms);
+  pointer-events: none;
+}
+
+html.js .screen.is-entering [data-reveal] {
+  position: relative;
+}
+
+/* overview */
+html.js .home.is-entering .home__co {
+  animation: m-fade-up 620ms var(--ease-out) both;
+}
+
+html.js .home.is-entering .home__co--left {
+  animation-delay: 260ms;
+}
+html.js .home.is-entering .home__co--cross {
+  animation-delay: 340ms;
+}
+html.js .home.is-entering .home__co--right-top {
+  animation-delay: 420ms;
+}
+html.js .home.is-entering .home__co--right-bottom {
+  animation-delay: 500ms;
+}
+
+html.js .home.is-entering .callout__rule {
+  animation: m-rule 560ms var(--ease-out) both;
+  animation-delay: inherit;
+}
+
+html.js .home.is-entering .home__centre {
+  animation: m-wipe-in 520ms var(--ease-out) 600ms both;
+}
+
+html.js .home.is-entering .home__id {
+  animation: m-fade-up 700ms var(--ease-out) 200ms both;
+}
+
+html.js .home.is-entering .home__leaders {
+  animation: m-fade 600ms var(--ease-out) 700ms both;
+}
+
+@keyframes m-tile-in {
+  from {
+    opacity: 0;
+    translate: calc(-60 * var(--u)) 0;
+    clip-path: inset(0 100% 0 0);
+  }
+  60% {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes m-grain-flash {
+  0% {
+    opacity: 0.9;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 0.2;
+  }
+}
+
+@keyframes m-wipe-in {
+  from {
+    opacity: 0;
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes m-glass-in {
+  from {
+    opacity: 0;
+    translate: calc(110 * var(--u)) 0;
+    filter: blur(10px);
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+    filter: blur(0);
+  }
+}
+
+@keyframes m-fade-up {
+  from {
+    opacity: 0;
+    translate: 0 calc(14 * var(--u));
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@keyframes m-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes m-ghost-in {
+  from {
+    opacity: 0;
+    translate: calc(-80 * var(--u)) 0;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@keyframes m-reveal {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes m-bar-off {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes m-rule {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+html[data-motion="reduced"] *,
+html[data-motion="reduced"] *::before,
+html[data-motion="reduced"] *::after {
+  animation-duration: 1ms !important;
+  animation-delay: 0ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 1ms !important;
+  transition-delay: 0ms !important;
+}
+
+html[data-motion="reduced"] .home__hint::before {
+  animation: none !important;
+}

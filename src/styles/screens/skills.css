@@ -1,0 +1,843 @@
+/* RESEARCH — the PV's STRUCTURAL STUDIES / STUDY · EXPLOIT BIOTHERM plates.
+   Tag-like tabs on top; each panel puts the white title box, motto, notes and
+   topic plates on the left and the specimen drawing big on the right, with a
+   crosshair through its orange core. Switching re-draws the specimen. */
+
+.sect--skills {
+  --lab-box: rgba(255, 255, 255, 0.74);
+  --lab-plate: rgba(255, 255, 255, 0.46);
+}
+
+:root[data-theme="dark"] .sect--skills {
+  --lab-box: color-mix(in srgb, var(--bg-hi) 84%, transparent);
+  --lab-plate: color-mix(in srgb, var(--bg-hi) 60%, transparent);
+}
+
+/* ───────── the section tile: one logotype per research section ───────── */
+
+/* the ∞ also cuts the letter after it (ST∞AT), so it paints above its neighbours */
+.sect--skills .lt__at {
+  z-index: 1;
+}
+
+/* the words differ in width; keep each at about the PV's 4/5 of the tile */
+.sect--skills .sect__tile .lt {
+  --lt-size: calc(146 * var(--u) * var(--lt-k, 1));
+}
+
+.sect--skills [data-tile-alt="stats"] {
+  --lt-k: 0.85;
+}
+
+.sect--skills [data-tile-alt="econ"] {
+  --lt-k: 0.77;
+}
+
+.sect--skills [data-tile-alt="quant"] {
+  --lt-k: 0.96;
+}
+
+/* tab switch: a short grain burst and a sliced jitter as the logotype swaps */
+html.js .sect--skills [data-tile-box].is-glitch::after {
+  animation: lab-grain 480ms steps(5) both;
+}
+
+html.js .sect--skills [data-tile-box].is-glitch .lt {
+  animation: lab-glitch 420ms steps(7) both;
+}
+
+@keyframes lab-grain {
+  0% {
+    opacity: 0.95;
+  }
+  60% {
+    opacity: 0.55;
+  }
+  100% {
+    opacity: 0.2;
+  }
+}
+
+@keyframes lab-glitch {
+  0% {
+    opacity: 0.2;
+    translate: calc(-10 * var(--u)) 0;
+    clip-path: inset(0 0 64% 0);
+  }
+  18% {
+    opacity: 1;
+    translate: calc(8 * var(--u)) 0;
+    clip-path: inset(38% 0 22% 0);
+  }
+  36% {
+    translate: calc(-5 * var(--u)) 0;
+    clip-path: inset(8% 0 46% 0);
+  }
+  54% {
+    opacity: 0.7;
+    translate: calc(3 * var(--u)) 0;
+    clip-path: inset(0 0 0 0);
+  }
+  72% {
+    opacity: 1;
+    translate: calc(-1 * var(--u)) 0;
+  }
+  100% {
+    translate: 0 0;
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* ───────── tabs ───────── */
+
+.lab {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: calc(22 * var(--u));
+  min-height: 100%;
+}
+
+.lab__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(10 * var(--u));
+}
+
+.lab__tab {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.6em;
+  min-height: max(38px, calc(46 * var(--u)));
+  padding: 0.62em 1.15em 0.5em 0.95em;
+  box-shadow: inset 0 0 0 max(1.5px, calc(2 * var(--u))) var(--ink);
+  color: var(--ink);
+  font-weight: 600;
+  font-size: max(11px, calc(13.5 * var(--u)));
+  letter-spacing: 0.08em;
+  line-height: 1.1;
+  text-transform: uppercase;
+  transition:
+    background-color var(--t-mid) var(--ease-out),
+    color var(--t-mid) var(--ease-out);
+}
+
+.lab__tab b {
+  font-weight: 800;
+  font-size: 1.18em;
+  letter-spacing: -0.01em;
+}
+
+.lab__tab small {
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  color: var(--sub);
+}
+
+.lab__tab:hover,
+.lab__tab:focus-visible {
+  color: var(--hover);
+}
+
+.lab__tab[aria-selected="true"] {
+  background: var(--tag-bg);
+  color: var(--tag-ink);
+}
+
+.lab__tab[aria-selected="true"] small {
+  color: color-mix(in srgb, var(--tag-ink) 70%, transparent);
+}
+
+/* ───────── panels ───────── */
+
+html.js .lab__stack {
+  display: grid;
+  flex: 1;
+  min-height: 0;
+}
+
+/* stacked in one cell so the outgoing and incoming panels can cross-fade */
+html.js .lab__panel {
+  grid-area: 1 / 1;
+  visibility: hidden;
+  opacity: 0;
+  translate: calc(-36 * var(--u)) 0;
+  transition:
+    opacity 200ms var(--ease-io),
+    translate 300ms var(--ease-io),
+    visibility 0s linear 300ms;
+}
+
+html.js .lab__panel.is-on {
+  /* inherit, not visible: a hidden screen must hide its open panel too */
+  visibility: inherit;
+  opacity: 1;
+  translate: 0 0;
+  transition:
+    opacity 460ms var(--ease-out) 110ms,
+    translate 640ms var(--ease-out) 110ms,
+    visibility 0s;
+}
+
+.lab__panel {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, max(272px, calc(345 * var(--u)))) minmax(0, 1fr);
+  grid-template-areas: "text viz";
+  align-items: center;
+  column-gap: calc(10 * var(--u));
+  /* the crosshair runs edge to edge of the panel, never beyond */
+  overflow: clip;
+}
+
+.lab__panel:focus-visible {
+  outline-offset: -2px;
+}
+
+.lab__text {
+  grid-area: text;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+/* the white translucent title box (STUDY / EXPLOIT — BIOTHERM) */
+.lab__title {
+  position: relative;
+  width: max-content;
+  max-width: calc(100% + 140 * var(--u));
+  padding: calc(16 * var(--u)) calc(36 * var(--u)) calc(14 * var(--u)) calc(26 * var(--u));
+  background: var(--lab-box);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.6),
+    0 calc(12 * var(--u)) calc(32 * var(--u)) rgba(40, 32, 24, 0.08);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+:root[data-theme="dark"] .lab__title {
+  box-shadow:
+    inset 0 0 0 1px var(--hair),
+    0 calc(12 * var(--u)) calc(32 * var(--u)) rgba(0, 0, 0, 0.3);
+}
+
+.lab__title::before {
+  content: "";
+  position: absolute;
+  left: calc(-16 * var(--u));
+  top: 0;
+  bottom: 0;
+  width: max(4px, calc(8 * var(--u)));
+  background: var(--ink);
+}
+
+.lab__study {
+  font-weight: 700;
+  font-size: max(11px, calc(17 * var(--u)));
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  color: var(--ink-2);
+}
+
+.lab__name {
+  margin-top: calc(2 * var(--u));
+  font-weight: 800;
+  font-size: max(28px, calc(60 * var(--u)));
+  line-height: 0.98;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  text-shadow: 0 calc(2 * var(--u)) calc(6 * var(--u)) rgba(0, 0, 0, 0.12);
+}
+
+.lab__motto {
+  display: flex;
+  align-items: center;
+  gap: calc(14 * var(--u));
+  margin-top: calc(26 * var(--u));
+  font-weight: 500;
+  font-size: max(15px, calc(22 * var(--u)));
+  line-height: 1.35;
+  letter-spacing: 0.06em;
+}
+
+.lab__motto > span:first-child {
+  font-weight: 700;
+}
+
+.lab__motto > i {
+  width: calc(26 * var(--u));
+  height: max(1.5px, calc(2 * var(--u)));
+  background: var(--ink);
+}
+
+.lab__body {
+  max-width: calc(340 * var(--u));
+  margin-top: calc(12 * var(--u));
+  font-size: max(13px, calc(15.5 * var(--u)));
+  line-height: 1.85;
+  letter-spacing: 0.02em;
+  color: var(--ink-2);
+}
+
+.lab__th {
+  display: flex;
+  align-items: center;
+  gap: calc(10 * var(--u));
+  margin-top: calc(24 * var(--u));
+}
+
+.lab__count {
+  font-family: var(--f-mono);
+  font-size: max(10px, calc(12 * var(--u)));
+  color: var(--sub);
+}
+
+/* topics as the PV's stacked white bar plates */
+.lab__topics {
+  container-type: inline-size;
+  align-self: stretch;
+  display: grid;
+  gap: calc(7 * var(--u));
+  margin-top: calc(10 * var(--u));
+}
+
+.lab__topics li {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: calc(12 * var(--u));
+  min-height: max(30px, calc(40 * var(--u)));
+  padding-right: calc(12 * var(--u));
+  background: linear-gradient(90deg, var(--lab-plate), transparent 130%);
+  box-shadow: inset 0 0 0 1px var(--hair);
+}
+
+.lab__tno {
+  align-self: stretch;
+  display: grid;
+  place-items: center;
+  padding: 0 calc(10 * var(--u));
+  background: var(--tag-bg);
+  color: var(--tag-ink);
+  font-family: var(--f-mono);
+  font-weight: 500;
+  font-size: max(10px, calc(12 * var(--u)));
+  letter-spacing: 0.04em;
+}
+
+.lab__topics b {
+  font-weight: 700;
+  font-size: max(11.5px, calc(14.5 * var(--u)));
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.lab__topics small {
+  overflow: hidden;
+  font-size: max(12px, calc(14 * var(--u)));
+  color: var(--sub);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* a ruler stub, the same on every row: decoration, not a score */
+.lab__topics li > i {
+  justify-self: end;
+  width: calc(30 * var(--u));
+  height: max(5px, calc(8 * var(--u)));
+  background: repeating-linear-gradient(90deg, var(--ink) 0 max(1px, calc(2 * var(--u))), transparent 0 calc(6 * var(--u)));
+  opacity: 0.4;
+}
+
+.lab__topics li:first-child > i {
+  background: var(--lime);
+  opacity: 1;
+}
+
+/* a narrow column keeps the words and drops the stub */
+@container (max-width: 300px) {
+  .lab__topics li > i {
+    display: none;
+  }
+}
+
+/* ───────── specimen ───────── */
+
+.lab__viz {
+  grid-area: viz;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: calc(12 * var(--u));
+  /* big: it runs to the plate edge; only the title box overlaps it */
+  margin: 0 calc(-12 * var(--u)) 0 calc(-6 * var(--u));
+  min-width: 0;
+}
+
+.lab__plot {
+  position: relative;
+  width: 100%;
+}
+
+.lab__plot .viz {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.lab__hatch {
+  position: absolute;
+  left: 9%;
+  top: 4%;
+  width: 26%;
+  height: 32%;
+  background: repeating-linear-gradient(-45deg, color-mix(in srgb, var(--orange-soft) 70%, transparent) 0 max(1.5px, calc(3 * var(--u))), transparent 0 calc(12 * var(--u)));
+  opacity: 0.55;
+}
+
+[data-skill-panel="econ"] .lab__hatch {
+  left: auto;
+  right: 6%;
+  top: auto;
+  bottom: 18%;
+  background: repeating-linear-gradient(-45deg, color-mix(in srgb, var(--ink) 30%, transparent) 0 max(1px, calc(2 * var(--u))), transparent 0 calc(12 * var(--u)));
+}
+
+.lab__chip {
+  position: absolute;
+  right: -1%;
+  bottom: 6%;
+  width: 12%;
+  aspect-ratio: 1;
+  background: var(--orange-soft);
+  opacity: 0.4;
+  filter: blur(2px);
+}
+
+/* the crosshair through the glass */
+.lab__xh {
+  position: absolute;
+  z-index: 0;
+  background: color-mix(in srgb, var(--ink) 26%, transparent);
+  pointer-events: none;
+}
+
+.lab__xh--v {
+  left: var(--cx);
+  top: calc(-1200 * var(--u));
+  bottom: calc(-1200 * var(--u));
+  width: max(1px, calc(1.5 * var(--u)));
+}
+
+.lab__xh--h {
+  top: var(--cy);
+  left: calc(-1000 * var(--u));
+  right: calc(-600 * var(--u));
+  height: max(1px, calc(1.5 * var(--u)));
+  /* fades out before it reaches the text column */
+  -webkit-mask: linear-gradient(90deg, transparent 30%, #000 46%);
+  mask: linear-gradient(90deg, transparent 30%, #000 46%);
+}
+
+.lab__cap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: calc(8 * var(--u));
+  padding-left: calc(40 * var(--u));
+  font-size: max(11px, calc(13 * var(--u)));
+  color: var(--sub);
+}
+
+.lab__cap .zh {
+  margin-left: calc(6 * var(--u));
+  letter-spacing: 0.04em;
+}
+
+/* the drawing itself: hairlines in ink, faint fills, one orange core */
+.viz * {
+  vector-effect: non-scaling-stroke;
+}
+
+.viz__grid path {
+  fill: none;
+  stroke: color-mix(in srgb, var(--ink) 7%, transparent);
+  stroke-width: 1;
+}
+
+.viz__axis path {
+  fill: none;
+  stroke: color-mix(in srgb, var(--ink) 60%, transparent);
+  stroke-width: 1;
+}
+
+.viz__bars rect {
+  fill: color-mix(in srgb, var(--ink) 6%, transparent);
+  stroke: color-mix(in srgb, var(--ink) 34%, transparent);
+  stroke-width: 1;
+}
+
+.viz__line {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.viz__line--b {
+  stroke: color-mix(in srgb, var(--ink) 62%, transparent);
+}
+
+.viz__line--hi {
+  stroke: var(--orange);
+  stroke-width: 2;
+}
+
+.viz__dots circle {
+  fill: color-mix(in srgb, var(--ink) 55%, transparent);
+}
+
+.viz__cross circle,
+.viz__cross path {
+  fill: none;
+  stroke: color-mix(in srgb, var(--ink) 45%, transparent);
+  stroke-width: 1;
+}
+
+.viz__cross circle + circle {
+  stroke-dasharray: 2 5;
+}
+
+.viz__ci path {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.2;
+}
+
+.viz__ci text,
+.viz__note {
+  fill: var(--ink-2);
+  font-family: var(--f-mono);
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+}
+
+.viz__ci text {
+  text-anchor: middle;
+}
+
+.viz__note--dim {
+  fill: var(--sub);
+  font-size: 12px;
+}
+
+.viz__dash {
+  fill: none;
+  stroke: color-mix(in srgb, var(--ink) 50%, transparent);
+  stroke-width: 1;
+  stroke-dasharray: 4 5;
+}
+
+.viz__band {
+  fill: color-mix(in srgb, var(--orange-soft) 14%, transparent);
+  stroke: none;
+}
+
+.viz__paths path {
+  fill: none;
+  stroke: color-mix(in srgb, var(--ink) 24%, transparent);
+  stroke-width: 1;
+}
+
+.viz__core {
+  fill: var(--orange);
+  filter: drop-shadow(0 0 5px var(--orange));
+}
+
+/* ───────── entrance: on screen entry and on every tab switch (JS adds .is-in) ───────── */
+
+.lab__panel.is-in .lab__title {
+  animation: lab-wipe 560ms var(--ease-out) 90ms both;
+}
+
+.lab__panel.is-in :is(.lab__motto, .lab__body, .lab__th) {
+  animation: lab-up 520ms var(--ease-out) both;
+}
+
+.lab__panel.is-in .lab__motto {
+  animation-delay: 220ms;
+}
+
+.lab__panel.is-in .lab__body {
+  animation-delay: 290ms;
+}
+
+.lab__panel.is-in .lab__th {
+  animation-delay: 360ms;
+}
+
+.lab__panel.is-in .lab__topics li {
+  animation: lab-slide 460ms var(--ease-out) both;
+  animation-delay: calc(400ms + var(--n, 0) * 60ms);
+}
+
+.lab__topics li:nth-child(2) {
+  --n: 1;
+}
+
+.lab__topics li:nth-child(3) {
+  --n: 2;
+}
+
+.lab__topics li:nth-child(4) {
+  --n: 3;
+}
+
+.lab__topics li:nth-child(n + 5) {
+  --n: 4;
+}
+
+.lab__panel.is-in :is(.viz__line, .viz__paths path, .viz__axis path[pathLength], .viz__ci path) {
+  stroke-dasharray: 1 1;
+  animation: lab-draw 1200ms var(--ease-out) 360ms both;
+}
+
+.lab__panel.is-in .viz__paths path {
+  animation-duration: 900ms;
+  animation-delay: calc(160ms + var(--k, 0) * 26ms);
+}
+
+.lab__panel.is-in .viz__axis path[pathLength] {
+  animation-duration: 700ms;
+  animation-delay: 80ms;
+}
+
+.lab__panel.is-in .viz__bars rect {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: lab-grow 620ms var(--ease-out) both;
+  animation-delay: calc(140ms + var(--k, 0) * 24ms);
+}
+
+.lab__panel.is-in .viz__dots circle {
+  animation: lab-fade 360ms var(--ease-out) both;
+  animation-delay: calc(520ms + var(--k, 0) * 22ms);
+}
+
+.lab__panel.is-in :is(.viz__cross, .viz__core, .viz__note, .viz__ci text, .viz__dash, .viz__band, .viz__grid) {
+  animation: lab-fade 520ms var(--ease-out) 760ms both;
+}
+
+.lab__panel.is-in .viz__grid {
+  animation-delay: 0ms;
+}
+
+.lab__panel.is-in .lab__xh--v {
+  animation: lab-xv 820ms var(--ease-out) 240ms both;
+}
+
+.lab__panel.is-in .lab__xh--h {
+  transform-origin: right;
+  animation: lab-xh 820ms var(--ease-out) 300ms both;
+}
+
+.lab__panel.is-in :is(.lab__hatch, .lab__chip, .lab__cap) {
+  animation: lab-fade 600ms var(--ease-out) 600ms both;
+}
+
+@keyframes lab-wipe {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes lab-up {
+  from {
+    opacity: 0;
+    translate: 0 calc(14 * var(--u));
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@keyframes lab-slide {
+  from {
+    opacity: 0;
+    translate: calc(-22 * var(--u)) 0;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@keyframes lab-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes lab-grow {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes lab-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes lab-xv {
+  from {
+    scale: 1 0;
+  }
+  to {
+    scale: 1 1;
+  }
+}
+
+@keyframes lab-xh {
+  from {
+    scale: 0 1;
+  }
+  to {
+    scale: 1 1;
+  }
+}
+
+/* ───────── phones & narrow windows ───────── */
+
+@media (max-width: 899px), (max-aspect-ratio: 1/1) {
+  .sect--skills .sect__tile .lt {
+    --lt-size: calc(82px * var(--lt-k, 1));
+  }
+
+  .lab {
+    gap: 18px;
+  }
+
+  .lab__tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .lab__tab {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    min-height: 60px;
+    padding: 9px 10px 8px;
+    font-size: 10.5px;
+    letter-spacing: 0.04em;
+  }
+
+  .lab__tab b {
+    font-size: 15px;
+  }
+
+  .lab__panel {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: none;
+    row-gap: 0;
+  }
+
+  /* title, then the specimen, then the notes */
+  .lab__text {
+    display: contents;
+  }
+
+  .lab__title {
+    order: 1;
+    max-width: 100%;
+    margin-left: 10px;
+    padding: 12px 20px 10px 16px;
+  }
+
+  .lab__title::before {
+    left: -10px;
+    width: 4px;
+  }
+
+  .lab__name {
+    font-size: clamp(28px, 10vw, 44px);
+  }
+
+  .lab__viz {
+    order: 2;
+    grid-area: auto;
+    margin: 14px 0 0;
+  }
+
+  .lab__cap {
+    padding-left: 0;
+  }
+
+  /* the vertical hair stays with the drawing instead of crossing the notes */
+  .lab__xh--v {
+    top: -24px;
+    bottom: -24px;
+  }
+
+  .lab__motto {
+    order: 3;
+    margin-top: 20px;
+  }
+
+  .lab__body {
+    order: 4;
+    max-width: none;
+  }
+
+  .lab__th {
+    order: 5;
+    margin-top: 20px;
+  }
+
+  .lab__topics {
+    order: 6;
+    gap: 6px;
+  }
+
+  .lab__topics li {
+    min-height: 40px;
+    gap: 12px;
+  }
+
+  .lab__topics li > i {
+    width: 28px;
+  }
+}
+
+/* no JavaScript: every panel in reading order; the inert tabs are dropped */
+html:not(.js) .lab__tabs {
+  display: none;
+}
+
+html:not(.js) .lab__panel + .lab__panel {
+  margin-top: 48px;
+}

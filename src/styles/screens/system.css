@@ -1,0 +1,299 @@
+/* SYSTEM — a Rhine Lab config sheet: a thick top rule, coded rows split by
+   hairlines, ■ bullets, and segmented tags (the chosen one a filled black
+   tag, the others outlined). Credits close the sheet in two columns. */
+
+.config {
+  /* leaves the band under the chrome's pager dots clear */
+  padding-top: calc(30 * var(--u));
+}
+
+/* both codes sit left: the right end of this line is under the chrome's pager */
+.config__head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 2.4em;
+  padding: 0 0 calc(8 * var(--u));
+  font-family: var(--f-mono);
+  font-size: max(10px, calc(12 * var(--u)));
+  letter-spacing: 0.1em;
+  color: var(--sub);
+  text-transform: uppercase;
+}
+
+.config__rows {
+  border-top: max(2px, calc(3 * var(--u))) solid var(--ink);
+}
+
+.config__row {
+  display: grid;
+  grid-template-columns: calc(64 * var(--u)) minmax(0, 1fr) calc(92 * var(--u)) auto;
+  align-items: center;
+  gap: 8px calc(18 * var(--u));
+  min-height: calc(80 * var(--u));
+  padding: calc(12 * var(--u)) 0;
+  border-bottom: 1px solid var(--hair);
+}
+
+.config__code {
+  font-family: var(--f-mono);
+  font-size: max(10px, calc(12 * var(--u)));
+  letter-spacing: 0.06em;
+  color: var(--sub);
+}
+
+.config__label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 0.8em;
+}
+
+.config__label span {
+  font-weight: 700;
+  font-size: max(13px, calc(18 * var(--u)));
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.config__label span::before {
+  content: "";
+  display: inline-block;
+  width: 0.42em;
+  height: 0.42em;
+  margin-right: 0.6em;
+  background: currentColor;
+  vertical-align: 0.16em;
+}
+
+.config__label small {
+  font-size: max(11px, calc(13 * var(--u)));
+  letter-spacing: 0.08em;
+  color: var(--sub);
+}
+
+.config__now {
+  justify-self: end;
+  font-family: var(--f-mono);
+  font-size: max(10px, calc(12 * var(--u)));
+  letter-spacing: 0.08em;
+  color: var(--sub);
+  white-space: nowrap;
+}
+
+.config__opts {
+  display: flex;
+  justify-content: flex-end;
+  gap: calc(8 * var(--u));
+}
+
+.seg {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6em;
+  min-height: 40px;
+  padding: 0.5em 1em 0.44em 0.85em;
+  box-shadow: inset 0 0 0 max(1px, calc(1.5 * var(--u))) var(--ink);
+  font-weight: 700;
+  font-size: max(12px, calc(14 * var(--u)));
+  letter-spacing: 0.08em;
+  line-height: 1;
+  white-space: nowrap;
+  transition:
+    background-color var(--t-fast),
+    color var(--t-fast),
+    box-shadow var(--t-fast);
+}
+
+/* □ / ■ — the choice reads without relying on the fill alone */
+.seg::before {
+  content: "";
+  flex: none;
+  width: 0.5em;
+  height: 0.5em;
+  box-shadow: inset 0 0 0 max(1px, calc(1.5 * var(--u))) currentColor;
+}
+
+.seg small {
+  font-weight: 400;
+  font-size: 0.86em;
+  letter-spacing: 0.04em;
+  opacity: 0.72;
+}
+
+.seg[aria-checked="true"] {
+  background: var(--tag-bg);
+  color: var(--tag-ink);
+  box-shadow: inset 0 0 0 max(1px, calc(1.5 * var(--u))) var(--tag-bg);
+}
+
+.seg[aria-checked="true"]::before {
+  background: currentColor;
+}
+
+.seg[aria-checked="false"]:hover {
+  color: var(--hover);
+  box-shadow: inset 0 0 0 max(1px, calc(1.5 * var(--u))) var(--hover);
+}
+
+.config__row--action .btn {
+  min-width: calc(150 * var(--u));
+}
+
+.config__note {
+  margin-top: calc(12 * var(--u));
+  font-size: max(12px, calc(13 * var(--u)));
+  letter-spacing: 0.04em;
+  color: var(--sub);
+}
+
+.config__note::before {
+  content: "■";
+  margin-right: 0.6em;
+  font-size: 0.8em;
+  color: var(--ink);
+}
+
+/* ───────── credits ───────── */
+
+.credits {
+  margin-top: calc(32 * var(--u));
+}
+
+.credits__h {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px calc(14 * var(--u));
+  padding-bottom: calc(10 * var(--u));
+  border-bottom: 1px solid var(--line);
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.credits__h small {
+  font-size: max(11px, calc(13 * var(--u)));
+  letter-spacing: 0.1em;
+  color: var(--sub);
+}
+
+.credits__cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: calc(36 * var(--u));
+  padding-top: calc(16 * var(--u));
+}
+
+.credits__tech {
+  font-size: max(13px, calc(15 * var(--u)));
+  line-height: 1.85;
+  letter-spacing: 0.02em;
+  color: var(--ink-2);
+}
+
+.credits__line {
+  font-size: max(11px, calc(12.5 * var(--u)));
+  line-height: 1.75;
+  color: var(--sub);
+}
+
+.credits__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: calc(16 * var(--u));
+}
+
+/* shorter desktop windows (1366×768): the same sheet, closer lines */
+@media (min-width: 900px) and (min-aspect-ratio: 1/1) and (max-height: 820px) {
+  .config {
+    padding-top: calc(20 * var(--u));
+  }
+
+  .config__head {
+    padding-bottom: calc(4 * var(--u));
+  }
+
+  .credits__h {
+    padding-bottom: calc(6 * var(--u));
+  }
+
+  .config__row {
+    min-height: 0;
+    padding-block: calc(8 * var(--u));
+  }
+
+  .config__note {
+    margin-top: calc(8 * var(--u));
+  }
+
+  .credits {
+    margin-top: calc(14 * var(--u));
+  }
+
+  .credits__cols {
+    padding-top: calc(10 * var(--u));
+  }
+
+  .credits__tech {
+    line-height: 1.7;
+  }
+
+  .credits__links {
+    margin-top: calc(10 * var(--u));
+  }
+}
+
+/* preferences need scripts; the plain page keeps only the credits */
+html:not(.js) .config__rows,
+html:not(.js) .config__note,
+html:not(.js) .config__head {
+  display: none;
+}
+
+/* ───────── phones & narrow windows ───────── */
+
+@media (max-width: 899px), (max-aspect-ratio: 1/1) {
+  .config {
+    padding-top: 0;
+  }
+
+  .config__head > span:last-child {
+    display: none;
+  }
+
+  .config__row {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 10px 12px;
+    padding: 14px 0;
+  }
+
+  .config__opts {
+    grid-column: 1 / -1;
+    justify-content: stretch;
+  }
+
+  .config__opts > * {
+    flex: 1 1 0;
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  .seg {
+    flex-direction: column;
+    gap: 3px;
+    padding: 8px 6px 7px;
+  }
+
+  .seg::before {
+    display: none;
+  }
+
+  .config__row--action .btn {
+    min-width: 0;
+  }
+
+  .credits__cols {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+}

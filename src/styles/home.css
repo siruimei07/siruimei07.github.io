@@ -1,0 +1,391 @@
+/* Overview: the ∞ (3D canvas or the flat fallback) with four callouts and the
+   centre pill at the PV's 3:46 positions, plus the director-style name block.
+   The composition lives in a centred 1920×1080 frame so the 3D figure (also
+   centred) and the callouts stay registered at any aspect ratio. */
+
+html.js .home__frame {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(1920 * var(--u));
+  height: calc(1080 * var(--u));
+  transform: translate(-50%, -50%);
+}
+
+.home__flat {
+  display: none;
+}
+
+html.js .home__flat {
+  display: block;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.9;
+  transition: opacity 700ms var(--ease-out);
+}
+
+.home__flat g {
+  fill: color-mix(in srgb, var(--bg-hi) 70%, #e9dcc8);
+  stroke: color-mix(in srgb, var(--ink) 14%, transparent);
+  stroke-width: 1;
+}
+
+:root[data-theme="dark"] .home__flat g {
+  fill: color-mix(in srgb, var(--ink) 14%, transparent);
+  stroke: color-mix(in srgb, var(--ink) 22%, transparent);
+}
+
+html.gl-on .home__flat {
+  opacity: 0;
+}
+
+.home__leaders {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.home__leaders line {
+  stroke: color-mix(in srgb, var(--ink) 60%, transparent);
+  stroke-width: max(1px, calc(1.6 * var(--u)));
+}
+
+.home__leaders circle {
+  fill: var(--ink);
+}
+
+/* ───────── callouts ───────── */
+
+.home__callouts {
+  display: grid;
+  gap: 28px;
+  margin: 32px 0;
+}
+
+html.js .home__co {
+  position: absolute;
+}
+
+html.js .home__co--left {
+  left: calc(93 * var(--u));
+  top: calc(455 * var(--u));
+}
+
+html.js .home__co--cross {
+  left: calc(530 * var(--u));
+  top: calc(535 * var(--u));
+}
+
+html.js .home__co--right-top {
+  left: calc(1325 * var(--u));
+  top: calc(186 * var(--u));
+}
+
+html.js .home__co--right-bottom {
+  left: calc(1442 * var(--u));
+  top: calc(638 * var(--u));
+}
+
+.home__co .callout {
+  min-width: calc(250 * var(--u));
+}
+
+/* a halo of paper keeps the copy legible where it crosses the plates */
+.home__co .callout__title,
+.home__co .callout__desc,
+.home__co .callout__zh {
+  text-shadow:
+    0 0 2px var(--bg),
+    0 0 7px var(--bg),
+    0 0 14px var(--bg);
+}
+
+/* ───────── centre pill (RHINE LAB.LLC. ◎) ───────── */
+
+.home__centre {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(16 * var(--u));
+  color: var(--ink);
+}
+
+html.js .home__centre {
+  position: absolute;
+  left: calc(1017 * var(--u));
+  top: calc(536 * var(--u));
+}
+
+.home__pill {
+  display: flex;
+  align-items: baseline;
+  gap: 1.2em;
+  min-width: calc(350 * var(--u));
+  padding: calc(5 * var(--u)) calc(22 * var(--u)) calc(4 * var(--u));
+  background: color-mix(in srgb, var(--bg-hi) 82%, transparent);
+  box-shadow: 0 0 calc(20 * var(--u)) color-mix(in srgb, var(--bg-hi) 70%, transparent);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+.home__pill b {
+  font-weight: 600;
+  font-size: max(12px, calc(17 * var(--u)));
+  letter-spacing: 0.04em;
+}
+
+.home__pill small {
+  font-weight: 500;
+  font-size: max(9px, calc(11 * var(--u)));
+  letter-spacing: 0.12em;
+  color: var(--sub);
+}
+
+.home__ring {
+  position: relative;
+  flex: none;
+  width: max(14px, calc(24 * var(--u)));
+  height: max(14px, calc(24 * var(--u)));
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 max(1.5px, calc(2.4 * var(--u))) var(--glass-edge), 0 0 0 1px color-mix(in srgb, var(--ink) 12%, transparent);
+}
+
+.home__ring::after {
+  content: "";
+  position: absolute;
+  inset: 30%;
+  border-radius: 50%;
+  background: var(--glass-edge);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ink) 12%, transparent);
+}
+
+.home__centre:hover .home__pill b,
+.home__centre:focus-visible .home__pill b {
+  color: var(--hover);
+}
+
+/* ───────── identity block, under the lockup (role · focus · one-liner · links) ───────── */
+
+.home__id {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: calc(16 * var(--u));
+  row-gap: calc(11 * var(--u));
+  align-items: center;
+  max-width: 640px;
+  margin-top: 28px;
+}
+
+html.js .home__id {
+  position: absolute;
+  left: calc(60 * var(--u));
+  top: calc(250 * var(--u));
+  width: calc(470 * var(--u));
+  min-width: 300px;
+  max-width: none;
+  margin: 0;
+}
+
+.home__badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: calc(5 * var(--u));
+  width: calc(96 * var(--u));
+  height: calc(66 * var(--u));
+  min-width: 64px;
+  min-height: 44px;
+  background: var(--tag-bg);
+  color: var(--tag-ink);
+}
+
+.home__badge-mark {
+  width: 64%;
+}
+
+.home__badge small {
+  font-size: max(4.5px, calc(5.5 * var(--u)));
+  font-weight: 700;
+  letter-spacing: 0.7em;
+  margin-right: -0.7em;
+  white-space: nowrap;
+}
+
+.home__role {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: calc(4 * var(--u));
+  padding-bottom: calc(8 * var(--u));
+  font-weight: 600;
+  font-size: max(11px, calc(16 * var(--u)));
+  letter-spacing: 0.05em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.home__role span:first-child {
+  font-weight: 800;
+}
+
+/* the underline running out from the badge (the PV's KRISTEN WRIGHT rule) */
+.home__role::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: calc(-40 * var(--u));
+  bottom: 0;
+  height: max(1.5px, calc(2.5 * var(--u)));
+  background: var(--ink);
+}
+
+.home__line {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: calc(5 * var(--u));
+}
+
+.home__line b {
+  font-weight: 700;
+  font-size: max(11px, calc(14 * var(--u)));
+  letter-spacing: 0.08em;
+}
+
+.home__line span {
+  font-size: max(13px, calc(16 * var(--u)));
+  color: var(--ink-2);
+  letter-spacing: 0.02em;
+}
+
+.home__links {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+}
+
+@media (pointer: fine) and (min-width: 900px) and (min-aspect-ratio: 1/1) {
+  .home__links .btn {
+    min-height: 34px;
+  }
+}
+
+.home__hint {
+  display: none;
+}
+
+html.js .home__hint {
+  position: absolute;
+  left: 50%;
+  top: calc(840 * var(--u));
+  display: flex;
+  align-items: center;
+  gap: 1em;
+  transform: translateX(-50%);
+  font-weight: 600;
+  font-size: max(10px, calc(13 * var(--u)));
+  letter-spacing: 0.24em;
+  color: var(--sub);
+  white-space: nowrap;
+}
+
+.home__hint::before {
+  content: "";
+  width: 0.6em;
+  height: 0.6em;
+  background: var(--ink);
+  animation: home-blink 1.1s steps(1) infinite;
+}
+
+.home__hint small {
+  letter-spacing: 0.16em;
+}
+
+@keyframes home-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* ───────── phones ───────── */
+
+@media (max-width: 899px), (max-aspect-ratio: 1/1) {
+  html.js .home {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+
+  html.js .home__frame {
+    position: relative;
+    left: auto;
+    top: auto;
+    width: auto;
+    height: auto;
+    transform: none;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    order: 1;
+  }
+
+  html.js .home__id {
+    order: 0;
+  }
+
+  html.js .home__flat {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1920 / 900;
+    margin: -10px 0 -6px;
+  }
+
+  html.js:not(.gl-on) .home__flat {
+    opacity: 0.9;
+  }
+
+  html.js .home__leaders,
+  html.js .home__hint {
+    display: none;
+  }
+
+  html.js .home__callouts {
+    order: 3;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 22px 18px;
+    margin: 0;
+  }
+
+  html.js .home__co {
+    position: relative;
+    inset: auto;
+  }
+
+  html.js .home__centre {
+    position: relative;
+    inset: auto;
+    order: 1;
+  }
+
+  .home__pill {
+    min-width: 0;
+    flex: 1;
+  }
+
+  html.js .home__id {
+    position: relative;
+    inset: auto;
+    order: 0;
+    width: auto;
+    min-width: 0;
+  }
+
+}

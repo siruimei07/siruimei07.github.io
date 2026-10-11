@@ -3,24 +3,36 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>酒寄 彩葉 · 月読 RELOAD</title>
-    <meta name="description" content="酒寄彩葉（Sirui Mei）的个人主页：多伦多大学本科，统计 · 经济 · 量化。三渲二的ツクヨミ场景与 P3R 风格的界面。" />
-    <meta name="theme-color" content="#061446" />
-    <meta name="color-scheme" content="dark" />
+    <title>Sirui Mei · Analysis OS</title>
+    <meta name="description" content="Sirui Mei 的个人主页：多伦多大学本科，统计 · 经济 · 量化。莱茵生命风格的个人档案终端。" />
+    <meta name="theme-color" content="#e8e5e1" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#11181b" media="(prefers-color-scheme: dark)" />
+    <meta name="color-scheme" content="light dark" />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
     <link rel="icon" type="image/png" href="/icon.png" />
     <link rel="apple-touch-icon" href="/icon.png" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="酒寄 彩葉 · 月読 RELOAD" />
-    <meta property="og:description" content="月见桥、五重塔与游过夜空的光鱼 —— Sirui Mei 的个人主页。多伦多大学本科，统计 · 经济 · 量化。" />
+    <meta property="og:title" content="Sirui Mei · Analysis OS" />
+    <meta property="og:description" content="Sirui Mei 的个人档案终端 —— 多伦多大学本科，统计 · 经济 · 量化。" />
     <meta property="og:url" content="https://siruimei07.github.io/" />
     <meta property="og:image" content="https://siruimei07.github.io/assets/avatar.webp" />
-    <script>document.documentElement.classList.add("js");</script>
+    <script>
+      (function () {
+        var d = document.documentElement;
+        d.classList.add("js");
+        var t = null;
+        try {
+          t = localStorage.getItem("rl.theme");
+        } catch (e) {}
+        if (t !== "light" && t !== "dark") t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        d.dataset.theme = t;
+      })();
+    </script>
     <script type="module" src="/src/main.ts"></script>
   </head>
   <body>
-    <canvas id="gl" aria-hidden="true"></canvas>
     <a class="skiplink" href="#main">跳到正文</a>
+    <canvas id="gl" aria-hidden="true"></canvas>
     <!--app-->
   </body>
 </html>

@@ -1,0 +1,13 @@
+@import "./tokens.css";
+@import "./base.css";
+@import "./components.css";
+@import "./app.css";
+@import "./motion.css";
+@import "./boot.css";
+@import "./home.css";
+@import "./screens/profile.css";
+@import "./screens/skills.css";
+@import "./screens/works.css";
+@import "./screens/activity.css";
+@import "./screens/contact.css";
+@import "./screens/system.css";

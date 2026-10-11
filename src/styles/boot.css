@@ -1,0 +1,499 @@
+/* The opening (PV 0:06–0:27). Static layout in --u, measured from the PV
+   frames around the centre of the 1920×1080 frame; boot.ts only feeds it
+   progress values (--shift, --rise, --veil, --paper…), opacity, clip-path and
+   ring geometry. Dark theme is the PV's dark version: black paper, pale ink.
+   Without JavaScript the whole thing is display: none (base.css). */
+
+.boot {
+  display: none;
+}
+
+html.js .boot {
+  /* the white ring, the white flash, the DNA strokes and the grey the paper fades up from */
+  --boot-pale: #fff;
+  --boot-flash: #fbfaf8;
+  --boot-dna: rgba(255, 255, 255, 0.8);
+  --boot-veil: color-mix(in srgb, var(--sub) 42%, var(--bg));
+  --logo-dx: calc(-296 * var(--u));
+  --ring: calc(1000 * var(--u));
+
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-boot);
+  display: block;
+  overflow: hidden;
+  color: var(--ink);
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+:root[data-theme="dark"] .boot {
+  --boot-pale: color-mix(in srgb, var(--ink) 42%, transparent);
+  --boot-flash: color-mix(in srgb, var(--ink) 16%, var(--bg));
+  --boot-dna: color-mix(in srgb, var(--ink) 9%, transparent);
+  --boot-veil: #000;
+}
+
+/* ───────── paper ───────── */
+
+.boot__paper {
+  position: absolute;
+  inset: 0;
+  /* the same paper as <body>, so clearing it at the exit is invisible */
+  background: radial-gradient(120% 90% at 50% 40%, var(--bg-hi) 0%, var(--bg) 55%, var(--bg-lo) 120%);
+  opacity: var(--paper, 1);
+}
+
+.boot__paper::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--boot-veil);
+  opacity: var(--veil, 1);
+}
+
+.boot__drift {
+  position: absolute;
+  inset: -48px;
+  opacity: calc(var(--dna, 0) * 0.42);
+  translate: 0 calc(var(--drift, 0) * -9 * var(--u));
+  will-change: translate;
+}
+
+.boot__dna {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  filter: blur(5px);
+}
+
+.boot__dna path {
+  fill: none;
+  stroke: var(--boot-dna);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.boot__strand {
+  stroke-width: 20;
+}
+
+.boot__rung {
+  stroke-width: 7;
+  opacity: 0.45;
+}
+
+/* ───────── scene (everything that leaves at the exit) ───────── */
+
+.boot__scene {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 52%;
+}
+
+/* the corner copy inherits whatever the real chrome uses; the scene is set in Montserrat */
+.boot__scene,
+.boot__skip {
+  font-family: var(--f-latin);
+}
+
+.boot__access,
+.boot__logo,
+.boot__lines > li,
+.boot__rings,
+.boot__card,
+.boot__flash,
+.boot__cap,
+.boot__skip {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.boot__t > [data-off] {
+  visibility: hidden;
+}
+
+.boot__access {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  font-weight: 500;
+  font-size: max(12px, calc(18 * var(--u)));
+  line-height: 1;
+  letter-spacing: 0.045em;
+  white-space: nowrap;
+}
+
+/* the ∞ (drawn in, then settled into the open loops) */
+.boot__mark {
+  display: block;
+  height: auto;
+  aspect-ratio: 310 / 145;
+  overflow: visible;
+}
+
+.boot__mark path {
+  fill: none;
+  stroke: var(--ink);
+}
+
+.boot__contour,
+.boot__loops {
+  stroke-width: 26;
+}
+
+.boot__contour {
+  stroke-linecap: round;
+  stroke-dasharray: 0 2;
+}
+
+.boot__loops {
+  opacity: 0;
+}
+
+.boot__plus,
+.boot__minus {
+  stroke-width: 15;
+  transform-box: fill-box;
+  transform-origin: center;
+  scale: 0;
+}
+
+.boot__head {
+  fill: var(--orange);
+  opacity: 0;
+}
+
+.boot__logo {
+  position: absolute;
+  left: 50%;
+  top: calc(50% - 79 * var(--u));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  translate: calc(-50% + var(--shift, 0) * var(--logo-dx)) 0;
+}
+
+.boot__mark--lg {
+  width: calc(300 * var(--u));
+}
+
+.boot__name {
+  margin-top: calc(14 * var(--u));
+  /* the tracking would push the word off centre: pay it back on the left */
+  padding-left: 0.9em;
+  font-weight: 700;
+  font-size: max(10px, calc(16.5 * var(--u)));
+  line-height: 1;
+  letter-spacing: 0.9em;
+  white-space: nowrap;
+}
+
+/* ───────── identity lines ───────── */
+
+.boot__lines {
+  position: absolute;
+  left: calc(50% - 28 * var(--u));
+  top: 50%;
+  margin: 0;
+  padding: 0;
+}
+
+.boot__lines > li {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.42em;
+  translate: 0 -50%;
+  font-weight: 500;
+  font-size: max(12px, calc(21.5 * var(--u)));
+  line-height: 1;
+  letter-spacing: 0.012em;
+  white-space: nowrap;
+}
+
+.boot__dash {
+  flex: none;
+  width: 0.36em;
+  height: max(2px, 0.13em);
+  background: currentColor;
+}
+
+.boot__lines [data-on] {
+  position: relative;
+}
+
+.boot__lines [data-on]::after {
+  content: "";
+  position: absolute;
+  left: 100%;
+  top: 0.06em;
+  bottom: 0.02em;
+  width: 0.5em;
+  margin-left: 0.08em;
+  background: currentColor;
+  opacity: var(--cursor, 0);
+}
+
+/* ───────── permission rings ───────── */
+
+.boot__rings {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--ring);
+  height: var(--ring);
+  translate: -50% -50%;
+}
+
+.boot__rings svg {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  overflow: visible;
+  scale: var(--rscale, 1);
+}
+
+.boot__rings path {
+  fill: none;
+  stroke-linecap: round;
+}
+
+.boot__r-outer {
+  stroke: var(--ink);
+  stroke-width: 3;
+}
+
+.boot__r-pale {
+  stroke: var(--boot-pale);
+  stroke-width: 5.5;
+}
+
+.boot__r-arc,
+.boot__r-side {
+  stroke: var(--ink);
+  stroke-width: 2.2;
+}
+
+.boot__r-core,
+.boot__r-head {
+  fill: var(--ink);
+}
+
+.boot__r-phead {
+  fill: var(--boot-pale);
+}
+
+.boot__r-orange {
+  fill: var(--orange);
+}
+
+.boot__perm {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  /* tracking is animated; the same amount on the left keeps the line centred */
+  padding-left: var(--track, 0.17em);
+  font-weight: 500;
+  font-size: max(11px, calc(var(--ring) * 0.0265));
+  line-height: 1;
+  letter-spacing: var(--track, 0.17em);
+  white-space: nowrap;
+}
+
+/* ───────── welcome card ───────── */
+
+.boot__card {
+  position: absolute;
+  /* above the flash: the cut whitens the paper, not the words */
+  z-index: 1;
+  left: 50%;
+  top: calc(50% + 20 * var(--u));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  translate: -50% -50%;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.boot__wt {
+  font-size: max(19px, calc(52 * var(--u)));
+  letter-spacing: 0.035em;
+  padding-left: 0.035em;
+  translate: 0 calc(var(--rise, 0) * 14 * var(--u));
+}
+
+.boot__bar {
+  align-self: stretch;
+  margin-top: calc(11 * var(--u));
+  padding: 0.12em 0.4em 0.08em;
+  font-size: max(17px, calc(50 * var(--u)));
+  line-height: 1;
+  text-align: center;
+  letter-spacing: 0.03em;
+  clip-path: inset(0 100% 0 0);
+}
+
+.boot__bar > span {
+  display: inline-block;
+  clip-path: inset(0 100% 0 0);
+}
+
+.boot__db {
+  margin-top: calc(14 * var(--u));
+  font-size: max(13px, calc(33 * var(--u)));
+  letter-spacing: 0.012em;
+  opacity: 0;
+}
+
+.boot__wlogo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: calc(18 * var(--u));
+  translate: 0 calc(var(--rise, 0) * 10 * var(--u));
+}
+
+.boot__mark--sm {
+  width: calc(208 * var(--u));
+}
+
+.boot__name--sm {
+  margin-top: calc(14 * var(--u));
+  font-size: max(10px, calc(12 * var(--u)));
+  letter-spacing: 0.86em;
+  padding-left: 0.86em;
+  opacity: 0;
+}
+
+/* the black / white cut before the card */
+.boot__flash {
+  position: absolute;
+  inset: 0;
+  background: var(--ink);
+}
+
+.boot__flash--pale {
+  background: var(--boot-flash);
+}
+
+/* ───────── the boot's own corner lockup and signature (same metrics as the chrome) ───────── */
+
+.boot__corner {
+  pointer-events: none;
+}
+
+.boot__brand a > * {
+  opacity: 0;
+  translate: calc(var(--rise, 1) * 64 * var(--u)) 0;
+}
+
+.boot__sign {
+  position: absolute;
+  right: calc(60 * var(--u));
+  bottom: calc(112 * var(--u));
+  line-height: 1;
+  white-space: nowrap;
+  visibility: hidden;
+}
+
+/* ───────── caption & skip ───────── */
+
+.boot__cap {
+  position: absolute;
+  left: 50%;
+  bottom: calc(30 * var(--u));
+  /* left: 50% would otherwise halve the room it may wrap in */
+  width: max-content;
+  max-width: min(92vw, calc(1100 * var(--u)));
+  translate: -50% 0;
+  font-family: var(--f-cjk);
+  font-weight: 500;
+  font-size: max(13px, calc(23 * var(--u)));
+  line-height: 1.3;
+  letter-spacing: 0.04em;
+  text-align: center;
+  color: var(--ink);
+  text-shadow:
+    0 0 6px var(--bg),
+    0 0 2px var(--bg);
+  pointer-events: none;
+}
+
+.boot__skip {
+  position: absolute;
+  right: calc(60 * var(--u));
+  bottom: calc(112 * var(--u) + max(26px, calc(34 * var(--u))));
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  min-height: 40px;
+  padding: 0 0 0 1.2em;
+  font-weight: 700;
+  font-size: max(11px, calc(14 * var(--u)));
+  letter-spacing: 0.22em;
+  color: var(--sub);
+  pointer-events: none;
+  transition: color var(--t-fast);
+}
+
+.boot__skip > span {
+  font-size: 1.3em;
+  line-height: 1;
+  letter-spacing: 0;
+  translate: 0 -0.06em;
+}
+
+.boot__skip:hover,
+.boot__skip:focus-visible {
+  color: var(--hover);
+}
+
+/* ───────── phones & narrow windows: everything stacks on the centre line ───────── */
+
+@media (max-width: 899px), (max-aspect-ratio: 1/1) {
+  html.js .boot {
+    --logo-dx: 0px;
+    /* the rings fill 88% of their box: a box as wide as the screen keeps them inside the gutters */
+    --ring: min(calc(1000 * var(--u)), 100vw, calc((100dvh - 150px) * 1.12));
+  }
+
+  /* one helix, on the right, as in the PV's portrait crops */
+  .boot__drift {
+    inset: -48px auto -48px auto;
+    right: calc(-26dvh);
+    width: calc((100dvh + 96px) * 1920 / 1080);
+  }
+
+  .boot__lines {
+    left: 50%;
+    top: calc(50% + 150 * var(--u));
+  }
+
+  .boot__lines > li {
+    translate: -50% -50%;
+  }
+
+  .boot__sign {
+    right: 16px;
+    bottom: calc(18px + env(safe-area-inset-bottom));
+  }
+
+  .boot__cap {
+    bottom: calc(52px + env(safe-area-inset-bottom));
+    max-width: calc(100vw - 32px);
+  }
+
+  .boot__skip {
+    right: 16px;
+    top: calc(12px + env(safe-area-inset-top));
+    bottom: auto;
+  }
+}

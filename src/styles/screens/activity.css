@@ -1,0 +1,555 @@
+/* ACTIVITY LOG — five FILE boxes (TOTAL tagged lime like the PV's VISUALIZED
+   bar), the contribution calendar sized off its own width (≈16u cells at
+   16:9; a fixed 14px pitch that scrolls sideways on phones) and the public
+   events as a command log in the rail's dotted style. */
+
+.logs {
+  display: flex;
+  flex-direction: column;
+  gap: calc(30 * var(--u));
+  /* leaves the band under the chrome's pager dots clear */
+  padding-top: calc(36 * var(--u));
+  --f-readout: "JetBrains Mono", "Noto Sans SC", ui-monospace, monospace;
+}
+
+/* ───────── FILE boxes ───────── */
+
+.logs__stats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: calc(14 * var(--u));
+}
+
+.logs__stat {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: calc(14 * var(--u));
+  min-width: 0;
+  padding: calc(16 * var(--u)) calc(18 * var(--u)) calc(14 * var(--u));
+  /* .cornered paints the four squares as backgrounds; the plate goes under them */
+  background-color: color-mix(in srgb, var(--bg-hi) 55%, transparent);
+  box-shadow: inset 0 0 0 1px var(--hair);
+}
+
+.logs__stat dt {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px calc(8 * var(--u));
+}
+
+.logs__no {
+  font-family: var(--f-mono);
+  font-size: max(10px, calc(11 * var(--u)));
+  color: var(--sub);
+}
+
+.logs__stat .tag {
+  font-size: max(10px, calc(13 * var(--u)));
+}
+
+.logs__stat dt small {
+  font-size: max(11px, calc(13 * var(--u)));
+  letter-spacing: 0.06em;
+  color: var(--sub);
+}
+
+.logs__stat dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px calc(10 * var(--u));
+}
+
+.logs__stat dd b {
+  font-weight: 700;
+  font-size: max(26px, calc(60 * var(--u)));
+  line-height: 0.92;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.logs__stat dd small {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  font-family: var(--f-mono);
+  font-size: max(10px, calc(12 * var(--u)));
+  letter-spacing: 0.08em;
+  color: var(--sub);
+}
+
+/* TOTAL: a lime meter under the figure, like VISUALIZED */
+.logs__stat.is-hi dd::after {
+  content: "";
+  flex-basis: 100%;
+  height: max(4px, calc(7 * var(--u)));
+  margin-top: calc(6 * var(--u));
+  background: var(--lime);
+}
+
+/* BEST DAY: the same orange as its cell in the calendar */
+.logs__stat.is-best dd small i {
+  width: 0.8em;
+  height: 0.8em;
+  background: var(--orange);
+}
+
+/* ───────── calendar ───────── */
+
+.heat {
+  padding: calc(16 * var(--u)) calc(12 * var(--u)) calc(14 * var(--u));
+  background: color-mix(in srgb, var(--bg-hi) 45%, transparent);
+  box-shadow: inset 0 0 0 1px var(--hair);
+}
+
+.heat__head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px 16px;
+  margin-bottom: calc(14 * var(--u));
+}
+
+.heat__head h3,
+.events__head h3 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px calc(12 * var(--u));
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.heat__head h3 small,
+.events__head h3 small {
+  font-size: max(11px, calc(13 * var(--u)));
+  letter-spacing: 0.1em;
+  color: var(--sub);
+}
+
+.heat__sel {
+  display: flex;
+  align-items: center;
+  gap: calc(10 * var(--u));
+  font-weight: 600;
+  font-size: max(10px, calc(12 * var(--u)));
+  letter-spacing: 0.08em;
+}
+
+.heat__sel b {
+  min-width: 25ch;
+  padding: calc(5 * var(--u)) calc(12 * var(--u)) calc(4 * var(--u));
+  box-shadow: inset 0 0 0 max(1px, calc(1.5 * var(--u))) var(--ink);
+  font-family: var(--f-readout);
+  font-weight: 500;
+  font-size: max(11px, calc(14 * var(--u)));
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.heat__scroll {
+  container-type: inline-size;
+  --lbl: max(28px, calc(34 * var(--u)));
+  --gap: max(2px, calc(2.5 * var(--u)));
+}
+
+/* everything below shares one pitch, so labels and cells stay in register */
+.heat__body {
+  --pitch: min(calc(18 * var(--u)), calc((100cqi - var(--lbl)) / 53));
+  --cell: calc(var(--pitch) - var(--gap));
+  display: grid;
+  grid-template-columns: var(--lbl) max-content;
+  width: max-content;
+}
+
+.heat__months,
+.heat__grid {
+  grid-column: 2;
+  display: grid;
+  grid-template-columns: repeat(53, var(--cell));
+  column-gap: var(--gap);
+}
+
+.heat__months {
+  grid-row: 1;
+  height: max(14px, calc(18 * var(--u)));
+}
+
+.heat__months span,
+.heat__days span {
+  font-weight: 600;
+  font-size: max(10px, calc(11 * var(--u)));
+  line-height: 1;
+  letter-spacing: 0.06em;
+  color: var(--sub);
+  white-space: nowrap;
+}
+
+.heat__months span {
+  grid-column: var(--c);
+  grid-row: 1;
+}
+
+.heat__days {
+  grid-column: 1;
+  grid-row: 2;
+  display: grid;
+  grid-template-rows: repeat(7, var(--cell));
+  row-gap: var(--gap);
+  align-items: center;
+}
+
+.heat__grid {
+  grid-row: 2;
+  grid-template-rows: repeat(7, var(--cell));
+  row-gap: var(--gap);
+  border-radius: 1px;
+}
+
+.heat__grid:focus-visible {
+  outline-width: 1px;
+  outline-offset: max(4px, calc(7 * var(--u)));
+}
+
+.heat__c {
+  grid-column: var(--c);
+  grid-row: var(--r);
+}
+
+.heat [data-l="0"] {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 24%, transparent);
+}
+
+.heat [data-l="1"] {
+  background: color-mix(in srgb, var(--ink) 26%, transparent);
+}
+
+.heat [data-l="2"] {
+  background: color-mix(in srgb, var(--ink) 48%, transparent);
+}
+
+.heat [data-l="3"] {
+  background: color-mix(in srgb, var(--ink) 72%, transparent);
+}
+
+.heat [data-l="4"] {
+  background: var(--ink);
+}
+
+/* the best day: filled orange with a ring standing off it */
+.heat .is-best {
+  background: var(--orange);
+  box-shadow:
+    0 0 0 max(1px, calc(1.5 * var(--u))) var(--bg-hi),
+    0 0 0 max(2px, calc(3 * var(--u))) var(--orange);
+}
+
+/* days still to come this week: an empty slot */
+.heat .heat__c.is-future {
+  background: none;
+  box-shadow: none;
+}
+
+/* the day the readout reports (today until another is picked) */
+.heat__c.is-cur,
+.heat__c:not(.is-future):hover {
+  outline: 1px solid var(--ink);
+  outline-offset: 1px;
+}
+
+.heat__grid:focus-visible .heat__c.is-cur,
+.heat__grid.is-kbd:focus .heat__c.is-cur {
+  outline: 2px solid var(--hover);
+  outline-offset: 1px;
+  position: relative;
+  z-index: 1;
+}
+
+.heat__foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px 18px;
+  margin-top: calc(14 * var(--u));
+  padding-left: var(--lbl);
+}
+
+.heat__keys kbd {
+  min-width: 1.6em;
+  margin-right: 0.2em;
+}
+
+.heat__keys span > kbd:last-of-type {
+  margin-right: 0.6em;
+}
+
+.heat__legend {
+  display: flex;
+  align-items: center;
+  gap: max(3px, calc(4 * var(--u)));
+  margin-left: auto;
+  font-weight: 600;
+  font-size: max(10px, calc(11 * var(--u)));
+  letter-spacing: 0.08em;
+  color: var(--sub);
+}
+
+.heat__legend span {
+  margin: 0 calc(6 * var(--u));
+}
+
+.heat__legend i {
+  width: max(9px, calc(12 * var(--u)));
+  height: max(9px, calc(12 * var(--u)));
+}
+
+.heat__legend i.is-best {
+  margin-left: calc(18 * var(--u));
+}
+
+/* cells arrive column by column, like a scan */
+html.js .screen.is-entering .heat__c {
+  animation: heat-scan 420ms var(--ease-out) both;
+  animation-delay: calc(420ms + var(--c) * 11ms);
+}
+
+@keyframes heat-scan {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ───────── command log ───────── */
+
+.events__head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px 16px;
+}
+
+.events__head .tag {
+  position: relative;
+  margin-left: calc(6 * var(--u));
+  font-size: max(10px, calc(12 * var(--u)));
+}
+
+/* the rail's COMMAND ENTERED tag has a bar standing off its left edge */
+.events__head .tag::before {
+  content: "";
+  position: absolute;
+  left: calc(-7 * var(--u));
+  top: 0;
+  bottom: 0;
+  width: max(1.5px, calc(2.5 * var(--u)));
+  background: var(--ink);
+}
+
+.events__snap {
+  font-family: var(--f-mono);
+  font-size: max(10px, calc(11 * var(--u)));
+  letter-spacing: 0.08em;
+  color: var(--sub);
+}
+
+.events__list {
+  display: grid;
+  gap: calc(3 * var(--u));
+  margin: calc(12 * var(--u)) 0 0 calc(6 * var(--u));
+  padding-left: calc(16 * var(--u));
+  border-left: 1px dotted var(--sub);
+  font-family: var(--f-readout);
+  font-size: max(11px, calc(13.5 * var(--u)));
+  line-height: 1.55;
+  letter-spacing: 0.02em;
+}
+
+.events__list li {
+  display: grid;
+  grid-template-columns: max-content max-content minmax(0, 1fr);
+  align-items: baseline;
+  gap: 0 1.3em;
+  color: var(--ink-2);
+}
+
+.events__list li:first-child {
+  color: var(--ink);
+}
+
+.events__list time {
+  color: var(--sub);
+  font-variant-numeric: tabular-nums;
+}
+
+.events__cmd {
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.events__list a {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-decoration: underline 1px transparent;
+  text-underline-offset: 3px;
+  transition:
+    color var(--t-fast),
+    text-decoration-color var(--t-fast);
+}
+
+.events__list a:hover,
+.events__list a:focus-visible {
+  color: var(--hover);
+  text-decoration-color: currentColor;
+}
+
+.events__list .events__none,
+.events__list .events__idle {
+  display: block;
+  color: var(--sub);
+}
+
+.events__idle i {
+  display: inline-block;
+  width: 0.6em;
+  height: 1.05em;
+  vertical-align: -0.18em;
+  background: var(--ink);
+  animation: logs-blink 1.06s steps(1) infinite;
+}
+
+@keyframes logs-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* ───────── shorter desktop windows ───────── */
+
+@media (min-width: 900px) and (min-aspect-ratio: 1/1) and (max-height: 820px) {
+  .logs {
+    gap: calc(18 * var(--u));
+  }
+
+  .logs__stat {
+    gap: calc(8 * var(--u));
+    padding-block: calc(12 * var(--u)) calc(10 * var(--u));
+  }
+
+  .heat__keys {
+    display: none;
+  }
+}
+
+/* ───────── phones & narrow windows ───────── */
+
+@media (max-width: 899px), (max-aspect-ratio: 1/1) {
+  .logs {
+    gap: 22px;
+    padding-top: 0;
+  }
+
+  .logs__stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .logs__stat {
+    padding: 12px 14px 12px;
+  }
+
+  .logs__stat.is-hi {
+    grid-column: 1 / -1;
+  }
+
+  .logs__stat dd b {
+    font-size: 30px;
+  }
+
+  .heat {
+    padding: 14px 12px 12px;
+    background: var(--bg-hi);
+  }
+
+  .heat__head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .heat__sel {
+    flex-wrap: wrap;
+  }
+
+  .heat__sel b {
+    min-width: 0;
+    white-space: normal;
+  }
+
+  .heat__scroll {
+    --lbl: 32px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--line) transparent;
+    padding: 2px 0 10px;
+  }
+
+  .heat__body {
+    --pitch: 14px;
+  }
+
+  /* the weekday labels stay put while the weeks scroll under them */
+  .heat__days {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: var(--bg-hi);
+    box-shadow: 4px 0 6px -4px var(--bg-hi);
+  }
+
+  .heat__grid:focus-visible {
+    outline-offset: 2px;
+  }
+
+  .heat__foot {
+    padding-left: 0;
+  }
+
+  .heat__keys {
+    display: none;
+  }
+
+  .heat__legend {
+    margin-left: 0;
+    flex-wrap: wrap;
+  }
+
+  .events__list {
+    gap: 2px;
+    padding-left: 12px;
+    margin-left: 4px;
+  }
+
+  .events__list li {
+    grid-template-columns: max-content minmax(0, 1fr);
+  }
+
+  .events__list time {
+    grid-column: 1 / -1;
+    font-size: 11px;
+  }
+
+  .events__list a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+  }
+}

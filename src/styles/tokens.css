@@ -1,0 +1,120 @@
+/* Design tokens. Every length on the desktop layout is written in --u, one
+   pixel of the PV's 1920×1080 frame, so compositions measured from the video
+   land in the same place at any 16:9 size. Text never shrinks below its floor. */
+
+:root {
+  color-scheme: light;
+
+  /* warm grey-white paper, near-black ink — the PV's light half */
+  --bg: #e8e5e1;
+  --bg-hi: #f1efec;
+  --bg-lo: #dcd8d2;
+  --ink: #0b0c0b;
+  --ink-2: #2f302d;
+  --sub: #77756d;
+  --line: #aaa59a;
+  --hair: rgba(11, 12, 11, 0.14);
+  --tile: #0e0f0e;
+  --tile-ink: #f3f2ef;
+  --tag-bg: #0b0c0b;
+  --tag-ink: #f6f5f2;
+  --glass: rgba(250, 249, 247, 0.4);
+  --glass-hi: rgba(255, 255, 255, 0.78);
+  --glass-edge: rgba(255, 255, 255, 0.92);
+  --glass-shadow: rgba(62, 52, 40, 0.1);
+  --ghost: rgba(255, 255, 255, 0.86);
+  --hex: rgba(140, 132, 120, 0.16);
+  --orange: #ee7d1f;
+  --orange-soft: #f5b26b;
+  --lime: #c4e84c;
+  --lime-ink: #8fbd1c;
+  --hover: #9b7247;
+  --select: #cbb397;
+  --knock: var(--tile);
+
+  --f-latin: "Montserrat", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --f-cjk: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+
+  /* one pixel of the 1920×1080 reference frame */
+  --u: min(calc(100vw / 1920), calc(100dvh / 1080));
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-io: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-snap: cubic-bezier(0.2, 0.9, 0.1, 1);
+  --t-fast: 160ms;
+  --t-mid: 320ms;
+  --t-slow: 640ms;
+
+  --z-canvas: 0;
+  --z-screen: 10;
+  --z-chrome: 30;
+  --z-boot: 80;
+  --z-toast: 90;
+}
+
+/* the PV's dark half (4:06–5:12): smoke-grey night, pale ink, amber signal */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #11181b;
+  --bg-hi: #182125;
+  --bg-lo: #0b1012;
+  --ink: #e0e3dc;
+  --ink-2: #c4c9c2;
+  --sub: #a6b0b1;
+  --line: #536166;
+  --hair: rgba(224, 227, 220, 0.14);
+  --tile: #050708;
+  --tile-ink: #e9ebe6;
+  --tag-bg: #e0e3dc;
+  --tag-ink: #0d1214;
+  --glass: rgba(28, 38, 42, 0.42);
+  --glass-hi: rgba(46, 58, 63, 0.6);
+  --glass-edge: rgba(224, 227, 220, 0.16);
+  --glass-shadow: rgba(0, 0, 0, 0.35);
+  --ghost: rgba(224, 227, 220, 0.08);
+  --hex: rgba(166, 176, 177, 0.1);
+  --orange: #e88a3a;
+  --orange-soft: #c5a16b;
+  --lime: #b6dc45;
+  --lime-ink: #b6dc45;
+  --hover: #c5a16b;
+  --select: #536166;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) {
+    color-scheme: dark;
+    --bg: #11181b;
+    --bg-hi: #182125;
+    --bg-lo: #0b1012;
+    --ink: #e0e3dc;
+    --ink-2: #c4c9c2;
+    --sub: #a6b0b1;
+    --line: #536166;
+    --hair: rgba(224, 227, 220, 0.14);
+    --tile: #050708;
+    --tile-ink: #e9ebe6;
+    --tag-bg: #e0e3dc;
+    --tag-ink: #0d1214;
+    --glass: rgba(28, 38, 42, 0.42);
+    --glass-hi: rgba(46, 58, 63, 0.6);
+    --glass-edge: rgba(224, 227, 220, 0.16);
+    --glass-shadow: rgba(0, 0, 0, 0.35);
+    --ghost: rgba(224, 227, 220, 0.08);
+    --hex: rgba(166, 176, 177, 0.1);
+    --orange: #e88a3a;
+    --orange-soft: #c5a16b;
+    --lime: #b6dc45;
+    --lime-ink: #b6dc45;
+    --hover: #c5a16b;
+    --select: #536166;
+  }
+}
+
+/* phones and narrow windows: lay out in real CSS pixels, not the 16:9 frame */
+@media (max-width: 899px), (max-aspect-ratio: 1/1) {
+  :root {
+    --u: 0.5px;
+  }
+}

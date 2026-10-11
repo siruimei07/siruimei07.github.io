@@ -16,11 +16,14 @@ export type Repository = {
   fork: boolean;
 };
 
+export type GitHubEvent = { id?: string; type: string; created_at: string; repo?: { name?: string } };
+
 export type GitHubSnapshot = {
   generatedAt: string;
   profile: { followers: number; following: number; public_repos: number };
   repositories: Repository[];
   contributions: Contribution[];
+  events?: GitHubEvent[];
 };
 
 export type WorkView = Work & { stars: number | null; language: string | null; updated: string | null };

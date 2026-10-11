@@ -1,0 +1,596 @@
+/* CONTACT — after the PV's dark file box (4:20): a wire from the left ending
+   in a square, then a box with a thick bar on its left edge. Ink on paper in
+   the light theme, white on black in the dark one, as in the film. Below it
+   the channels, the Toronto clock as a FILE readout, a terminal for the
+   message, and the PERMISSION AUTHORIZED rings (0:20) beside the terminal. */
+
+.comms {
+  --f-readout: "JetBrains Mono", "Noto Sans SC", ui-monospace, monospace;
+  --ring-white: #fff;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) calc(272 * var(--u));
+  grid-template-areas:
+    "file time"
+    "chan rings"
+    "form rings";
+  gap: calc(30 * var(--u)) calc(40 * var(--u));
+  align-items: start;
+}
+
+:root[data-theme="dark"] .comms {
+  --ring-white: color-mix(in srgb, var(--ink) 55%, transparent);
+}
+
+/* ───────── file box ───────── */
+
+.comms__file {
+  grid-area: file;
+  align-self: end;
+  display: flex;
+  align-items: center;
+}
+
+/* line + end square in one element, so a single clip draws both in */
+.comms__wire {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: calc(48 * var(--u));
+  max-width: calc(190 * var(--u));
+  height: max(9px, calc(14 * var(--u)));
+  margin-right: calc(20 * var(--u));
+  background: linear-gradient(90deg, transparent, var(--ink) 55%) left center / calc(100% - 10 * var(--u)) max(1px, calc(2 * var(--u))) no-repeat;
+}
+
+.comms__wire::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: max(9px, calc(14 * var(--u)));
+  height: 100%;
+  background: var(--ink);
+}
+
+.comms__box {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: none;
+  width: calc(440 * var(--u));
+  min-height: calc(116 * var(--u));
+  padding: calc(27 * var(--u)) calc(30 * var(--u)) calc(24 * var(--u)) calc(52 * var(--u));
+  border: max(1px, calc(1.5 * var(--u))) solid var(--ink);
+  background: color-mix(in srgb, var(--bg-hi) 72%, transparent);
+  font-weight: 500;
+  font-size: max(12px, calc(18 * var(--u)));
+  line-height: 1.3;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+/* the thick bar on the left edge */
+.comms__box::before {
+  content: "";
+  position: absolute;
+  left: -1px;
+  top: -1px;
+  bottom: -1px;
+  width: calc(18 * var(--u));
+  background: var(--ink);
+}
+
+.comms__box > span {
+  display: block;
+  min-height: 1.3em;
+  white-space: pre;
+}
+
+.comms__box b {
+  font-weight: 700;
+}
+
+.comms__led {
+  display: inline-block;
+  width: 0.55em;
+  height: 0.55em;
+  margin-left: 0.55em;
+  background: var(--lime);
+  vertical-align: 0.08em;
+}
+
+:root[data-theme="dark"] .comms__box {
+  background: var(--tile);
+  border-color: var(--tile-ink);
+  color: var(--tile-ink);
+}
+
+:root[data-theme="dark"] .comms__box::before {
+  background: var(--tile-ink);
+}
+
+/* draw in: wire, square, box — then JS types the two lines */
+html.js .screen.is-entering .comms__wire {
+  animation: comms-draw 460ms var(--ease-out) 180ms both;
+}
+
+html.js .screen.is-entering .comms__box {
+  animation: comms-draw 300ms var(--ease-io) 560ms both;
+}
+
+@keyframes comms-draw {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* ───────── channels ───────── */
+
+.comms__channels {
+  grid-area: chan;
+  border-top: max(1.5px, calc(2 * var(--u))) solid var(--ink);
+}
+
+.channel {
+  display: grid;
+  grid-template-columns: calc(108 * var(--u)) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px calc(20 * var(--u));
+  padding: calc(14 * var(--u)) 0;
+  border-bottom: 1px solid var(--hair);
+}
+
+.channel__label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 0.6em;
+  font-weight: 700;
+  font-size: max(12px, calc(15 * var(--u)));
+  letter-spacing: 0.08em;
+  line-height: 1.3;
+}
+
+.channel__no {
+  flex-basis: 100%;
+  font-family: var(--f-mono);
+  font-weight: 400;
+  font-size: max(10px, calc(11 * var(--u)));
+  letter-spacing: 0.06em;
+  color: var(--sub);
+}
+
+.channel__no::before {
+  content: "■ ";
+  font-size: 0.8em;
+}
+
+.channel__label small {
+  font-weight: 400;
+  font-size: max(11px, calc(13 * var(--u)));
+  letter-spacing: 0.06em;
+  color: var(--sub);
+}
+
+.channel__value {
+  justify-self: start;
+  font-weight: 600;
+  font-size: max(15px, calc(21 * var(--u)));
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  text-decoration: underline max(1px, calc(1.5 * var(--u))) transparent;
+  text-underline-offset: 0.2em;
+  transition:
+    color var(--t-fast),
+    text-decoration-color var(--t-fast);
+}
+
+.channel__value:hover,
+.channel__value:focus-visible {
+  color: var(--hover);
+  text-decoration-color: currentColor;
+}
+
+.channel__act .btn {
+  min-width: calc(112 * var(--u));
+  justify-content: flex-start;
+}
+
+/* ───────── local time ───────── */
+
+.comms__time {
+  grid-area: time;
+  /* leaves the band under the chrome's pager dots clear */
+  margin-top: calc(40 * var(--u));
+  display: flex;
+  flex-direction: column;
+  gap: calc(12 * var(--u));
+  padding: calc(16 * var(--u)) calc(20 * var(--u)) calc(14 * var(--u));
+  background-color: color-mix(in srgb, var(--bg-hi) 55%, transparent);
+  box-shadow: inset 0 0 0 1px var(--hair);
+}
+
+.comms__time-h {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px calc(10 * var(--u));
+}
+
+.comms__time-h small {
+  font-size: max(11px, calc(13 * var(--u)));
+  letter-spacing: 0.06em;
+  color: var(--sub);
+}
+
+.comms__clock b {
+  font-family: var(--f-mono);
+  font-weight: 500;
+  font-size: max(28px, calc(46 * var(--u)));
+  line-height: 1;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.comms__zone {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 2px 12px;
+  padding-top: calc(8 * var(--u));
+  border-top: 1px solid var(--hair);
+  font-family: var(--f-mono);
+  font-size: max(10px, calc(11.5 * var(--u)));
+  letter-spacing: 0.08em;
+  color: var(--sub);
+}
+
+/* ───────── message terminal ───────── */
+
+.comms__form {
+  grid-area: form;
+  display: flex;
+  flex-direction: column;
+  gap: calc(12 * var(--u));
+  min-width: 0;
+}
+
+.comms__lead {
+  font-size: max(13px, calc(16 * var(--u)));
+  line-height: 1.7;
+  letter-spacing: 0.02em;
+  color: var(--ink-2);
+}
+
+.comms__term {
+  background: color-mix(in srgb, var(--bg-hi) 62%, transparent);
+  box-shadow: inset 0 0 0 max(1px, calc(1.5 * var(--u))) var(--ink);
+  transition: box-shadow var(--t-fast);
+}
+
+.comms__term:focus-within {
+  box-shadow: inset 0 0 0 2px var(--hover);
+}
+
+.comms__term-h {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: calc(5 * var(--u)) calc(14 * var(--u)) calc(4 * var(--u));
+  background: var(--tag-bg);
+  color: var(--tag-ink);
+  font-weight: 600;
+  font-size: max(11px, calc(13 * var(--u)));
+  letter-spacing: 0.08em;
+}
+
+.comms__term-h > span {
+  font-family: var(--f-mono);
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  opacity: 0.8;
+  font-variant-numeric: tabular-nums;
+}
+
+.comms__field {
+  --px: calc(18 * var(--u));
+  --py: calc(14 * var(--u));
+  position: relative;
+  font-family: var(--f-readout);
+  font-size: max(13px, calc(16 * var(--u)));
+  line-height: 1.6;
+}
+
+.comms__field textarea {
+  display: block;
+  width: 100%;
+  min-height: calc(4 * 1.6em + 2 * var(--py));
+  padding: var(--py) var(--px);
+  border: 0;
+  background: transparent;
+  resize: vertical;
+  text-indent: 2ch;
+  caret-color: var(--orange);
+}
+
+.comms__field textarea:focus-visible {
+  outline: none;
+}
+
+.comms__field textarea::placeholder {
+  color: var(--sub);
+  opacity: 1;
+}
+
+/* empty: the block caret stands where the first letter will go, the hint after it */
+.comms__field textarea:placeholder-shown {
+  text-indent: 3.4ch;
+  caret-color: transparent;
+}
+
+.comms__prompt {
+  position: absolute;
+  left: var(--px);
+  top: var(--py);
+  font-weight: 500;
+  pointer-events: none;
+}
+
+.comms__caret {
+  position: absolute;
+  left: calc(var(--px) + 2ch);
+  top: calc(var(--py) + 0.22em);
+  width: 1ch;
+  height: 1.16em;
+  background: var(--ink);
+  pointer-events: none;
+  animation: comms-blink 1.06s steps(1) infinite;
+}
+
+.comms__field textarea:focus ~ .comms__caret {
+  background: var(--orange);
+}
+
+.comms__field textarea:not(:placeholder-shown) ~ .comms__caret {
+  display: none;
+}
+
+@keyframes comms-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+.comms__send {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px 16px;
+  padding: 0 calc(14 * var(--u)) calc(14 * var(--u));
+}
+
+.comms__thanks {
+  font-size: max(12px, calc(13 * var(--u)));
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+/* ───────── PERMISSION AUTHORIZED rings ───────── */
+
+.comms__rings {
+  grid-area: rings;
+  align-self: center;
+  justify-self: center;
+  width: min(100%, calc(272 * var(--u)));
+  pointer-events: none;
+}
+
+.rings {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.rings path {
+  fill: none;
+  stroke-dasharray: 1;
+  stroke-linecap: round;
+}
+
+.rings__ink {
+  stroke: var(--ink);
+  stroke-width: 1.4;
+}
+
+.rings__white {
+  stroke: var(--ring-white);
+  stroke-width: 2.6;
+  filter: drop-shadow(0 0 1.2px rgba(40, 32, 24, 0.18));
+}
+
+.rings__thin {
+  stroke: var(--ink);
+  stroke-width: 0.8;
+}
+
+.rings__knob {
+  fill: var(--ink);
+}
+
+.rings__pip {
+  fill: var(--ring-white);
+}
+
+.rings__dot {
+  fill: var(--orange);
+}
+
+.rings g {
+  transform-box: view-box;
+  transform-origin: 50% 50%;
+}
+
+html.js .screen.is-entering .rings path {
+  animation: rings-draw 900ms var(--ease-out) 420ms both;
+}
+
+html.js .screen.is-entering .rings circle {
+  animation: m-fade 300ms var(--ease-out) 1000ms both;
+}
+
+@keyframes rings-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* one turn on TRANSMIT; JS skips it under reduced motion */
+.rings.is-spin .rings__a {
+  animation: rings-spin 1.5s var(--ease-io) both;
+}
+
+.rings.is-spin .rings__b {
+  animation: rings-spin-back 1.25s var(--ease-io) 60ms both;
+}
+
+.rings.is-spin .rings__c {
+  animation: rings-spin-back 0.9s var(--ease-io) 120ms both;
+}
+
+.rings.is-spin .rings__d {
+  animation: rings-spin-fast 1.3s var(--ease-io) both;
+}
+
+@keyframes rings-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+@keyframes rings-spin-back {
+  to {
+    rotate: -360deg;
+  }
+}
+
+@keyframes rings-spin-fast {
+  to {
+    rotate: 720deg;
+  }
+}
+
+/* shorter desktop windows (1366×768): tighter rhythm, a three-line terminal */
+@media (min-width: 900px) and (min-aspect-ratio: 1/1) and (max-height: 820px) {
+  .comms {
+    row-gap: calc(16 * var(--u));
+  }
+
+  .channel {
+    padding-block: calc(10 * var(--u));
+  }
+
+  .comms__time {
+    gap: calc(8 * var(--u));
+  }
+
+  .comms__clock b {
+    font-size: max(28px, calc(40 * var(--u)));
+  }
+
+  .comms__send {
+    padding-bottom: calc(10 * var(--u));
+  }
+
+  .comms__form {
+    gap: calc(8 * var(--u));
+  }
+
+  .comms__lead {
+    line-height: 1.5;
+  }
+
+  .comms__field textarea {
+    min-height: calc(3 * 1.6em + 2 * var(--py));
+  }
+}
+
+/* copying and the clock need scripts; the plain page keeps the links */
+html:not(.js) [data-copy],
+html:not(.js) .comms__time {
+  display: none;
+}
+
+/* ───────── phones & narrow windows ───────── */
+
+@media (max-width: 899px), (max-aspect-ratio: 1/1) {
+  .comms {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "file"
+      "chan"
+      "time"
+      "form";
+    gap: 22px;
+  }
+
+  .comms__rings {
+    display: none;
+  }
+
+  .comms__time {
+    margin-top: 0;
+  }
+
+  .comms__wire {
+    flex: none;
+    width: 30px;
+    min-width: 0;
+    margin-right: 10px;
+  }
+
+  .comms__box {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+    min-height: 0;
+    padding: 16px 14px 15px 30px;
+    font-size: 13px;
+  }
+
+  .comms__box::before {
+    width: 10px;
+  }
+
+  .channel {
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 12px 0;
+  }
+
+  .channel__label {
+    grid-column: 1 / -1;
+  }
+
+  .channel__value {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+  }
+
+  .channel__act .btn {
+    min-width: 112px;
+  }
+
+  .comms__field {
+    --px: 14px;
+    --py: 12px;
+    /* 16px keeps iOS from zooming into the field */
+    font-size: 16px;
+  }
+}
