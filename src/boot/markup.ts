@@ -47,7 +47,9 @@ const typed = (text: string, cls = "") => `<span class="boot__t${cls ? ` ${cls}`
 
 export function renderBoot(): string {
   const lines = boot.lines.map((l) => `<li><i class="boot__dash"></i>${typed(l)}</li>`).join("");
+  // the picture is all aria-hidden: this line tells a screen reader what the pause is
   return `<div class="boot" data-boot>
+  <p class="sr-only" role="status">正在打开 Sirui Mei 的个人档案 · 按任意键跳过</p>
   <div class="boot__paper" aria-hidden="true"><div class="boot__drift">${dna()}</div></div>
   <div class="boot__scene" data-b="scene" aria-hidden="true">
     <p class="boot__access" data-b="access">${typed(boot.access)}</p>

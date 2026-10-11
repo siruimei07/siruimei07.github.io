@@ -4,7 +4,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const dist = new URL("../dist/", import.meta.url);
@@ -63,11 +63,42 @@ test("focus lists statistics, economics and quant", () => {
   for (const s of ["统计", "经济", "量化"]) assert.ok(html.includes(s), `missing ${s}`);
 });
 
+/** Text files of the build, i.e. everything a visitor's browser can read. */
+const distText = () => distFiles().filter((f) => /\.(html|js|css|json)$/.test(f));
+
 test("nothing of the previous persona or site is left", () => {
-  for (const s of ["酒寄", "彩葉", "彩叶", "さかより", "いろは", "ヤチヨ", "月読"]) {
-    assert.ok(!html.includes(s), `found ${s}`);
+  // content.ts is bundled into the JS as well, so the page alone is not enough
+  for (const f of distText()) {
+    const text = readFileSync(f, "utf8");
+    const name = relative(fileURLToPath(dist), f);
+    for (const s of ["酒寄", "彩葉", "彩叶", "さかより", "いろは", "ヤチヨ", "月読"]) {
+      assert.ok(!text.includes(s), `found ${s} in ${name}`);
+    }
+    assert.doesNotMatch(text, /tsukuyomi|sakayori|iroha/i, name);
   }
-  assert.doesNotMatch(html, /tsukuyomi|sakayori|iroha/i);
+});
+
+test("every Chinese character on the page is in the Noto Sans SC subset", () => {
+  const covered = new Set(readFileSync(new URL("../src/fonts/noto-sans-sc.chars.txt", import.meta.url), "utf8").replace(/\r|\n/g, ""));
+  // the GitHub snapshot is re-synced on every deploy; what only it uses falls back to a system font
+  const synced = new Set(readFileSync(new URL("data/github.json", dist), "utf8"));
+  const missing = new Set();
+  for (const f of distFiles().filter((f) => /\.(html|js)$/.test(f))) {
+    for (const c of readFileSync(f, "utf8").match(/[\p{Script=Han}\u3000-\u303f\uff00-\uffef]/gu) ?? []) {
+      if (!covered.has(c) && !synced.has(c)) missing.add(c);
+    }
+  }
+  assert.equal(missing.size, 0, `not in src/fonts/: ${[...missing].join("")} (run python scripts/subset-noto.py)`);
+});
+
+test("fonts load as a few files, not hundreds of unicode-range slices", () => {
+  const css = distFiles()
+    .filter((f) => f.endsWith(".css"))
+    .map((f) => readFileSync(f, "utf8"))
+    .join("\n");
+  const faces = css.match(/@font-face\s*\{[^}]*\}/g) ?? [];
+  assert.ok(faces.length <= 15, `${faces.length} @font-face rules`);
+  assert.equal(faces.filter((f) => f.includes("Noto Sans SC")).length, 3, "Noto Sans SC 400, 500 and 700");
 });
 
 test("the fan-made notice is on the page", () => {

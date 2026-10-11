@@ -37,7 +37,7 @@
 }
 
 .tag--xs {
-  font-size: max(8px, calc(9 * var(--u)));
+  font-size: max(10px, calc(10 * var(--u)));
   font-weight: 700;
   letter-spacing: 0.04em;
   padding: 0.16em 0.7em 0.08em;

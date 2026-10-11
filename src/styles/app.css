@@ -36,18 +36,6 @@ html.js .screen:focus {
   outline: none;
 }
 
-.credits-foot {
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 32px 0;
-  font-size: 12px;
-  color: var(--sub);
-}
-
-html.js .credits-foot {
-  display: none;
-}
-
 /* ───────── brand lockup (RHINE LAB / SYNTHESIZE INFORMATION / ANALYSIS OS) ───────── */
 
 .brand {
@@ -219,12 +207,19 @@ html.js .rail {
   align-items: flex-start;
   padding: calc(250 * var(--u)) 0 calc(250 * var(--u)) calc(46 * var(--u));
   pointer-events: none;
+  /* hidden, not just transparent, on the overview: no invisible tab stops */
   opacity: 0;
-  transition: opacity var(--t-mid) var(--ease-out);
+  visibility: hidden;
+  transition:
+    opacity var(--t-mid) var(--ease-out),
+    visibility 0s linear var(--t-mid);
 }
 
+/* fading in waits for the overview to clear; visibility switches on at once */
 html.js[data-view="sect"] .rail {
   opacity: 1;
+  visibility: visible;
+  transition-delay: 180ms, 0s;
 }
 
 html.js[data-view="sect"] .rail > * {
@@ -242,6 +237,8 @@ html.js[data-view="sect"] .rail > * {
 
 .rail__dash {
   display: block;
+  /* the rail runs full on short screens: the thin rules must not be squeezed out */
+  flex-shrink: 0;
   width: calc(14 * var(--u));
   height: max(1.5px, calc(2 * var(--u)));
   background: var(--ink);
@@ -266,16 +263,16 @@ html.js[data-view="sect"] .rail > * {
   background: var(--ink);
 }
 
+/* starts at 60u and must end short of the tile at 253u, even when the 10px floor kicks in */
 .rail__note {
-  width: calc(186 * var(--u));
-  min-width: 132px;
+  width: min(calc(186 * var(--u)), calc(193 * var(--u) - 12px));
   margin: calc(12 * var(--u)) 0 calc(28 * var(--u)) calc(14 * var(--u));
-  font-size: max(7.5px, calc(8.6 * var(--u)));
+  font-size: max(10px, calc(10.5 * var(--u)));
   font-weight: 500;
   line-height: 1.75;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--sub);
+  color: var(--ink-2);
 }
 
 .rail__nav ol {
@@ -288,8 +285,13 @@ html.js[data-view="sect"] .rail > * {
   position: relative;
   display: grid;
   grid-template-columns: 2.2em auto auto;
+  /* the Chinese name hugs the label: the lower rows sit beside the tile on small screens */
+  justify-content: start;
   align-items: baseline;
+  align-content: center;
   column-gap: 0.5em;
+  /* a 24px target at any size (WCAG 2.5.8) */
+  min-height: 24px;
   padding: max(2px, calc(3 * var(--u))) 0;
   font-size: max(11px, calc(13.5 * var(--u)));
   font-weight: 600;
@@ -306,16 +308,17 @@ html.js[data-view="sect"] .rail > * {
   letter-spacing: 0;
 }
 
+/* full --sub, not faded: it has to keep 4.5:1 on the paper */
 .rail__nav a > small {
-  font-size: 0.78em;
+  font-size: max(10px, 0.78em);
   font-weight: 400;
   letter-spacing: 0.12em;
-  opacity: 0.8;
 }
 
+/* hover is the site's hover colour; only the current entry is full ink */
 .rail__nav a:hover,
 .rail__nav a:focus-visible {
-  color: var(--ink);
+  color: var(--hover);
 }
 
 .rail__nav a[aria-current="page"] {
@@ -337,6 +340,17 @@ html.js[data-view="sect"] .rail > * {
   transform: translateY(-50%);
 }
 
+/* the section chain of 3D plates passes behind the lower rail, as in the PV: a halo of
+   paper keeps the small text there legible over it, in both themes */
+.rail__log,
+.rail__note,
+.foot-sect > span {
+  text-shadow:
+    0 0 2px var(--bg),
+    0 0 6px var(--bg),
+    0 0 12px var(--bg);
+}
+
 .rail__log {
   display: flex;
   flex-direction: column;
@@ -345,7 +359,7 @@ html.js[data-view="sect"] .rail > * {
   padding-left: calc(10 * var(--u));
   border-left: 1px dotted var(--sub);
   font-family: var(--f-mono);
-  font-size: max(8px, calc(9 * var(--u)));
+  font-size: max(10px, calc(10 * var(--u)));
   line-height: 1.5;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -369,6 +383,7 @@ html.js[data-view="sect"] .rail > * {
 
 .rail__end {
   display: block;
+  flex-shrink: 0;
   width: calc(214 * var(--u));
   height: 1px;
   background: linear-gradient(90deg, var(--ink) 0 calc(14 * var(--u)), transparent calc(14 * var(--u)) calc(24 * var(--u)), var(--ink) calc(24 * var(--u)));
@@ -396,19 +411,37 @@ html.js .rule {
 
 html.js[data-view="sect"] .rule {
   transform: scaleY(1);
+  transition-delay: 180ms;
 }
 
+/* the lime marker rides on the rule but is not part of it, so the rule's
+   scaleY draw never squashes it; it fades in once the rule has passed */
 .rule__mark {
-  position: absolute;
-  left: 50%;
+  display: none;
+}
+
+html.js .rule__mark {
+  display: block;
+  position: fixed;
+  left: calc(430 * var(--u) + max(1px, calc(2 * var(--u))) / 2);
   top: 0;
+  z-index: calc(var(--z-screen) - 1);
   width: calc(38 * var(--u));
   height: calc(22 * var(--u));
   min-width: 18px;
   min-height: 10px;
   background: var(--lime);
   transform: translate(-50%, calc(var(--mark-y, 336px) - 50%));
-  transition: transform 520ms var(--ease-snap);
+  opacity: 0;
+  transition:
+    opacity var(--t-fast) var(--ease-out),
+    transform 520ms var(--ease-snap);
+  pointer-events: none;
+}
+
+html.js[data-view="sect"] .rule__mark {
+  opacity: 1;
+  transition-delay: 300ms, 0s;
 }
 
 /* ───────── foot lines, clock, caption ───────── */
@@ -455,7 +488,7 @@ html.js .foot-sign {
 
 .foot-clock {
   font-family: var(--f-mono);
-  font-size: max(9.5px, calc(12 * var(--u)));
+  font-size: max(10px, calc(12 * var(--u)));
   letter-spacing: 0.12em;
   color: var(--sub);
   font-variant-numeric: tabular-nums;
@@ -507,6 +540,7 @@ html.js .caption {
 html.js.is-booting .chrome,
 html.js.is-booting .rail,
 html.js.is-booting .rule,
+html.js.is-booting .rule__mark,
 html.js.is-booting .foot-sect,
 html.js.is-booting .foot-sign,
 html.js.is-booting .caption,
@@ -528,7 +562,7 @@ html.js .screens {
 .toast {
   position: fixed;
   left: 50%;
-  top: calc(40 * var(--u) + 12px);
+  top: calc(env(safe-area-inset-top) + 40 * var(--u) + 12px);
   z-index: var(--z-toast);
   padding: 0.5em 1em 0.42em;
   background: var(--tag-bg);
@@ -583,7 +617,8 @@ html.js .sect__tile {
   top: calc(-24 * var(--u));
   z-index: 3;
   padding: calc(6 * var(--u)) calc(26 * var(--u)) calc(4 * var(--u));
-  background: color-mix(in srgb, var(--bg-hi) 82%, transparent);
+  /* opaque: it crosses the rule, which must not show through */
+  background: var(--bg-hi);
   font-weight: 400;
   font-size: max(11px, calc(22 * var(--u)));
   letter-spacing: 0.04em;
@@ -599,12 +634,14 @@ html.js .sect__tile {
   display: contents;
 }
 
+/* the plate keeps the 16:9 frame's size on ultrawide and 4:3 screens
+   (at exactly 16:9 each max() is its first term) */
 html.js .sect__panel {
   position: absolute;
   left: calc(805 * var(--u));
-  right: calc(35 * var(--u));
-  top: calc(45 * var(--u));
-  bottom: calc(50 * var(--u));
+  right: max(calc(35 * var(--u)), calc(100vw - 1885 * var(--u)));
+  top: max(calc(45 * var(--u)), calc(50% - 495 * var(--u)));
+  bottom: max(calc(50 * var(--u)), calc(50% - 490 * var(--u)));
   perspective: calc(2600 * var(--u));
   perspective-origin: 70% 50%;
 }
@@ -675,13 +712,13 @@ html.js .sect__glass {
 
 .sect__no {
   font-family: var(--f-mono);
-  font-size: 0.86em;
+  font-size: max(11px, 0.86em);
   color: var(--sub);
 }
 
 .sect__h small {
   font-weight: 400;
-  font-size: 0.9em;
+  font-size: max(11px, 0.9em);
   color: var(--sub);
   letter-spacing: 0.12em;
 }
@@ -713,9 +750,13 @@ html.js .sect__glass {
   margin-top: calc(18 * var(--u));
 }
 
-/* ───────── narrow screens & phones ───────── */
+/* ───────── phones, narrow or short windows, touch tablets ───────── */
 
-@media (max-width: 899px), (max-aspect-ratio: 1/1) {
+/* The shared phone query, identical in tokens.css, the screen styles and
+   src/three/scene.ts: narrow, portrait or short windows, and touch tablets
+   up to 1400px wide (the 16:9 frame cannot give them 40px touch targets).
+   Screens scroll in one centred column, at most 880px wide. */
+@media (max-width: 899px), (max-aspect-ratio: 1/1), (max-height: 539px), (pointer: coarse) and (max-width: 1400px) {
   /* a frosted top bar holds the lockup while screens scroll beneath it */
   html.js .chrome {
     height: calc(84px + env(safe-area-inset-top));
@@ -726,24 +767,25 @@ html.js .sect__glass {
   }
 
   html.js .brand {
-    left: 16px;
+    left: max(16px, env(safe-area-inset-left));
     top: calc(12px + env(safe-area-inset-top));
   }
 
+  /* sized so the middle line keeps the 10px label floor */
   .brand a {
-    width: 136px;
+    width: 145px;
   }
 
   .brand a > b {
-    font-size: 22px;
+    font-size: 23.4px;
   }
 
   .brand a > span {
-    font-size: 9.4px;
+    font-size: 10px;
   }
 
   .brand a > i {
-    font-size: 17.6px;
+    font-size: 18.7px;
   }
 
   html.js .pager {
@@ -751,25 +793,28 @@ html.js .sect__glass {
   }
 
   html.js .rule,
+  html.js .rule__mark,
   html.js .foot-sect,
   html.js .foot-sign,
-  html.js .caption {
+  html.js .caption,
+  html.js [data-caption-say] {
     display: none;
   }
 
-  /* the rail becomes a bottom tab bar */
+  /* the rail becomes a bottom tab bar, on every screen */
   html.js .rail {
     top: auto;
     right: 0;
     width: auto;
     height: auto;
-    padding: 0 0 env(safe-area-inset-bottom);
+    padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     flex-direction: row;
     background: color-mix(in srgb, var(--bg) 88%, transparent);
     -webkit-backdrop-filter: blur(12px);
     backdrop-filter: blur(12px);
     box-shadow: 0 -1px 0 var(--hair);
     opacity: 1;
+    visibility: visible;
     pointer-events: auto;
   }
 
@@ -787,24 +832,26 @@ html.js .sect__glass {
     scrollbar-width: none;
   }
 
+  /* six equal tabs: 53px each at 320px wide, never below 40px */
   html.js .rail__nav ol {
     flex-direction: row;
     gap: 0;
     margin: 0;
-    min-width: max-content;
+    min-width: 0;
   }
 
   html.js .rail__nav li {
-    flex: 1;
+    flex: 1 1 0;
+    min-width: 0;
   }
 
   html.js .rail__nav a {
     grid-template-columns: auto;
+    justify-content: stretch;
     justify-items: center;
-    flex: 1;
-    min-width: 62px;
+    min-width: 0;
     min-height: 54px;
-    padding: 8px 10px 6px;
+    padding: 8px 4px 6px;
     font-size: 11px;
     text-align: center;
   }
@@ -825,7 +872,6 @@ html.js .sect__glass {
   html.js .rail__nav a > small {
     font-size: 13px;
     letter-spacing: 0.08em;
-    opacity: 1;
   }
 
   html.js .rail__nav a[aria-current="page"] > small {
@@ -841,11 +887,18 @@ html.js .sect__glass {
     transform: translateX(-50%);
   }
 
+  /* scroll-padding keeps a focused control clear of both frosted bars */
   html.js .screen {
     overflow-y: auto;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
-    padding: calc(104px + env(safe-area-inset-top)) 16px calc(84px + env(safe-area-inset-bottom));
+    padding: calc(104px + env(safe-area-inset-top)) max(16px, env(safe-area-inset-right), calc(50% - 440px)) calc(84px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left), calc(50% - 440px));
+    scroll-padding-top: calc(104px + env(safe-area-inset-top));
+    scroll-padding-bottom: calc(84px + env(safe-area-inset-bottom));
+  }
+
+  .toast {
+    top: calc(env(safe-area-inset-top) + 96px);
   }
 
   html.js .sect__tile {
@@ -901,5 +954,66 @@ html.js .sect__glass {
 
   .sect__h {
     min-width: 0;
+  }
+}
+
+/* landscape phones: both bars shrink (lockup on one line, tabs without
+   numerals) so the content keeps at least 280px of height */
+@media (orientation: landscape) and (max-height: 500px) {
+  html.js .chrome {
+    height: calc(40px + env(safe-area-inset-top));
+  }
+
+  html.js .brand {
+    top: calc(9px + env(safe-area-inset-top));
+  }
+
+  .brand a {
+    position: relative;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 12px;
+    width: auto;
+  }
+
+  /* the one-line lockup is 20px tall; its touch target fills the 40px bar */
+  .brand a::after {
+    content: "";
+    position: absolute;
+    inset: -10px -8px;
+  }
+
+  .brand a > b {
+    font-size: 19px;
+  }
+
+  .brand a > span {
+    display: none;
+  }
+
+  .brand a > i {
+    gap: 0.3em;
+    font-size: 15px;
+  }
+
+  html.js .rail__nav a {
+    align-content: center;
+    min-height: 40px;
+    padding: 4px 4px 3px;
+  }
+
+  html.js .rail__nav a > b {
+    display: none;
+  }
+
+  html.js .screen {
+    padding-top: calc(52px + env(safe-area-inset-top));
+    padding-bottom: calc(52px + env(safe-area-inset-bottom));
+    scroll-padding-top: calc(52px + env(safe-area-inset-top));
+    scroll-padding-bottom: calc(52px + env(safe-area-inset-bottom));
+  }
+
+  .toast {
+    top: calc(env(safe-area-inset-top) + 52px);
   }
 }

@@ -36,13 +36,13 @@ export function renderProfile(data: GitHubSnapshot | null): string {
   const body = `<div class="dossier">
   <figure class="dossier__portrait" data-reveal>
     <span class="dossier__bg" aria-hidden="true"></span>
-    <img src="/assets/avatar.webp" width="1024" height="1024" alt="${esc(identity.name)} 的头像" decoding="async" />
+    <img src="/assets/avatar-512.webp" srcset="/assets/avatar-256.webp 256w, /assets/avatar-512.webp 512w, /assets/avatar.webp 1024w" sizes="(max-width: 409px) calc(100vw - 70px), 340px" width="1024" height="1024" alt="${esc(identity.name)} 的头像" decoding="async" fetchpriority="low" />
     <i class="dossier__scan" aria-hidden="true"></i>
   </figure>
   <div class="dossier__id" data-reveal>
     ${tag(profile.rank, "tag--tilt dossier__rank")}
     <p class="namebar dossier__name">${esc(identity.name.toUpperCase())}</p>
-    <p class="dossier__en">${esc(profile.introEn)}</p>
+    <p class="dossier__en" lang="en">${esc(profile.introEn)}</p>
     <div class="dossier__sec">
       <span class="tile tile--light dossier__mini" aria-hidden="true">${logotype(s.tile)}</span>
       <p class="dossier__loaded">${esc(profile.loaded)}&nbsp;<i aria-hidden="true">■</i></p>

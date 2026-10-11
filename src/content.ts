@@ -34,7 +34,9 @@ export const brand = {
 export type SectionId = "profile" | "skills" | "works" | "activity" | "contact" | "system";
 
 /** A logotype tile (the PV's CMPT CTRL / STRU / NRG): one or two words, with the ∞ mark
- *  laid over one letter. `mark` = [line, letter index, dx em, dy em, scale]. */
+ *  laid over one letter. `mark` = [line, letter index, dx em, dy em, scale]. As in the PV's
+ *  ST∞RU, the mark cuts one stem (or sits in one counter) and leaves its neighbours readable;
+ *  every tile uses the same scale. */
 export type Logotype = { lines: string[]; sub: string; mark: [number, number, number, number, number] };
 
 export type Section = {
@@ -61,7 +63,7 @@ export const sections: Section[] = [
     label: "PERSONNEL FILE",
     zh: "档案",
     section: "PERSONNEL SECTION",
-    tile: { lines: ["PRSN", "FILE"], sub: "PERSONNEL FILE SECTION", mark: [0, 1, 0.3, 0.08, 0.48] },
+    tile: { lines: ["PRSN", "FILE"], sub: "PERSONNEL FILE SECTION", mark: [0, 1, -0.16, 0.12, 0.46] },
     code: "PRSN-001",
     caption: "Sirui Mei，多伦多大学本科在读，研究方向为统计、经济与量化",
     note: "PERSONAL INFORMATION, AFFILIATION AND PUBLIC GITHUB PARAMETERS OF THE DIRECTOR OF THIS ARCHIVE.",
@@ -72,7 +74,7 @@ export const sections: Section[] = [
     label: "RESEARCH",
     zh: "研究",
     section: "RESEARCH SECTION",
-    tile: { lines: ["STAT"], sub: "STATISTICS SECTION", mark: [0, 1, 0.32, 0.08, 0.48] },
+    tile: { lines: ["STAT"], sub: "STATISTICS SECTION", mark: [0, 3, 0.02, 0.1, 0.46] },
     code: "RSCH-001",
     caption: "下设三个研究科：统计、经济与量化",
     note: "THREE RESEARCH SECTIONS. EACH ONE STUDIES HOW NUMBERS EXPLAIN A DIFFERENT PART OF THE WORLD.",
@@ -83,7 +85,7 @@ export const sections: Section[] = [
     label: "PROJECTS",
     zh: "作品",
     section: "PROJECT ARCHIVE SECTION",
-    tile: { lines: ["PRJ"], sub: "PROJECT ARCHIVE SECTION", mark: [0, 1, 0.3, 0.1, 0.46] },
+    tile: { lines: ["PRJ"], sub: "PROJECT ARCHIVE SECTION", mark: [0, 1, -0.16, 0.12, 0.46] },
     code: "PRJ-001",
     caption: "项目记录：作品与公开仓库",
     note: "CURATED WORKS AND EVERY PUBLIC REPOSITORY, SYNCED FROM GITHUB ON EACH DEPLOY.",
@@ -94,7 +96,7 @@ export const sections: Section[] = [
     label: "ACTIVITY LOG",
     zh: "活动",
     section: "ACTIVITY LOG SECTION",
-    tile: { lines: ["LOG"], sub: "ACTIVITY LOG SECTION", mark: [0, 1, 0.02, 0.04, 0.66] },
+    tile: { lines: ["LOG"], sub: "ACTIVITY LOG SECTION", mark: [0, 1, 0, 0.02, 0.46] },
     code: "LOG-365",
     caption: "近一年的提交记录与公开动态",
     note: "CONTRIBUTION CALENDAR OF THE LAST 53 WEEKS AND THE LATEST PUBLIC EVENTS ON GITHUB.",
@@ -105,7 +107,7 @@ export const sections: Section[] = [
     label: "CONTACT",
     zh: "联络",
     section: "CONTACT SECTION",
-    tile: { lines: ["CNCT"], sub: "CONTACT SECTION", mark: [0, 2, 0.04, 0.05, 0.56] },
+    tile: { lines: ["CNCT"], sub: "CONTACT SECTION", mark: [0, 3, 0.02, 0.1, 0.46] },
     code: "CNCT-001",
     caption: "联络通道已开放：邮箱与 GitHub",
     note: "OPEN CHANNELS FOR COLLABORATION, QUESTIONS, OR SIMPLY SAYING HELLO.",
@@ -116,7 +118,7 @@ export const sections: Section[] = [
     label: "SYSTEM",
     zh: "设置",
     section: "SYSTEM CONFIG SECTION",
-    tile: { lines: ["SYS"], sub: "SYSTEM CONFIG SECTION", mark: [0, 1, 0.08, 0.05, 0.6] },
+    tile: { lines: ["SYS"], sub: "SYSTEM CONFIG SECTION", mark: [0, 1, 0.02, 0.12, 0.46] },
     code: "SYS-001",
     caption: "终端设置：配色、动效与三维显示",
     note: "DISPLAY PREFERENCES ARE STORED IN THIS BROWSER ONLY.",
@@ -181,7 +183,7 @@ export type Skill = {
 export const skills: Skill[] = [
   {
     id: "stats",
-    tile: { lines: ["STAT"], sub: "STATISTICS SECTION", mark: [0, 1, 0.32, 0.08, 0.48] },
+    tile: { lines: ["STAT"], sub: "STATISTICS SECTION", mark: [0, 3, 0.02, 0.1, 0.46] },
     zh: "统计",
     en: "STATISTICS",
     study: "STUDY / INFER",
@@ -196,7 +198,7 @@ export const skills: Skill[] = [
   },
   {
     id: "econ",
-    tile: { lines: ["ECON"], sub: "ECONOMICS SECTION", mark: [0, 1, 0.14, 0.03, 0.46] },
+    tile: { lines: ["ECON"], sub: "ECONOMICS SECTION", mark: [0, 1, 0.1, 0.04, 0.46] },
     zh: "经济",
     en: "ECONOMICS",
     study: "STUDY / EXPLAIN",
@@ -211,7 +213,7 @@ export const skills: Skill[] = [
   },
   {
     id: "quant",
-    tile: { lines: ["QNT"], sub: "QUANTITATIVE SECTION", mark: [0, 1, 0.33, 0.08, 0.48] },
+    tile: { lines: ["QNT"], sub: "QUANTITATIVE SECTION", mark: [0, 2, 0.03, 0.11, 0.46] },
     zh: "量化",
     en: "QUANT",
     study: "STUDY / EXPLOIT",

@@ -47,7 +47,7 @@ function renderHeat(weeks: HeatCell[][], st: HeatStats): string {
   return `<section class="heat" data-heat data-reveal aria-labelledby="h-heat">
     <header class="heat__head">
       <h3 id="h-heat"><span class="tag">${esc(activityText.heat)}</span><small class="zh">${esc(activityText.heatZh)}</small></h3>
-      <p class="heat__sel" data-heat-sel><span>${esc(activityText.select)}</span><b data-heat-sel-text aria-live="polite">—</b></p>
+      <p class="heat__sel" data-heat-sel><span>${esc(activityText.select)}</span><b data-heat-sel-text>—</b></p>
     </header>
     <p class="sr-only" id="heat-sum">${esc(summary(st))}</p>
     <div class="heat__scroll" data-heat-scroll>
@@ -94,7 +94,8 @@ export function renderActivity(data: GitHubSnapshot | null): string {
   const stats = activityText.stats
     .map((k, i) => {
       const hi = k.id === "total";
-      const unit = k.id === "best" ? (st.best ? `<small><i aria-hidden="true"></i>${esc(st.best.date.slice(5).replace("-", "/"))}</small>` : "") : `<small>${UNITS[k.id]}</small>`;
+      // every box keeps its unit row (empty without a best day), so the figures stay level
+      const unit = k.id === "best" ? `<small>${st.best ? `<i aria-hidden="true"></i>${esc(st.best.date.slice(5).replace("-", "/"))}` : ""}</small>` : `<small>${UNITS[k.id]}</small>`;
       return `<div class="logs__stat cornered${hi ? " is-hi" : ""}${k.id === "best" ? " is-best" : ""}"><dt><span class="logs__no" aria-hidden="true">${pad(i + 1, 2)}</span><span class="tag${hi ? " tag--lime" : ""}">${esc(k.en)}</span><small class="zh">${esc(k.zh)}</small></dt><dd><b data-count="${values[k.id]}">${values[k.id]}</b>${unit}</dd></div>`;
     })
     .join("");

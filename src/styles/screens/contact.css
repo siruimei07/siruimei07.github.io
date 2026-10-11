@@ -4,6 +4,11 @@
    the channels, the Toronto clock as a FILE readout, a terminal for the
    message, and the PERMISSION AUTHORIZED rings (0:20) beside the terminal. */
 
+/* CNCT is the widest logotype: a smaller size keeps the T's crossbar off the tile edge */
+.sect--contact .sect__tile .lt {
+  --lt-size: calc(116 * var(--u));
+}
+
 .comms {
   --f-readout: "JetBrains Mono", "Noto Sans SC", ui-monospace, monospace;
   --ring-white: #fff;
@@ -304,6 +309,7 @@ html.js .screen.is-entering .comms__box {
   line-height: 1.6;
 }
 
+/* rows="3" in the markup; the four-line height is set here, so short windows can drop to three */
 .comms__field textarea {
   display: block;
   width: 100%;
@@ -486,14 +492,15 @@ html.js .screen.is-entering .rings circle {
   }
 }
 
-/* shorter desktop windows (1366×768): tighter rhythm, a three-line terminal */
-@media (min-width: 900px) and (min-aspect-ratio: 1/1) and (max-height: 820px) {
+/* smaller 16:9 frames (1366×768, 1280×720, and windows up to 1460 wide, whose
+   plate keeps the 16:9 frame): tighter rhythm, a three-line terminal */
+@media (min-width: 900px) and (min-aspect-ratio: 1/1) and (min-height: 540px) and (pointer: fine) and (max-height: 820px), (min-width: 900px) and (max-width: 1460px) and (min-aspect-ratio: 1/1) and (min-height: 540px) and (pointer: fine) {
   .comms {
-    row-gap: calc(16 * var(--u));
+    row-gap: calc(12 * var(--u));
   }
 
   .channel {
-    padding-block: calc(10 * var(--u));
+    padding-block: calc(7 * var(--u));
   }
 
   .comms__time {
@@ -529,7 +536,12 @@ html:not(.js) .comms__time {
 
 /* ───────── phones & narrow windows ───────── */
 
-@media (max-width: 899px), (max-aspect-ratio: 1/1) {
+@media (max-width: 899px), (max-aspect-ratio: 1/1), (max-height: 539px), (pointer: coarse) and (max-width: 1400px) {
+  /* the same share of the tile as on desktop (82px for the other words) */
+  .sect--contact .sect__tile .lt {
+    --lt-size: 68px;
+  }
+
   .comms {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:

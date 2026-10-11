@@ -114,7 +114,7 @@ export function renderWorks(data: GitHubSnapshot | null): string {
     <p class="files__h"><span class="tag">${esc(worksText.index)}</span><span class="files__count">${pad(list.length, 2)} FILES</span></p>
     <ol class="files__list" role="tablist" aria-orientation="vertical" aria-label="项目档案">${rows}</ol>
     <p class="keys files__keys" aria-hidden="true"><span><kbd>↑</kbd><kbd>↓</kbd>SELECT FILE</span></p>
-    <p class="files__more">${ext(identity.githubUrl, `<span>${esc(worksText.more)} ›</span> <small>@${esc(identity.github)}</small>`)}</p>
+    <p class="files__more">${ext(identity.githubUrl, `<span>${esc(worksText.more)} <span aria-hidden="true">›</span></span> <small>@${esc(identity.github)}</small>`)}</p>
   </div>
   <div class="files__detail">${files}</div>
 </div>`;

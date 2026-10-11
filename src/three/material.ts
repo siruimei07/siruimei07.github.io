@@ -39,7 +39,8 @@ export const PALETTES: Record<"light" | "dark", Palette> = {
     amber: "#c5a16b",
     faceAlpha: 0.72,
     sideAlpha: 0.85,
-    looseAlpha: 0.45,
+    // pale glass on near-black reads far louder than on paper: the chain stays as quiet as in light
+    looseAlpha: 0.24,
   },
 };
 

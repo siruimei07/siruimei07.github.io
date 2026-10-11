@@ -97,25 +97,26 @@ const brandIn = (t: number, a: number): [number, number, number] => [
   out3(seg(t, a + 0.1, a + 0.38)),
 ];
 
-// ───────── the full score, ≈ 4.7 s ─────────
+// ───────── the full score, ≈ 5.4 s ─────────
 
-function permission(t: number): Rings | null {
-  if (t < 2.6 || t >= 3.5) return null;
-  const grow = out3(seg(t, 2.68, 3.08));
-  const spin = seg(t, 2.66, 3.12);
-  const c = io3(seg(t, 3.08, 3.36)); // collapse into the compact double ring
-  const cut = seg(t, 3.42, 3.5);
+/** The permission rings on their own clock: `r` seconds since they appeared (they last 0.9 s). */
+function permission(r: number): Rings | null {
+  if (r < 0 || r >= 0.9) return null;
+  const grow = out3(seg(r, 0.08, 0.48));
+  const spin = seg(r, 0.06, 0.52);
+  const c = io3(seg(r, 0.48, 0.76)); // collapse into the compact double ring
+  const cut = seg(r, 0.82, 0.9);
   // the black arc grows clockwise from its tail, the white one counter-clockwise
   const outer = { r: lerp(423, 256, c), a: lerp(52 + 28 * spin, 276, c), sweep: lerp(285 * grow, 356, c) };
   const paleTail = lerp(140 - 26 * spin, -96, c);
   const paleSweep = lerp(286 * grow, 354, c);
   const pale = { r: lerp(333, 235, c), a: paleTail - paleSweep, sweep: paleSweep };
   const arcR = lerp(106, 92, c);
-  const arcSweep = lerp(105 * out3(seg(t, 2.7, 2.95)), 128, c);
+  const arcSweep = lerp(105 * out3(seg(r, 0.1, 0.35)), 128, c);
   const aMid = lerp(150 + 70 * spin, 270, c);
   const bMid = lerp(60 - 70 * spin, 85, c);
   return {
-    o: (t < 2.62 ? seg(t, 2.6, 2.62) : 1) * (1 - cut),
+    o: (r < 0.02 ? seg(r, 0, 0.02) : 1) * (1 - cut),
     blur: cut * 6,
     scale: 1 + cut * 0.04,
     outer,
@@ -124,31 +125,33 @@ function permission(t: number): Rings | null {
       { r: arcR, a: aMid - arcSweep / 2, sweep: arcSweep },
       { r: arcR, a: bMid - arcSweep / 2, sweep: arcSweep },
     ],
-    sides: out3(seg(t, 3.2, 3.42)),
-    core: back(seg(t, 3.18, 3.32)),
-    orange: { r: lerp(201, 175, c), a: [lerp(160 + 30 * spin, 264, c), lerp(340 + 30 * spin, 456, c)], size: out3(seg(t, 2.72, 2.84)) },
-    text: { n: seg(t, 2.72, 2.94), o: lerp(1, 0.2, c), track: lerp(lerp(0.32, 0.17, out3(seg(t, 2.72, 3.08))), 0.07, c), scale: lerp(1, 0.76, c) },
+    sides: out3(seg(r, 0.6, 0.82)),
+    core: back(seg(r, 0.58, 0.72)),
+    orange: { r: lerp(201, 175, c), a: [lerp(160 + 30 * spin, 264, c), lerp(340 + 30 * spin, 456, c)], size: out3(seg(r, 0.12, 0.24)) },
+    text: { n: seg(r, 0.12, 0.34), o: lerp(1, 0.2, c), track: lerp(lerp(0.32, 0.17, out3(seg(r, 0.12, 0.48))), 0.07, c), scale: lerp(1, 0.76, c) },
   };
 }
 
+// access 0.1 · mark 0.8 · identity lines 1.86 · rings 3.1 · cut 4.0 · welcome card 4.05 (whole at 4.5) · exit 5.0
 function fullFrame(t: number): Frame {
   const lines = boot.lines;
   let line: Frame["line"] = null;
-  if (t >= 1.86 && t < 2.62) {
-    const i = t < 2.14 ? 0 : t < 2.37 ? 1 : 2;
-    const from = [1.88, 2.15, 2.38][i];
-    const dur = [0.2, 0.16, 0.14][i];
-    line = { i, n: seg(t, from, from + dur) * lines[i].length, o: i === 2 ? 1 - seg(t, 2.54, 2.62) : 1 };
+  if (t >= 1.86 && t < 3.12) {
+    // each line types in fast, as in the PV, then holds 0.2 s so it can be read
+    const i = t < 2.28 ? 0 : t < 2.65 ? 1 : 2;
+    const from = [1.88, 2.29, 2.66][i];
+    const dur = [0.2, 0.16, 0.18][i];
+    line = { i, n: seg(t, from, from + dur) * lines[i].length, o: i === 2 ? 1 - seg(t, 3.04, 3.12) : 1 };
   }
-  const exit = seg(t, 4.3, 4.7);
-  const db = t < 4.0 ? 0 : t < 4.03 ? 1 : t < 4.06 ? 0.12 : 1;
+  const exit = seg(t, 5.0, 5.4);
+  const db = t < 4.38 ? 0 : t < 4.41 ? 1 : t < 4.44 ? 0.12 : 1;
   return {
     veil: 1 - out3(seg(t, 0, 0.55)),
     dna: out3(seg(t, 0.05, 0.9)),
     out: exit,
     access: { n: seg(t, 0.12, 0.46) * boot.access.length, o: 1 - seg(t, 0.66, 0.78) },
     logo: {
-      o: t >= 0.8 ? 1 - seg(t, 2.54, 2.64) : 0,
+      o: t >= 0.8 ? 1 - seg(t, 3.04, 3.14) : 0,
       mark: { draw: io3(seg(t, 0.82, 1.32)), loops: seg(t, 1.3, 1.38), signs: back(seg(t, 1.3, 1.5)) },
       name: seg(t, 1.26, 1.6),
       shift: io3(seg(t, 1.6, 1.9)),
@@ -156,25 +159,26 @@ function fullFrame(t: number): Frame {
     brand: brandIn(t, 1.52),
     sign: seg(t, 1.56, 1.84),
     line,
-    rings: permission(t),
+    rings: permission(t - 3.1),
     card: {
-      o: t >= 3.55 ? 1 : 0,
-      wt: out3(seg(t, 3.56, 3.68)),
-      bar: io3(seg(t, 3.66, 3.82)),
-      text: seg(t, 3.74, 3.86),
+      o: t >= 4.05 ? 1 : 0,
+      wt: out3(seg(t, 4.06, 4.18)),
+      bar: io3(seg(t, 4.16, 4.32)),
+      text: seg(t, 4.24, 4.36),
       db,
-      markO: out3(seg(t, 3.8, 3.96)),
+      markO: out3(seg(t, 4.3, 4.46)),
       mark: FULL_MARK,
-      name: out3(seg(t, 3.84, 4.0)),
+      name: out3(seg(t, 4.34, 4.5)),
     },
-    flash: [t >= 3.5 && t < 3.55 ? 1 : 0, t >= 3.55 ? 1 - seg(t, 3.6, 3.76) : 0],
+    flash: [t >= 4.0 && t < 4.05 ? 1 : 0, t >= 4.05 ? 1 - seg(t, 4.1, 4.26) : 0],
+    // the last caption is gone by the exit, where the chrome fades in its own
     cap: caption(t, [
       [0, 0.1, 0.8],
-      [1, 1.86, 2.6],
-      [2, 2.66, 3.48],
-      [3, 3.6, 4.7],
+      [1, 1.86, 3.1],
+      [2, 3.16, 3.98],
+      [3, 4.1, 5.0],
     ]),
-    skip: hold(t, 0.4, 0.6, 4.3, 4.42),
+    skip: hold(t, 0.4, 0.6, 5.0, 5.12),
   };
 }
 
@@ -197,12 +201,12 @@ function shortFrame(t: number): Frame {
     mark: { draw: io3(seg(t, 0.04, 0.42)), loops: seg(t, 0.4, 0.46), signs: back(seg(t, 0.4, 0.56)) },
     name: out3(seg(t, 0.32, 0.56)),
   };
-  f.cap = caption(t, [[3, 0.44, 1.3]]);
+  f.cap = caption(t, [[3, 0.44, 0.95]]);
   f.skip = hold(t, 0.4, 0.55, 0.95, 1.05);
   return f;
 }
 
-const FULL: Score = { frame: fullFrame, welcome: 3.5, exit: 4.3, end: 4.7 };
+const FULL: Score = { frame: fullFrame, welcome: 4.0, exit: 5.0, end: 5.4 };
 const SHORT: Score = { frame: shortFrame, welcome: 0.4, exit: 0.95, end: 1.3 };
 
 // ───────── writing a frame to the DOM ─────────
@@ -341,13 +345,15 @@ class Painter {
     }
   }
 
-  paint(f: Frame, t: number) {
+  /** `settled`: after a skip, the corner lockup drops what is left of its slide. */
+  paint(f: Frame, t: number, settled = false) {
     const e = this.els;
     const root = this.root;
     this.css(root, "--veil", f2(f.veil));
     this.css(root, "--dna", f2(f.dna));
     this.css(root, "--drift", f2(t));
     const out = f.out;
+    this.css(root, "--out", f2(out));
     this.css(root, "--paper", f2(1 - out3(out)));
     this.css(e.scene, "opacity", f2(1 - in2(out)));
     this.css(e.scene, "scale", f2(1 - 0.06 * out3(out)));
@@ -422,16 +428,16 @@ class Painter {
     this.show(e.flashInk, f.flash[0]);
     this.show(e.flashPale, f.flash[1]);
 
+    // the chrome's own lockup fades in at the exit: this copy must lie exactly on it, never beside it
     e.brand.forEach((line, i) => {
       this.css(line, "opacity", f2(f.brand[i]));
-      this.css(line, "--rise", f2(1 - f.brand[i]));
+      this.css(line, "--rise", f2(settled ? 0 : 1 - f.brand[i]));
     });
     this.css(e.sign, "clip-path", `inset(-20% ${f2((1 - f.sign) * 100)}% -20% 0)`);
     this.show(e.sign, f.sign > 0 ? 1 : 0);
 
     if (f.cap.i >= 0) this.text(e.cap, boot.captions[f.cap.i]);
-    // the chrome brings its own caption at the exit: step aside quickly
-    this.show(e.cap, f.cap.o * (1 - clamp(out * 4)));
+    this.show(e.cap, f.cap.o);
 
     this.show(e.skip, f.skip);
     this.css(e.skip, "pointer-events", f.skip > 0.5 ? "auto" : "none");
@@ -488,7 +494,9 @@ export function runBoot(root: HTMLElement, o: BootOptions): BootRun {
       const f = o.reduced ? blank() : score.frame(cut.t);
       f.out = Math.max(f.out, k);
       f.skip = 0;
-      painter.paint(f, cut.t);
+      // the chrome's caption is already fading in: never show two
+      f.cap.o = 0;
+      painter.paint(f, cut.t, true);
       if (k >= 1) return finish();
     } else {
       const t = paused ?? (now - start) / 1000;

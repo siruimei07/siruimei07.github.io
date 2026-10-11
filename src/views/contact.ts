@@ -64,7 +64,7 @@ export function renderContact(): string {
       <p class="comms__term-h"><label for="letter-text">${esc(contact.message)}</label><span aria-hidden="true">${esc(s.code)} · <span data-chars>000</span>/800</span></p>
       <div class="comms__field">
         <span class="comms__prompt" aria-hidden="true">&gt;</span>
-        <textarea id="letter-text" name="body" rows="4" maxlength="800" placeholder="${esc(contact.placeholder)}"></textarea>
+        <textarea id="letter-text" name="body" rows="3" maxlength="800" placeholder="${esc(contact.placeholder)}"></textarea>
         <i class="comms__caret" aria-hidden="true"></i>
       </div>
       <p class="comms__send"><span class="comms__thanks zh" data-thanks role="status"></span><button class="btn btn--ink" type="submit">${esc(contact.send)} <small>${esc(contact.sendZh)}</small></button></p>

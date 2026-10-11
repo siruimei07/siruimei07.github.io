@@ -188,14 +188,17 @@
   line-height: 1.85;
   letter-spacing: 0.02em;
   color: var(--ink-2);
+  text-wrap: pretty;
 }
 
 .credits__line {
   font-size: max(11px, calc(12.5 * var(--u)));
   line-height: 1.75;
   color: var(--sub);
+  text-wrap: pretty;
 }
 
+/* both links on one row under both columns: in the narrow column they wrapped and fell off the plate */
 .credits__links {
   display: flex;
   flex-wrap: wrap;
@@ -203,8 +206,9 @@
   margin-top: calc(16 * var(--u));
 }
 
-/* shorter desktop windows (1366×768): the same sheet, closer lines */
-@media (min-width: 900px) and (min-aspect-ratio: 1/1) and (max-height: 820px) {
+/* smaller 16:9 frames (1366×768, 1280×720, and windows up to 1460 wide, whose
+   plate keeps the 16:9 frame): the same sheet, closer lines */
+@media (min-width: 900px) and (min-aspect-ratio: 1/1) and (min-height: 540px) and (pointer: fine) and (max-height: 820px), (min-width: 900px) and (max-width: 1460px) and (min-aspect-ratio: 1/1) and (min-height: 540px) and (pointer: fine) {
   .config {
     padding-top: calc(20 * var(--u));
   }
@@ -252,7 +256,7 @@ html:not(.js) .config__head {
 
 /* ───────── phones & narrow windows ───────── */
 
-@media (max-width: 899px), (max-aspect-ratio: 1/1) {
+@media (max-width: 899px), (max-aspect-ratio: 1/1), (max-height: 539px), (pointer: coarse) and (max-width: 1400px) {
   .config {
     padding-top: 0;
   }
@@ -295,5 +299,11 @@ html:not(.js) .config__head {
   .credits__cols {
     grid-template-columns: minmax(0, 1fr);
     gap: 14px;
+  }
+
+  /* sentences keep the 13px reading floor */
+  .config__note,
+  .credits__line {
+    font-size: 13px;
   }
 }

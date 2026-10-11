@@ -17,6 +17,13 @@ function seg(name: string, opts: Opt[]) {
 
 const code = (n: number) => `<span class="config__code" aria-hidden="true">SYS-${pad(n, 2)}</span>`;
 
+/** The credits open with an English sentence: mark it, so a Chinese voice does not read it. */
+function creditsLine(text: string): string {
+  // up to the first full stop that is followed by Chinese
+  const m = /^(.+?\.)\s+(?=[^\x20-\x7e])(.+)$/s.exec(text);
+  return m ? `<span lang="en">${esc(m[1])}</span> ${esc(m[2])}` : esc(text);
+}
+
 export function renderSystem(): string {
   const s = sectionById.system;
   const row = (n: number, k: { label: string; zh: string; options: Opt[] }, name: string, now: boolean) =>
@@ -29,18 +36,16 @@ export function renderSystem(): string {
     ${row(1, system.theme, "theme", true)}
     ${row(2, system.motion, "motion", true)}
     ${row(3, system.three, "three", false)}
-    <li class="config__row config__row--action">${code(4)}<p class="config__label" id="cfg-replay"><span>${esc(system.replay.label)}</span><small class="zh">${esc(system.replay.zh)}</small></p><p class="config__now" aria-hidden="true"></p><p class="config__opts"><button type="button" class="btn" data-replay aria-describedby="cfg-replay">REPLAY ›</button></p></li>
+    <li class="config__row config__row--action">${code(4)}<p class="config__label" id="cfg-replay"><span>${esc(system.replay.label)}</span><small class="zh">${esc(system.replay.zh)}</small></p><p class="config__now" aria-hidden="true"></p><p class="config__opts"><button type="button" class="btn" data-replay aria-describedby="cfg-replay">REPLAY <span aria-hidden="true">›</span></button></p></li>
   </ul>
   <p class="config__note zh">${esc(system.stored)}</p>
   <section class="credits" data-reveal aria-labelledby="h-credits">
     <h3 class="credits__h" id="h-credits">${code(5)}<span class="tag">${esc(system.about.label)}</span><small class="zh">${esc(system.about.zh)}</small></h3>
     <div class="credits__cols">
       <p class="credits__tech zh">${esc(system.tech)}</p>
-      <div class="credits__side">
-        <p class="credits__line">${esc(credits)}</p>
-        <p class="credits__links">${ext("https://github.com/siruimei07/siruimei07.github.io", `${esc(system.source)} <small>${esc(system.sourceZh)}</small>`, `class="btn btn--ink"`)}${ext("https://github.com/LBEILC/RhineLabUI", `RHINELABUI <small>MIT</small>`, `class="btn"`)}</p>
-      </div>
+      <p class="credits__line">${creditsLine(credits)}</p>
     </div>
+    <p class="credits__links">${ext("https://github.com/siruimei07/siruimei07.github.io", `${esc(system.source)} <small>${esc(system.sourceZh)}</small>`, `class="btn btn--ink"`)}${ext("https://github.com/LBEILC/RhineLabUI", `RHINELABUI <small>MIT</small>`, `class="btn"`)}</p>
   </section>
 </div>`;
   return sectionScreen(s, { ghost: "CONFIG", body });

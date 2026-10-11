@@ -6,9 +6,7 @@ import "@fontsource/montserrat/latin-700.css";
 import "@fontsource/montserrat/latin-800.css";
 import "@fontsource/jetbrains-mono/latin-400.css";
 import "@fontsource/jetbrains-mono/latin-500.css";
-import "@fontsource/noto-sans-sc/400.css";
-import "@fontsource/noto-sans-sc/500.css";
-import "@fontsource/noto-sans-sc/700.css";
+import "./fonts/fonts.css";
 import "./styles/index.css";
 import { App } from "./app/app.ts";
 

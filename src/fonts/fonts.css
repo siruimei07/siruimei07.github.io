@@ -1,0 +1,28 @@
+/* Noto Sans SC, cut down to the characters this site uses: one small file per
+   weight instead of ~100 unicode-range slices each. The files and
+   noto-sans-sc.chars.txt come from scripts/subset-noto.py; re-run it after
+   adding Chinese copy (tests/build.test.mjs fails until you do). */
+
+@font-face {
+  font-family: "Noto Sans SC";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url("./noto-sans-sc-400.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Noto Sans SC";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 500;
+  src: url("./noto-sans-sc-500.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Noto Sans SC";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src: url("./noto-sans-sc-700.woff2") format("woff2");
+}

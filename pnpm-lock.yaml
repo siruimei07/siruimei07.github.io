@@ -14,9 +14,6 @@ importers:
       '@fontsource/montserrat':
         specifier: ^5.3.0
         version: 5.3.0
-      '@fontsource/noto-sans-sc':
-        specifier: ^5.3.0
-        version: 5.3.0
       three:
         specifier: ^0.186.1
         version: 0.186.1
@@ -94,9 +91,6 @@ packages:
 
   '@fontsource/montserrat@5.3.0':
     resolution: {integrity: sha512-iQPDtZOnmM5ih4JBGaMSXisRap0ixb9bAUw2hDtY7EjVfaqiiNlKtVuJl9XclxUwtwMMHNcWXfQR6zI9x05+Tg==}
-
-  '@fontsource/noto-sans-sc@5.3.0':
-    resolution: {integrity: sha512-HeqIlGm0+ohOKxZLuHj1qW6r6avHH0OWdKERAcSDI0RQ+MXrteuLKA+M+5eOA8rYy0MFvOR5AT0fQo2rUkye0Q==}
 
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
@@ -850,8 +844,6 @@ snapshots:
   '@fontsource/jetbrains-mono@5.3.0': {}
 
   '@fontsource/montserrat@5.3.0': {}
-
-  '@fontsource/noto-sans-sc@5.3.0': {}
 
   '@humanfs/core@0.19.2':
     dependencies:

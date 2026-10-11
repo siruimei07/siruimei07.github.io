@@ -105,6 +105,9 @@ function econ(): Viz {
 function quant(): Viz {
   const r = rng(11);
   const n = 46;
+  // the paths stop short of the plot's right edge, so the core's outer ring stays whole
+  const end = 470;
+  const step = (end - 40) / n;
   const paths: string[] = [];
   let best = "";
   let bestEnd = Infinity;
@@ -115,7 +118,7 @@ function quant(): Viz {
     for (let i = 1; i <= n; i++) {
       y += gauss(r) * 9 - 1.4;
       y = Math.max(40, Math.min(320, y));
-      d += `L${f(40 + i * 10)} ${f(y)}`;
+      d += `L${f(40 + i * step)} ${f(y)}`;
     }
     paths.push(d);
     if (Math.abs(y - 120) < bestEnd) {
@@ -126,14 +129,14 @@ function quant(): Viz {
   }
   const label = "蒙特卡洛模拟的价格路径，其中一条被高亮";
   return {
-    core: [500, bestY],
+    core: [end, bestY],
     label,
     svg: frame(
-      `<rect class="viz__band" x="40" y="150" width="460" height="130"/>
+      `<rect class="viz__band" x="40" y="150" width="${end - 40}" height="130"/>
   <g class="viz__paths">${paths.map((d, i) => `<path style="--k:${i}" pathLength="1" d="${d}"/>`).join("")}</g>
   <path class="viz__line viz__line--hi" pathLength="1" d="${best}"/>
-  <g class="viz__cross"><circle cx="500" cy="${bestY}" r="18"/><circle cx="500" cy="${bestY}" r="32"/></g>
-  <circle class="viz__core" cx="500" cy="${bestY}" r="6"/>
+  <g class="viz__cross"><circle cx="${end}" cy="${bestY}" r="18"/><circle cx="${end}" cy="${bestY}" r="32"/></g>
+  <circle class="viz__core" cx="${end}" cy="${bestY}" r="6"/>
   <text class="viz__note" x="50" y="208">S₀</text><text class="viz__note viz__note--dim" x="46" y="352">N = 22 PATHS · T = 46</text>`,
       label,
     ),

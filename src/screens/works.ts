@@ -6,6 +6,8 @@ import { scramble, typeText } from "../app/fx.ts";
 import type { ScreenContext, ScreenModule } from "./types.ts";
 
 const IN_MS = 2000;
+/** The phone / tablet flow, same query as the CSS phone blocks: there the screen scrolls. */
+const PHONE = "(max-width: 899px), (max-aspect-ratio: 1/1), (max-height: 539px), (pointer: coarse) and (max-width: 1400px)";
 
 export function createWorks(): ScreenModule {
   let root: HTMLElement;
@@ -77,11 +79,17 @@ export function createWorks(): ScreenModule {
     },
     leave: stop,
     key(e) {
+      const a = document.activeElement;
+      const onRow = rows.includes(a as HTMLButtonElement);
       if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        // on a row; or in the desktop frame right after entering, when focus is on the screen
+        // itself (the promised ↑↓ SELECT FILE). Anywhere else the arrows keep scrolling.
+        const fresh = (!a || a === root || a === document.body) && !matchMedia(PHONE).matches;
+        if (!onRow && !fresh) return false;
         select(current + (e.key === "ArrowDown" ? 1 : -1), true);
         return true;
       }
-      if ((e.key === "Home" || e.key === "End") && rows.includes(document.activeElement as HTMLButtonElement)) {
+      if ((e.key === "Home" || e.key === "End") && onRow) {
         select(e.key === "Home" ? 0 : rows.length - 1, true);
         return true;
       }

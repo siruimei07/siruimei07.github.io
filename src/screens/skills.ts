@@ -8,6 +8,8 @@ import type { ScreenContext, ScreenModule } from "./types.ts";
 
 const IN_MS = 2000;
 const GLITCH_MS = 500;
+/** The phone / tablet flow, same query as the CSS phone blocks: there the screen scrolls. */
+const PHONE = "(max-width: 899px), (max-aspect-ratio: 1/1), (max-height: 539px), (pointer: coarse) and (max-width: 1400px)";
 
 export function createSkills(): ScreenModule {
   let root: HTMLElement;
@@ -88,8 +90,13 @@ export function createSkills(): ScreenModule {
       for (const p of panels) p.classList.remove("is-in");
     },
     key(e) {
-      const onTab = tabs.includes(document.activeElement as HTMLButtonElement);
+      const a = document.activeElement;
+      const onTab = tabs.includes(a as HTMLButtonElement);
       if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        // on a tab; or in the desktop frame right after entering, when focus is on the screen
+        // itself. Anywhere else the arrows keep scrolling.
+        const fresh = (!a || a === root || a === document.body) && !matchMedia(PHONE).matches;
+        if (!onTab && !fresh) return false;
         select(current + (e.key === "ArrowDown" ? 1 : -1), true);
         return true;
       }

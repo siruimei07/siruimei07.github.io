@@ -1,7 +1,8 @@
 /* ACTIVITY LOG — five FILE boxes (TOTAL tagged lime like the PV's VISUALIZED
    bar), the contribution calendar sized off its own width (≈16u cells at
-   16:9; a fixed 14px pitch that scrolls sideways on phones) and the public
-   events as a command log in the rail's dotted style. */
+   16:9; a 14px pitch that scrolls sideways on phones, fitted to the width
+   again on tablets) and the public events as a command log in the rail's
+   dotted style. */
 
 .logs {
   display: flex;
@@ -17,49 +18,56 @@
 .logs__stats {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: calc(14 * var(--u));
+  gap: calc(12 * var(--u));
 }
 
+/* Every box has the same rows (index, tag, Chinese; then figure, unit), and
+   the figure block, the same height in all five, is pinned to the bottom:
+   the five figures share a line whatever the labels above them do. */
 .logs__stat {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   gap: calc(14 * var(--u));
   min-width: 0;
-  padding: calc(16 * var(--u)) calc(18 * var(--u)) calc(14 * var(--u));
+  padding: calc(16 * var(--u)) calc(12 * var(--u)) calc(14 * var(--u));
   /* .cornered paints the four squares as backgrounds; the plate goes under them */
   background-color: color-mix(in srgb, var(--bg-hi) 55%, transparent);
   box-shadow: inset 0 0 0 1px var(--hair);
 }
 
 .logs__stat dt {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px calc(8 * var(--u));
+  display: grid;
+  justify-items: start;
+  gap: calc(6 * var(--u));
 }
 
 .logs__no {
   font-family: var(--f-mono);
   font-size: max(10px, calc(11 * var(--u)));
+  line-height: 1.2;
   color: var(--sub);
 }
 
+/* LONGEST STREAK fits one line down to 1440 wide; narrower boxes break it in two */
 .logs__stat .tag {
+  max-width: 100%;
   font-size: max(10px, calc(13 * var(--u)));
+  letter-spacing: 0.02em;
+  white-space: normal;
 }
 
 .logs__stat dt small {
   font-size: max(11px, calc(13 * var(--u)));
+  line-height: 1.4;
   letter-spacing: 0.06em;
   color: var(--sub);
 }
 
 .logs__stat dd {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 2px calc(10 * var(--u));
+  display: grid;
+  justify-items: start;
+  gap: calc(6 * var(--u));
 }
 
 .logs__stat dd b {
@@ -71,21 +79,26 @@
 }
 
 .logs__stat dd small {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 0.5em;
+  min-height: 1.4em;
   font-family: var(--f-mono);
   font-size: max(10px, calc(12 * var(--u)));
+  line-height: 1.4;
   letter-spacing: 0.08em;
   color: var(--sub);
 }
 
-/* TOTAL: a lime meter under the figure, like VISUALIZED */
-.logs__stat.is-hi dd::after {
+/* TOTAL: a lime meter after the unit, like VISUALIZED */
+.logs__stat.is-hi dd small {
+  justify-self: stretch;
+}
+
+.logs__stat.is-hi dd small::after {
   content: "";
-  flex-basis: 100%;
+  flex: 1;
   height: max(4px, calc(7 * var(--u)));
-  margin-top: calc(6 * var(--u));
   background: var(--lime);
 }
 
@@ -360,9 +373,9 @@ html.js .screen.is-entering .heat__c {
   color: var(--sub);
 }
 
+/* no row gap: the links' 24px lines already space the rows */
 .events__list {
   display: grid;
-  gap: calc(3 * var(--u));
   margin: calc(12 * var(--u)) 0 0 calc(6 * var(--u));
   padding-left: calc(16 * var(--u));
   border-left: 1px dotted var(--sub);
@@ -394,7 +407,10 @@ html.js .screen.is-entering .heat__c {
   text-transform: uppercase;
 }
 
+/* a 24px line keeps each link a full target (WCAG 2.5.8) and the ellipsis working */
 .events__list a {
+  min-width: 0;
+  line-height: max(24px, 1.55em);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -432,11 +448,13 @@ html.js .screen.is-entering .heat__c {
   }
 }
 
-/* ───────── shorter desktop windows ───────── */
+/* ───────── smaller 16:9 frames ───────── */
 
-@media (min-width: 900px) and (min-aspect-ratio: 1/1) and (max-height: 820px) {
+/* 1366×768, 1280×720, and windows up to 1460 wide, whose plate keeps the 16:9
+   frame (1440×900): the pixel floors take more of it, so the rhythm tightens */
+@media (min-width: 900px) and (min-aspect-ratio: 1/1) and (min-height: 540px) and (pointer: fine) and (max-height: 820px), (min-width: 900px) and (max-width: 1460px) and (min-aspect-ratio: 1/1) and (min-height: 540px) and (pointer: fine) {
   .logs {
-    gap: calc(18 * var(--u));
+    gap: calc(16 * var(--u));
   }
 
   .logs__stat {
@@ -444,14 +462,38 @@ html.js .screen.is-entering .heat__c {
     padding-block: calc(12 * var(--u)) calc(10 * var(--u));
   }
 
+  .logs__stat dt {
+    gap: calc(3 * var(--u));
+  }
+
+  .logs__stat dd b {
+    font-size: max(26px, calc(54 * var(--u)));
+  }
+
+  .heat {
+    padding-block: calc(12 * var(--u)) calc(10 * var(--u));
+  }
+
+  .heat__head {
+    margin-bottom: calc(8 * var(--u));
+  }
+
+  .heat__foot {
+    margin-top: calc(8 * var(--u));
+  }
+
   .heat__keys {
     display: none;
+  }
+
+  .events__list {
+    margin-top: calc(8 * var(--u));
   }
 }
 
 /* ───────── phones & narrow windows ───────── */
 
-@media (max-width: 899px), (max-aspect-ratio: 1/1) {
+@media (max-width: 899px), (max-aspect-ratio: 1/1), (max-height: 539px), (pointer: coarse) and (max-width: 1400px) {
   .logs {
     gap: 22px;
     padding-top: 0;
@@ -490,6 +532,7 @@ html.js .screen.is-entering .heat__c {
 
   .heat__sel b {
     min-width: 0;
+    font-size: 13px;
     white-space: normal;
   }
 
@@ -502,17 +545,34 @@ html.js .screen.is-entering .heat__c {
     padding: 2px 0 10px;
   }
 
+  /* phones: a 14px pitch that scrolls sideways; from a 12px pitch up (tablets,
+     668px = 53 × 12 + the label column) the year fits the width, no scroller */
   .heat__body {
     --pitch: 14px;
   }
 
-  /* the weekday labels stay put while the weeks scroll under them */
-  .heat__days {
+  @container (min-width: 668px) {
+    .heat__body {
+      --pitch: min(18px, calc((100cqi - var(--lbl)) / 53));
+    }
+  }
+
+  /* the weekday labels stay put while the weeks scroll under them; a blank
+     cell above them covers the month names going the same way (with scripts
+     on, screens/activity.ts hides a name whole before it would show cut) */
+  .heat__days,
+  .heat__body::before {
     position: sticky;
     left: 0;
     z-index: 2;
     background: var(--bg-hi);
     box-shadow: 4px 0 6px -4px var(--bg-hi);
+  }
+
+  .heat__body::before {
+    content: "";
+    grid-column: 1;
+    grid-row: 1;
   }
 
   .heat__grid:focus-visible {
@@ -536,6 +596,7 @@ html.js .screen.is-entering .heat__c {
     gap: 2px;
     padding-left: 12px;
     margin-left: 4px;
+    font-size: 12px;
   }
 
   .events__list li {
@@ -544,12 +605,9 @@ html.js .screen.is-entering .heat__c {
 
   .events__list time {
     grid-column: 1 / -1;
-    font-size: 11px;
   }
 
   .events__list a {
-    display: inline-flex;
-    align-items: center;
-    min-height: 40px;
+    line-height: 40px;
   }
 }

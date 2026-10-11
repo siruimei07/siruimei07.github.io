@@ -2,9 +2,7 @@
 // in the document before (and without) JavaScript. With JS the same markup
 // becomes the terminal: opening → overview → section files.
 
-import { credits } from "./content.ts";
 import { summarize, type GitHubSnapshot } from "./github.ts";
-import { esc } from "./markup.ts";
 import { renderBoot } from "./boot/markup.ts";
 import { renderChrome } from "./views/chrome.ts";
 import { renderHome } from "./views/home.ts";
@@ -30,6 +28,5 @@ export function renderApp(data: GitHubSnapshot | null): string {
     renderSystem(),
     `</main>`,
     `<p class="toast" data-toast role="status" aria-live="polite"></p>`,
-    `<p class="credits-foot">${esc(credits)}</p>`,
   ].join("\n");
 }

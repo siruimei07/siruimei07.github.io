@@ -28,7 +28,7 @@ html.js .home__flat {
 
 .home__flat g {
   fill: color-mix(in srgb, var(--bg-hi) 70%, #e9dcc8);
-  stroke: color-mix(in srgb, var(--ink) 14%, transparent);
+  stroke: color-mix(in srgb, var(--ink) 28%, transparent);
   stroke-width: 1;
 }
 
@@ -41,8 +41,10 @@ html.gl-on .home__flat {
   opacity: 0;
 }
 
+/* above the frame, so the dots land on the flat figure's plates, not under them */
 .home__leaders {
   position: absolute;
+  z-index: 1;
   inset: 0;
   width: 100%;
   height: 100%;
@@ -71,13 +73,18 @@ html.js .home__co {
   position: absolute;
 }
 
+/* below the identity block, whose px floors stop it shrinking with --u */
 html.js .home__co--left {
   left: calc(93 * var(--u));
-  top: calc(455 * var(--u));
+  top: max(calc(455 * var(--u)), calc(250 * var(--u) + 170px));
+}
+
+html.js .home__co--left .callout {
+  max-width: calc(425 * var(--u));
 }
 
 html.js .home__co--cross {
-  left: calc(530 * var(--u));
+  left: calc(556 * var(--u));
   top: calc(535 * var(--u));
 }
 
@@ -95,6 +102,21 @@ html.js .home__co--right-bottom {
   min-width: calc(250 * var(--u));
 }
 
+/* each rule draws with its own callout (motion.css's `inherit` reads the
+   link's delay, not the list item's) */
+html.js .home.is-entering .home__co--left .callout__rule {
+  animation-delay: 260ms;
+}
+html.js .home.is-entering .home__co--cross .callout__rule {
+  animation-delay: 340ms;
+}
+html.js .home.is-entering .home__co--right-top .callout__rule {
+  animation-delay: 420ms;
+}
+html.js .home.is-entering .home__co--right-bottom .callout__rule {
+  animation-delay: 500ms;
+}
+
 /* a halo of paper keeps the copy legible where it crosses the plates */
 .home__co .callout__title,
 .home__co .callout__desc,
@@ -103,6 +125,15 @@ html.js .home__co--right-bottom {
     0 0 2px var(--bg),
     0 0 7px var(--bg),
     0 0 14px var(--bg);
+}
+
+/* the dark plates are lighter than the copy: a halo is not enough there */
+:root[data-theme="dark"] .home__co :is(.callout__desc, .callout__zh) {
+  margin-inline: -0.3em;
+  padding: 0 0.3em;
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 
 /* ───────── centre pill (RHINE LAB.LLC. ◎) ───────── */
@@ -140,18 +171,19 @@ html.js .home__centre {
 
 .home__pill small {
   font-weight: 500;
-  font-size: max(9px, calc(11 * var(--u)));
+  font-size: max(10px, calc(11 * var(--u)));
   letter-spacing: 0.12em;
   color: var(--sub);
 }
 
 .home__ring {
+  --ring: var(--glass-edge);
   position: relative;
   flex: none;
   width: max(14px, calc(24 * var(--u)));
   height: max(14px, calc(24 * var(--u)));
   border-radius: 50%;
-  box-shadow: inset 0 0 0 max(1.5px, calc(2.4 * var(--u))) var(--glass-edge), 0 0 0 1px color-mix(in srgb, var(--ink) 12%, transparent);
+  box-shadow: inset 0 0 0 max(1.5px, calc(2.4 * var(--u))) var(--ring), 0 0 0 1px color-mix(in srgb, var(--ink) 12%, transparent);
 }
 
 .home__ring::after {
@@ -159,8 +191,13 @@ html.js .home__centre {
   position: absolute;
   inset: 30%;
   border-radius: 50%;
-  background: var(--glass-edge);
+  background: var(--ring);
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--ink) 12%, transparent);
+}
+
+/* dark --glass-edge is a 16% veil, which vanishes over the lit plates */
+:root[data-theme="dark"] .home__ring {
+  --ring: color-mix(in srgb, var(--ink) 60%, transparent);
 }
 
 .home__centre:hover .home__pill b,
@@ -180,12 +217,12 @@ html.js .home__centre {
   margin-top: 28px;
 }
 
+/* wide enough to keep GITHUB and MAIL on one row at every desktop size */
 html.js .home__id {
   position: absolute;
   left: calc(60 * var(--u));
   top: calc(250 * var(--u));
-  width: calc(470 * var(--u));
-  min-width: 300px;
+  width: max(400px, calc(560 * var(--u)));
   max-width: none;
   margin: 0;
 }
@@ -270,7 +307,7 @@ html.js .home__id {
   gap: 8px 10px;
 }
 
-@media (pointer: fine) and (min-width: 900px) and (min-aspect-ratio: 1/1) {
+@media (pointer: fine) and (min-width: 900px) and (min-aspect-ratio: 1/1) and (min-height: 540px) {
   .home__links .btn {
     min-height: 34px;
   }
@@ -313,9 +350,9 @@ html.js .home__hint {
   }
 }
 
-/* ───────── phones ───────── */
+/* ───────── phones, tablets, short windows ───────── */
 
-@media (max-width: 899px), (max-aspect-ratio: 1/1) {
+@media (max-width: 899px), (max-aspect-ratio: 1/1), (max-height: 539px), (pointer: coarse) and (max-width: 1400px) {
   html.js .home {
     display: flex;
     flex-direction: column;
@@ -369,13 +406,21 @@ html.js .home__hint {
     inset: auto;
   }
 
+  html.js .home__co--left .callout {
+    max-width: none;
+  }
+
+  /* the pill is a link to PROFILE: a full-height touch target */
   html.js .home__centre {
     position: relative;
     inset: auto;
     order: 1;
+    min-height: 44px;
   }
 
   .home__pill {
+    align-self: stretch;
+    align-items: center;
     min-width: 0;
     flex: 1;
   }
@@ -388,4 +433,8 @@ html.js .home__hint {
     min-width: 0;
   }
 
+  /* inside the gutter, or the screen scrolls sideways */
+  .home__role::after {
+    right: 0;
+  }
 }

@@ -95,11 +95,14 @@ html.js .home.is-entering .home__leaders {
   animation: m-fade 600ms var(--ease-out) 700ms both;
 }
 
+/* the clip reaches past the tile's box (SECTION tab above, white ring, drop
+   shadow), so nothing pops in when the animation lets go; on phones 40u is
+   20px, still above the tab at -14px */
 @keyframes m-tile-in {
   from {
     opacity: 0;
     translate: calc(-60 * var(--u)) 0;
-    clip-path: inset(0 100% 0 0);
+    clip-path: inset(calc(-40 * var(--u)) calc(100% + 70 * var(--u)) calc(-90 * var(--u)) calc(-70 * var(--u)));
   }
   60% {
     opacity: 1;
@@ -107,7 +110,7 @@ html.js .home.is-entering .home__leaders {
   to {
     opacity: 1;
     translate: 0 0;
-    clip-path: inset(0 0 0 0);
+    clip-path: inset(calc(-40 * var(--u)) calc(-70 * var(--u)) calc(-90 * var(--u)) calc(-70 * var(--u)));
   }
 }
 

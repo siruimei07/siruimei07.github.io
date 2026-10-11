@@ -1,12 +1,13 @@
 // Overview behaviour: leader lines from each callout to its point on the ∞.
-// Points come live from the 3D projection; without 3D they are the PV
-// positions inside the centred 1920×1080 frame.
+// Points come live from the 3D projection; without 3D they are the same
+// points on the flat figure inside the centred 1920×1080 frame.
 
-import { FALLBACK_ANCHORS } from "../views/home.ts";
+import { anchorPoints } from "../views/home.ts";
 import type { Anchor } from "../three/plates.ts";
 import type { ScreenContext, ScreenModule } from "./types.ts";
 
 const SVG = "http://www.w3.org/2000/svg";
+const FLAT = anchorPoints();
 
 // Which end of the callout's underline the leader leaves from.
 const SIDE: Record<string, "start" | "end"> = { left: "end", cross: "end", "right-top": "start", "right-bottom": "start" };
@@ -25,7 +26,7 @@ export function createHome(): ScreenModule {
     const r = frame.getBoundingClientRect();
     const k = r.width / 1920;
     const out: Record<string, Anchor> = {};
-    for (const [id, [x, y]] of Object.entries(FALLBACK_ANCHORS)) out[id] = { x: r.left + x * k, y: r.top + y * k, visible: true };
+    for (const [id, { x, y }] of Object.entries(FLAT)) out[id] = { x: r.left + x * k, y: r.top + y * k, visible: true };
     return out;
   };
 
@@ -51,6 +52,9 @@ export function createHome(): ScreenModule {
       l.dot.setAttribute("cx", p.x.toFixed(1));
       l.dot.setAttribute("cy", p.y.toFixed(1));
     }
+    // the rules draw and the callouts rise during the entry: follow them every
+    // frame, since without 3D nothing else asks for a redraw
+    if (root.classList.contains("is-entering")) schedule();
   };
 
   const schedule = () => {
@@ -92,10 +96,14 @@ export function createHome(): ScreenModule {
         for (const l of lines.values()) l.dot.setAttribute("r", String(dotR()));
         schedule();
       });
+      // each entry animation's end (bubbling up from the rules and callouts)
+      // settles the lines on their final positions
+      root.addEventListener("animationend", schedule);
     },
     enter() {
       active = true;
       schedule();
+      window.setTimeout(schedule, 1100);
     },
     leave() {
       active = false;

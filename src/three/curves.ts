@@ -3,7 +3,7 @@
 
 export type Vec2 = { x: number; y: number };
 
-/** The overview's figure-eight: the same lemniscate as views/home.ts flatInfinity(). */
+/** The overview's figure-eight; views/home.ts draws it flat and places the leader anchors on it. */
 export const INF = { cx: 960, cy: 550, a: 430, flat: 0.92 } as const;
 
 export function lemniscate(t: number, out: Vec2): Vec2 {
@@ -39,7 +39,6 @@ export function chainPath(t: number, out: Vec2): Vec2 {
 export class ArcCurve {
   readonly length: number;
   private table: Float32Array;
-  private tmp: Vec2 = { x: 0, y: 0 };
 
   constructor(
     readonly fn: (t: number, out: Vec2) => Vec2,
@@ -82,22 +81,5 @@ export class ArcCurve {
 
   at(t: number, out: Vec2): Vec2 {
     return this.fn(t, out);
-  }
-
-  /** The parameter of the curve point nearest (x, y). */
-  nearest(x: number, y: number, samples = 4096): number {
-    let best = this.t0;
-    let bestD = Infinity;
-    const p = this.tmp;
-    for (let i = 0; i <= samples; i++) {
-      const t = this.t0 + ((this.t1 - this.t0) * i) / samples;
-      this.fn(t, p);
-      const d = (p.x - x) ** 2 + (p.y - y) ** 2;
-      if (d < bestD) {
-        bestD = d;
-        best = t;
-      }
-    }
-    return best;
   }
 }

@@ -17,7 +17,7 @@ import {
   type ShaderMaterial,
 } from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
-import { FALLBACK_ANCHORS } from "../views/home.ts";
+import { ANCHOR_T } from "../views/home.ts";
 import { ArcCurve, INF, chainPath, lemniscate, type Vec2 } from "./curves.ts";
 import { applyPalette, createPlateMaterial } from "./material.ts";
 import type { Anchor, Formation, Plates, PlatesOptions } from "./plates.ts";
@@ -57,7 +57,7 @@ const MORPH = 0.9; // s per plate
 const STAGGER = 0.5; // s spread from first to last plate
 const PULSE = 1.1;
 
-const NARROW = "(max-width: 899px), (max-aspect-ratio: 1/1)";
+const NARROW = "(max-width: 899px), (max-aspect-ratio: 1/1), (max-height: 539px), (pointer: coarse) and (max-width: 1400px)";
 const STRIDE = 11; // px py pz · qx qy qz qw · scale fade tube tone
 
 type FrameMap = { ox: number; oy: number; k: number };
@@ -195,7 +195,7 @@ export class PlatesScene implements Plates {
       this.jitter.push(new Quaternion().setFromAxisAngle(new Vector3(rnd() - 0.5, rnd() - 0.5, rnd() - 0.5).normalize(), (rnd() - 0.5) * 6 * DEG));
       this.idx.push(i);
     }
-    this.anchorT = Object.entries(FALLBACK_ANCHORS).map(([id, [x, y]]) => [id, this.inf.nearest(x, y)]);
+    this.anchorT = Object.entries(ANCHOR_T);
     this.assignChain();
 
     this.readTheme();
@@ -219,7 +219,7 @@ export class PlatesScene implements Plates {
     this.invalidate();
   }
 
-  /** Phones, narrow and portrait windows: the ∞ follows the flat figure's box. */
+  /** Phones, touch tablets, narrow, short and portrait windows: the ∞ follows the flat figure's box. */
   private get narrow() {
     return this.narrowQ.matches;
   }

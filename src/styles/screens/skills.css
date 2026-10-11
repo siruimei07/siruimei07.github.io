@@ -15,11 +15,6 @@
 
 /* ───────── the section tile: one logotype per research section ───────── */
 
-/* the ∞ also cuts the letter after it (ST∞AT), so it paints above its neighbours */
-.sect--skills .lt__at {
-  z-index: 1;
-}
-
 /* the words differ in width; keep each at about the PV's 4/5 of the tile */
 .sect--skills .sect__tile .lt {
   --lt-size: calc(146 * var(--u) * var(--lt-k, 1));
@@ -35,6 +30,11 @@
 
 .sect--skills [data-tile-alt="quant"] {
   --lt-k: 0.96;
+}
+
+/* the Q's tail drops below the line; the sub line steps down to keep clear of it */
+.sect--skills [data-tile-alt="quant"] .lt__sub {
+  margin-top: calc(var(--lt-size) * 0.25);
 }
 
 /* tab switch: a short grain burst and a sliced jitter as the logotype swaps */
@@ -128,8 +128,10 @@ html.js .sect--skills [data-tile-box].is-glitch .lt {
   letter-spacing: -0.01em;
 }
 
+/* <small> alone would put the zh name under the floor in the small frames */
 .lab__tab small {
   font-weight: 400;
+  font-size: max(11px, 0.83em);
   letter-spacing: 0.1em;
   color: var(--sub);
 }
@@ -137,6 +139,11 @@ html.js .sect--skills [data-tile-box].is-glitch .lt {
 .lab__tab:hover,
 .lab__tab:focus-visible {
   color: var(--hover);
+}
+
+/* the tabs sit in the scrolling body's top-left corner, which would clip a ring drawn outside */
+.lab__tab:focus-visible {
+  outline-offset: -4px;
 }
 
 .lab__tab[aria-selected="true"] {
@@ -280,6 +287,8 @@ html.js .lab__panel.is-on {
   line-height: 1.85;
   letter-spacing: 0.02em;
   color: var(--ink-2);
+  /* no single character left alone on the last line */
+  text-wrap: pretty;
 }
 
 .lab__th {
@@ -304,11 +313,15 @@ html.js .lab__panel.is-on {
   margin-top: calc(10 * var(--u));
 }
 
+/* the Chinese name sits under the English one, whole: the meaning is never cut */
 .lab__topics li {
   display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "no en rule"
+    "no zh rule";
   align-items: center;
-  gap: calc(12 * var(--u));
+  column-gap: calc(12 * var(--u));
   min-height: max(30px, calc(40 * var(--u)));
   padding-right: calc(12 * var(--u));
   background: linear-gradient(90deg, var(--lab-plate), transparent 130%);
@@ -316,6 +329,7 @@ html.js .lab__panel.is-on {
 }
 
 .lab__tno {
+  grid-area: no;
   align-self: stretch;
   display: grid;
   place-items: center;
@@ -329,22 +343,27 @@ html.js .lab__panel.is-on {
 }
 
 .lab__topics b {
+  grid-area: en;
+  align-self: end;
+  padding-top: calc(4 * var(--u));
   font-weight: 700;
   font-size: max(11.5px, calc(14.5 * var(--u)));
+  line-height: 1.2;
   letter-spacing: 0.06em;
-  white-space: nowrap;
 }
 
 .lab__topics small {
-  overflow: hidden;
+  grid-area: zh;
+  align-self: start;
+  padding-bottom: calc(4 * var(--u));
   font-size: max(12px, calc(14 * var(--u)));
+  line-height: 1.2;
   color: var(--sub);
-  white-space: nowrap;
-  text-overflow: ellipsis;
 }
 
 /* a ruler stub, the same on every row: decoration, not a score */
 .lab__topics li > i {
+  grid-area: rule;
   justify-self: end;
   width: calc(30 * var(--u));
   height: max(5px, calc(8 * var(--u)));
@@ -378,9 +397,16 @@ html.js .lab__panel.is-on {
   min-width: 0;
 }
 
+/* but no bigger than at 1920×1080, so a wide plate cannot grow it past the fold */
+.lab__plot,
+.lab__cap {
+  width: 100%;
+  max-width: calc(564 * var(--u));
+  margin-inline: auto;
+}
+
 .lab__plot {
   position: relative;
-  width: 100%;
 }
 
 .lab__plot .viz {
@@ -409,9 +435,10 @@ html.js .lab__panel.is-on {
   background: repeating-linear-gradient(-45deg, color-mix(in srgb, var(--ink) 30%, transparent) 0 max(1px, calc(2 * var(--u))), transparent 0 calc(12 * var(--u)));
 }
 
+/* far enough in that its blur clears the panel's clip (the plot runs 12u past it) */
 .lab__chip {
   position: absolute;
-  right: -1%;
+  right: 4%;
   bottom: 6%;
   width: 12%;
   aspect-ratio: 1;
@@ -702,12 +729,10 @@ html.js .lab__panel.is-on {
   }
 }
 
+/* no `to`: each element fades up to its own opacity (the hatch and chip stay faint) */
 @keyframes lab-fade {
   from {
     opacity: 0;
-  }
-  to {
-    opacity: 1;
   }
 }
 
@@ -731,7 +756,7 @@ html.js .lab__panel.is-on {
 
 /* ───────── phones & narrow windows ───────── */
 
-@media (max-width: 899px), (max-aspect-ratio: 1/1) {
+@media (max-width: 899px), (max-aspect-ratio: 1/1), (max-height: 539px), (pointer: coarse) and (max-width: 1400px) {
   .sect--skills .sect__tile .lt {
     --lt-size: calc(82px * var(--lt-k, 1));
   }
@@ -758,6 +783,15 @@ html.js .lab__panel.is-on {
 
   .lab__tab b {
     font-size: 15px;
+  }
+
+  .lab__tab small {
+    font-size: 11px;
+  }
+
+  .lab__th .tag--xs,
+  .lab__cap .tag--xs {
+    font-size: 10px;
   }
 
   .lab__panel {
@@ -797,6 +831,12 @@ html.js .lab__panel.is-on {
     padding-left: 0;
   }
 
+  /* u is a fixed half pixel here; cap the specimen in real pixels instead */
+  .lab__plot,
+  .lab__cap {
+    max-width: 600px;
+  }
+
   /* the vertical hair stays with the drawing instead of crossing the notes */
   .lab__xh--v {
     top: -24px;
@@ -825,7 +865,7 @@ html.js .lab__panel.is-on {
 
   .lab__topics li {
     min-height: 40px;
-    gap: 12px;
+    column-gap: 12px;
   }
 
   .lab__topics li > i {

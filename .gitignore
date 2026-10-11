@@ -19,3 +19,4 @@ npm-debug.log*
 
 # local tooling
 /.claude/
+__pycache__/

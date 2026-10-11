@@ -2,11 +2,12 @@
      portrait | rank / name bar / section / code
      intro    | INFO + rings, PROFILE card
      GitHub meters across the foot
-   Sized to fit the plate without scrolling from 1440×900 up. */
+   Sized to fit the plate without scrolling from 1280×720 up (a compact
+   block takes over in the small frames). */
 
-/* the ∞ cuts the letter after it too (PR∞SN), so it paints above its neighbours */
-.sect--profile .lt__at {
-  z-index: 1;
+/* two lines: a little smaller than the shared size, so the N clears the tile dot */
+.sect--profile .sect__tile .lt--two {
+  --lt-size: calc(108 * var(--u));
 }
 
 .dossier {
@@ -166,6 +167,8 @@
   line-height: 1.75;
   letter-spacing: 0.02em;
   color: var(--ink-2);
+  /* no single character left alone on the last line */
+  text-wrap: pretty;
 }
 
 /* the line under the name, like the PV's "PHD IN PARTICLE PHYSICS" */
@@ -255,6 +258,8 @@
 .dossier__card .card__fields dd {
   font-size: max(13px, calc(16 * var(--u)));
   line-height: 1.25;
+  /* a narrow card would leave 本科在读's 读 alone on a line */
+  text-wrap: pretty;
 }
 
 /* ───────── GitHub meters, one strip ───────── */
@@ -289,13 +294,82 @@
   white-space: nowrap;
 }
 
+/* <small> alone would shrink the zh label under the 10px floor at u < 1 */
 .dossier__bars li > span small {
   margin-left: 0;
+  font-size: max(10px, 0.83em);
+}
+
+/* ───────── small desktop frames (u < 0.8: 1440×900, 1366×768, 1280×720): the px floors outgrow the plate ───────── */
+
+@media (min-width: 900px) and (min-aspect-ratio: 1/1) and (min-height: 540px) and (pointer: fine) and (max-width: 1535px),
+  (min-width: 900px) and (min-aspect-ratio: 1/1) and (min-height: 540px) and (pointer: fine) and (max-height: 863px) {
+  .dossier {
+    row-gap: calc(10 * var(--u));
+  }
+
+  .dossier__portrait {
+    min-height: calc(240 * var(--u));
+  }
+
+  .dossier__id {
+    padding-top: calc(4 * var(--u));
+  }
+
+  .dossier__name,
+  .dossier__sec,
+  .dossier__coderow {
+    margin-top: calc(8 * var(--u));
+  }
+
+  .dossier__sec {
+    padding-block: calc(6 * var(--u));
+  }
+
+  .dossier__mini .lt {
+    --lt-size: max(22px, calc(34 * var(--u)));
+  }
+
+  .dossier__info {
+    gap: calc(8 * var(--u));
+  }
+
+  .dossier__intro {
+    line-height: 1.55;
+  }
+
+  /* a mouse target (pointer: fine), so a little under the 40px touch size is fine */
+  .dossier__links {
+    gap: 6px;
+    margin-top: 0;
+  }
+
+  .dossier__links .btn {
+    min-height: 36px;
+  }
+
+  .dossier__deco {
+    padding-top: calc(24 * var(--u));
+  }
+
+  .dossier__params {
+    padding-top: calc(8 * var(--u));
+  }
+
+  /* COMMITS has the longest label (近一年提交) and the biggest number */
+  .dossier__bars {
+    grid-template-columns: minmax(0, 1.3fr) repeat(4, minmax(0, 1fr));
+    column-gap: calc(16 * var(--u));
+  }
 }
 
 /* ───────── phones & narrow windows ───────── */
 
-@media (max-width: 899px), (max-aspect-ratio: 1/1) {
+@media (max-width: 899px), (max-aspect-ratio: 1/1), (max-height: 539px), (pointer: coarse) and (max-width: 1400px) {
+  .sect--profile .sect__tile .lt--two {
+    --lt-size: 58px;
+  }
+
   .dossier {
     display: flex;
     flex-direction: column;
@@ -364,7 +438,7 @@
 
   .dossier__en {
     max-width: none;
-    font-size: 11px;
+    font-size: 13px;
   }
 
   .dossier__params {
@@ -382,6 +456,10 @@
 
   .dossier__bars li:first-child {
     grid-column: 1 / -1;
+  }
+
+  .dossier__bars li > span small {
+    font-size: 11px;
   }
 }
 

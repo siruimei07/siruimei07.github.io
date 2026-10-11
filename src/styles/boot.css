@@ -9,8 +9,9 @@
 }
 
 html.js .boot {
-  /* the white ring, the white flash, the DNA strokes and the grey the paper fades up from */
+  /* the white ring, the black cut, the white flash, the DNA strokes and the grey the paper fades up from */
   --boot-pale: #fff;
+  --boot-cut: var(--ink);
   --boot-flash: #fbfaf8;
   --boot-dna: rgba(255, 255, 255, 0.8);
   --boot-veil: color-mix(in srgb, var(--sub) 42%, var(--bg));
@@ -30,6 +31,8 @@ html.js .boot {
 
 :root[data-theme="dark"] .boot {
   --boot-pale: color-mix(in srgb, var(--ink) 42%, transparent);
+  /* the cut stays black: the pale ink would make it a full-screen white flash */
+  --boot-cut: #000;
   --boot-flash: color-mix(in srgb, var(--ink) 16%, var(--bg));
   --boot-dna: color-mix(in srgb, var(--ink) 9%, transparent);
   --boot-veil: #000;
@@ -377,7 +380,7 @@ html.js .boot {
 .boot__flash {
   position: absolute;
   inset: 0;
-  background: var(--ink);
+  background: var(--boot-cut);
 }
 
 .boot__flash--pale {
@@ -456,13 +459,14 @@ html.js .boot {
   color: var(--hover);
 }
 
-/* ───────── phones & narrow windows: everything stacks on the centre line ───────── */
+/* ───────── phones, tablets & narrow windows: everything stacks on the centre line ───────── */
 
-@media (max-width: 899px), (max-aspect-ratio: 1/1) {
+@media (max-width: 899px), (max-aspect-ratio: 1/1), (max-height: 539px), (pointer: coarse) and (max-width: 1400px) {
   html.js .boot {
     --logo-dx: 0px;
-    /* the rings fill 88% of their box: a box as wide as the screen keeps them inside the gutters */
-    --ring: min(calc(1000 * var(--u)), 100vw, calc((100dvh - 150px) * 1.12));
+    /* the rings fill 88% of their box: a box as wide as the screen keeps them inside the gutters,
+       and one this tall keeps them clear of the caption, which the bottom inset lifts */
+    --ring: min(calc(1000 * var(--u)), 100vw, calc((100dvh - 150px - 2 * env(safe-area-inset-bottom)) * 1.12));
   }
 
   /* one helix, on the right, as in the PV's portrait crops */
@@ -481,18 +485,29 @@ html.js .boot {
     translate: -50% -50%;
   }
 
+  /* clear of a landscape notch; the same left as the chrome's .brand (app.css), so the hand-off lines up */
+  html.js .boot__brand {
+    left: max(16px, env(safe-area-inset-left));
+  }
+
   .boot__sign {
-    right: 16px;
+    right: max(16px, env(safe-area-inset-right));
     bottom: calc(18px + env(safe-area-inset-bottom));
+  }
+
+  /* no signature in the chrome here to take over from this one, and the tab bar
+     fades in right beneath it at the exit: it goes the moment the exit begins */
+  .boot__sign > span {
+    opacity: calc(1 - var(--out, 0) * 10);
   }
 
   .boot__cap {
     bottom: calc(52px + env(safe-area-inset-bottom));
-    max-width: calc(100vw - 32px);
+    max-width: calc(100vw - 2 * max(16px, env(safe-area-inset-left), env(safe-area-inset-right)));
   }
 
   .boot__skip {
-    right: 16px;
+    right: max(16px, env(safe-area-inset-right));
     top: calc(12px + env(safe-area-inset-top));
     bottom: auto;
   }

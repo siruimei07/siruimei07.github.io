@@ -157,13 +157,43 @@ html:not(.js) #gl,
 html:not(.js) [data-boot],
 html:not(.js) .rule,
 html:not(.js) .home__leaders,
-html:not(.js) .caption,
-html:not(.js) .pager {
+html:not(.js) .caption {
   display: none !important;
 }
 
 html:not(.js) .chrome {
+  max-width: 1180px;
+  margin: 0 auto;
   padding: 40px 0 24px;
+}
+
+/* the pager is the one list of all six files: here it is the table of contents */
+html:not(.js) .pager {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 18px;
+  margin-top: 12px;
+}
+
+html:not(.js) .pager a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: auto;
+  height: auto;
+  min-height: 40px;
+}
+
+html:not(.js) .pager a > span {
+  position: static;
+  translate: none;
+  padding: 0;
+  font-size: 12px;
+  opacity: 1;
+}
+
+html:not(.js) .pager a:hover > span {
+  color: var(--hover);
 }
 
 html:not(.js) .screen {
@@ -176,6 +206,29 @@ html:not(.js) .screen {
 
 html:not(.js) .home {
   border-top: 0;
+}
+
+/* the glass's inner pane is sized for one 16:9 plate; over a long page of
+   flowing content it only cuts a hard-edged block through it */
+html:not(.js) .sect__glass::before {
+  display: none;
+}
+
+/* parts that only mean something once scripts drive them: the index header
+   of a list that is not shown, the empty day readout, the 000/800 counter */
+html:not(.js) .files__h,
+html:not(.js) .heat__sel,
+html:not(.js) .comms__term-h > span {
+  display: none;
+}
+
+/* the charts and cassettes would otherwise grow with the reading column */
+html:not(.js) .lab__plot .viz {
+  max-width: 640px;
+}
+
+html:not(.js) .cassette__art {
+  max-width: 560px;
 }
 
 @media (prefers-reduced-motion: reduce) {

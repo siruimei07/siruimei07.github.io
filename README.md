@@ -70,6 +70,17 @@ pnpm test
 
 所有文案在 `src/content.ts`：身份与一句话介绍、左上标志、六个区块（标签、科室字块、编号、字幕、左侧说明）、开场文字、总览标注、档案、研究、作品（精选列表；`public/data/github.json` 里的其余公开仓库会自动追加）、活动、联络、设置与声明。构建时由 `src/render.ts` 与 `src/views/*` 预渲染为静态 HTML（含提交热力图与标本图，经 `vite.config.ts` 的 `static-sections` 插件写进 `index.html`）——没有 JavaScript 时也是一张完整可读的页面。
 
+### 中文字体子集
+
+中文用的 Noto Sans SC 不走 npm 包（那会带来 300 多条 `@font-face` 与几十个分片），而是只保留本站用到的字：`src/fonts/` 里是 400 / 500 / 700 三个字重的 WOFF2、字符清单 `noto-sans-sc.chars.txt` 与字体许可 `OFL.txt`，由 `src/fonts/fonts.css` 声明。改动文案后如果出现了新的汉字，`pnpm test` 会列出缺少的字并失败；这时重新生成子集（需要 Python 与 Noto Sans SC 可变字体，[google/fonts](https://github.com/google/fonts/tree/main/ofl/notosanssc) 的 `NotoSansSC[wght].ttf`，或 Windows 自带的 `C:\Windows\Fonts\NotoSansSC-VF.ttf`）：
+
+```powershell
+pip install fonttools brotli
+python scripts/subset-noto.py path\to\NotoSansSC[wght].ttf
+```
+
+脚本扫描 `index.html`、`src/` 下的 `.ts` / `.css` 与 `public/data/github.json`，外加常用标点与全角符号。定时同步进来的 GitHub 数据里若有新字，不会让测试失败，只会退回系统字体显示，下次重新生成时补上。
+
 ## 目录
 
 - `src/main.ts`：入口，载入字体与样式并启动终端；出错时退回纯文档。
@@ -81,6 +92,7 @@ pnpm test
 - `src/styles/`：`tokens.css`（颜色、字体、`--u` 单位与深色主题）、`base.css`、`components.css`（标签、字块、玻璃板、名牌、资料卡等组件）、`app.css`（常驻界面与区块框架）、`motion.css`、`boot.css`、`home.css`、`screens/*.css`。
 - `src/markup.ts`：构建时与浏览器共用的字符串工具与 ∞± 标志的路径。
 - `src/github.ts`：把 `public/data/github.json` 整理成作品列表、计量与热力图。
+- `src/fonts/`：Noto Sans SC 子集与其 `@font-face`；`scripts/subset-noto.py` 负责重新生成。
 
 ## GitHub 数据与部署
 
@@ -88,4 +100,4 @@ pnpm test
 
 ## 声明
 
-Fan-made tribute to Arknights · Rhine Lab。「明日方舟」「莱茵生命」及相关名称与标志版权归上海鹰角网络科技有限公司（Hypergryph）所有，本站与官方无关。界面参考特别映像「莱茵生命：访问」与开源复刻 LBEILC/RhineLabUI（MIT），∞± 标志的轮廓改写自其 `src/brand.ts`。头像为站主本人使用的头像。
+Fan-made tribute to Arknights · Rhine Lab。「明日方舟」「莱茵生命」及相关名称与标志版权归上海鹰角网络科技有限公司（Hypergryph）所有，本站与官方无关。界面参考特别映像「莱茵生命：访问」与开源复刻 LBEILC/RhineLabUI（MIT），∞± 标志的轮廓改写自其 `src/brand.ts`。头像为站主本人使用的头像。字体 Montserrat、JetBrains Mono 与 Noto Sans SC 均以 SIL Open Font License 1.1 授权（Noto Sans SC 子集的许可见 `src/fonts/OFL.txt`）。
