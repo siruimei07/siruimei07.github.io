@@ -20,3 +20,6 @@ npm-debug.log*
 # local tooling
 /.claude/
 __pycache__/
+
+# reference PV (local study material, never published)
+/768017020-1-208.mp4

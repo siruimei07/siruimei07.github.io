@@ -1,228 +1,60 @@
-// The opening sequence (PV 0:06–0:27), as a score: every frame is a pure
-// function of elapsed time, so it plays the same at any frame rate, can be
-// skipped or sought to any instant, and survives a backgrounded tab. Layout
-// lives in boot.css; this file only writes progress values, typed text and
-// ring geometry. Phases "welcome" and "exit" are reported to the app.
+// The opening sequence (PV 0:06–0:27), played from the score in motion.ts at
+// SPEED × RhineLabUI's pace. Every frame is a pure function of elapsed time,
+// so it plays the same at any frame rate, can be skipped or sought to any
+// instant, and survives a backgrounded tab. The clock waits on the white frame
+// until the page has settled, and never runs more than one PV frame ahead of
+// what was painted, so no editorial cut is ever dropped. Layout lives in
+// boot.css; this file only writes opacity, a few custom properties,
+// clip-paths, typed text and the mark's and rings' SVG geometry. Phases
+// "idle" (a still moment for heavy work), "welcome" and "exit" go to the app.
 
 import { boot, brand } from "../content.ts";
+import { bootMotion, FULL, PV, SHORT, SPEED, type Motion, type Version } from "./motion.ts";
+import { progress, smooth } from "./tracks.ts";
 
 export type BootOptions = {
-  /** Skip the timeline entirely (reduced motion). */
+  /** Skip the timeline entirely (reduced motion, deep links). */
   reduced: boolean;
   /** Returning visitor this session: play the short version. */
   short: boolean;
-  /** Named moments, so the app can start the 3D fly-in on cue ("welcome", "exit"). */
+  /** Named moments, so the app can load the 3D while nothing moves ("idle") and start its fly-in on cue ("welcome", "exit"). */
   onPhase?: (phase: string) => void;
 };
 
 export type BootRun = { finished: Promise<void>; skip(): void };
 
-// ───────── timing (seconds) ─────────
-
-type Score = { frame: (t: number) => Frame; welcome: number; exit: number; end: number };
-
 const SKIP_MS = 280;
 const REDUCED_MS = 180;
-const GLYPHS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#/";
+/** One PV frame at SPEED (ms): the most the clock may advance between two painted frames. */
+const TICK_MS = 1000 / (25 * SPEED);
+/** The white frame holds at least HOLD_MIN_MS, then until the fonts are in and CALM_FRAMES
+ *  frames in a row came within CALM_MS of each other, but never longer than HOLD_MAX_MS. */
+const HOLD_MIN_MS = 360;
+const HOLD_MAX_MS = 800;
+const CALM_MS = 34;
+const CALM_FRAMES = 3;
 
-const clamp = (x: number) => (x < 0 ? 0 : x > 1 ? 1 : x);
-const seg = (t: number, a: number, b: number) => clamp((t - a) / (b - a));
-const lerp = (a: number, b: number, p: number) => a + (b - a) * p;
-const out3 = (p: number) => 1 - (1 - p) ** 3;
-const in2 = (p: number) => p * p;
-const io3 = (p: number) => (p < 0.5 ? 4 * p ** 3 : 1 - (-2 * p + 2) ** 3 / 2);
-const back = (p: number) => (p <= 0 ? 0 : 1 + 2.7 * (p - 1) ** 3 + 1.7 * (p - 1) ** 2);
-/** Rises over [a,b], falls over [c,d]. */
-const hold = (t: number, a: number, b: number, c: number, d: number) => Math.min(seg(t, a, b), 1 - seg(t, c, d));
+// The PV scales each ring as a layer, so its stroke thickens with its radius as it closes in
+// (measured over frames 506–568: width ∝ radius^0.85; black 2.75 px at r 248, white 5 px at r 224).
+const ringStroke = (rest: number, at: number, r: number) => rest * Math.max(0.2, r / at) ** 0.85;
 
-type Mark = { draw: number; loops: number; signs: number };
-type Arc = { r: number; a: number; sweep: number };
-type Rings = {
-  o: number;
-  blur: number;
-  scale: number;
-  outer: Arc;
-  pale: Arc;
-  arcs: [Arc, Arc];
-  sides: number;
-  core: number;
-  orange: { r: number; a: [number, number]; size: number };
-  text: { n: number; o: number; track: number; scale: number };
-};
-type Frame = {
-  veil: number;
-  dna: number;
-  /** exit progress: the scene shrinks, blurs and fades, the paper clears */
-  out: number;
-  access: { n: number; o: number };
-  logo: { o: number; mark: Mark; name: number; shift: number };
-  brand: [number, number, number];
-  sign: number;
-  line: { i: number; n: number; o: number } | null;
-  rings: Rings | null;
-  card: { o: number; wt: number; bar: number; text: number; db: number; markO: number; mark: Mark; name: number };
-  flash: [number, number];
-  cap: { i: number; o: number };
-  skip: number;
-};
+/** App time (seconds since this version started) ↔ PV time. */
+const pvAt = (v: Version, s: number) => v.from + s * SPEED;
+const appAt = (v: Version, pv: number) => Math.max(0, (pv - v.from) / SPEED);
 
-const FULL_MARK: Mark = { draw: 1, loops: 1, signs: 1 };
-const NO_MARK: Mark = { draw: 0, loops: 0, signs: 0 };
-
-const blank = (): Frame => ({
-  veil: 0,
-  dna: 1,
-  out: 0,
-  access: { n: 0, o: 0 },
-  logo: { o: 0, mark: NO_MARK, name: 0, shift: 0 },
-  brand: [1, 1, 1],
-  sign: 1,
-  line: null,
-  rings: null,
-  card: { o: 0, wt: 0, bar: 0, text: 0, db: 0, markO: 0, mark: NO_MARK, name: 0 },
-  flash: [0, 0],
-  cap: { i: -1, o: 0 },
-  skip: 0,
-});
-
-/** Which caption shows when: [index, from, to]. */
-function caption(t: number, spans: [number, number, number][]) {
-  for (const [i, a, b] of spans) if (t >= a && t < b) return { i, o: hold(t, a, a + 0.1, b - 0.08, b) };
-  return { i: -1, o: 0 };
-}
-
-const brandIn = (t: number, a: number): [number, number, number] => [
-  out3(seg(t, a, a + 0.28)),
-  out3(seg(t, a + 0.05, a + 0.33)),
-  out3(seg(t, a + 0.1, a + 0.38)),
-];
-
-// ───────── the full score, ≈ 5.4 s ─────────
-
-/** The permission rings on their own clock: `r` seconds since they appeared (they last 0.9 s). */
-function permission(r: number): Rings | null {
-  if (r < 0 || r >= 0.9) return null;
-  const grow = out3(seg(r, 0.08, 0.48));
-  const spin = seg(r, 0.06, 0.52);
-  const c = io3(seg(r, 0.48, 0.76)); // collapse into the compact double ring
-  const cut = seg(r, 0.82, 0.9);
-  // the black arc grows clockwise from its tail, the white one counter-clockwise
-  const outer = { r: lerp(423, 256, c), a: lerp(52 + 28 * spin, 276, c), sweep: lerp(285 * grow, 356, c) };
-  const paleTail = lerp(140 - 26 * spin, -96, c);
-  const paleSweep = lerp(286 * grow, 354, c);
-  const pale = { r: lerp(333, 235, c), a: paleTail - paleSweep, sweep: paleSweep };
-  const arcR = lerp(106, 92, c);
-  const arcSweep = lerp(105 * out3(seg(r, 0.1, 0.35)), 128, c);
-  const aMid = lerp(150 + 70 * spin, 270, c);
-  const bMid = lerp(60 - 70 * spin, 85, c);
-  return {
-    o: (r < 0.02 ? seg(r, 0, 0.02) : 1) * (1 - cut),
-    blur: cut * 6,
-    scale: 1 + cut * 0.04,
-    outer,
-    pale,
-    arcs: [
-      { r: arcR, a: aMid - arcSweep / 2, sweep: arcSweep },
-      { r: arcR, a: bMid - arcSweep / 2, sweep: arcSweep },
-    ],
-    sides: out3(seg(r, 0.6, 0.82)),
-    core: back(seg(r, 0.58, 0.72)),
-    orange: { r: lerp(201, 175, c), a: [lerp(160 + 30 * spin, 264, c), lerp(340 + 30 * spin, 456, c)], size: out3(seg(r, 0.12, 0.24)) },
-    text: { n: seg(r, 0.12, 0.34), o: lerp(1, 0.2, c), track: lerp(lerp(0.32, 0.17, out3(seg(r, 0.12, 0.48))), 0.07, c), scale: lerp(1, 0.76, c) },
-  };
-}
-
-// access 0.1 · mark 0.8 · identity lines 1.86 · rings 3.1 · cut 4.0 · welcome card 4.05 (whole at 4.5) · exit 5.0
-function fullFrame(t: number): Frame {
-  const lines = boot.lines;
-  let line: Frame["line"] = null;
-  if (t >= 1.86 && t < 3.12) {
-    // each line types in fast, as in the PV, then holds 0.2 s so it can be read
-    const i = t < 2.28 ? 0 : t < 2.65 ? 1 : 2;
-    const from = [1.88, 2.29, 2.66][i];
-    const dur = [0.2, 0.16, 0.18][i];
-    line = { i, n: seg(t, from, from + dur) * lines[i].length, o: i === 2 ? 1 - seg(t, 3.04, 3.12) : 1 };
-  }
-  const exit = seg(t, 5.0, 5.4);
-  const db = t < 4.38 ? 0 : t < 4.41 ? 1 : t < 4.44 ? 0.12 : 1;
-  return {
-    veil: 1 - out3(seg(t, 0, 0.55)),
-    dna: out3(seg(t, 0.05, 0.9)),
-    out: exit,
-    access: { n: seg(t, 0.12, 0.46) * boot.access.length, o: 1 - seg(t, 0.66, 0.78) },
-    logo: {
-      o: t >= 0.8 ? 1 - seg(t, 3.04, 3.14) : 0,
-      mark: { draw: io3(seg(t, 0.82, 1.32)), loops: seg(t, 1.3, 1.38), signs: back(seg(t, 1.3, 1.5)) },
-      name: seg(t, 1.26, 1.6),
-      shift: io3(seg(t, 1.6, 1.9)),
-    },
-    brand: brandIn(t, 1.52),
-    sign: seg(t, 1.56, 1.84),
-    line,
-    rings: permission(t - 3.1),
-    card: {
-      o: t >= 4.05 ? 1 : 0,
-      wt: out3(seg(t, 4.06, 4.18)),
-      bar: io3(seg(t, 4.16, 4.32)),
-      text: seg(t, 4.24, 4.36),
-      db,
-      markO: out3(seg(t, 4.3, 4.46)),
-      mark: FULL_MARK,
-      name: out3(seg(t, 4.34, 4.5)),
-    },
-    flash: [t >= 4.0 && t < 4.05 ? 1 : 0, t >= 4.05 ? 1 - seg(t, 4.1, 4.26) : 0],
-    // the last caption is gone by the exit, where the chrome fades in its own
-    cap: caption(t, [
-      [0, 0.1, 0.8],
-      [1, 1.86, 3.1],
-      [2, 3.16, 3.98],
-      [3, 4.1, 5.0],
-    ]),
-    skip: hold(t, 0.4, 0.6, 5.0, 5.12),
-  };
-}
-
-// ───────── the short score for returning visitors, ≈ 1.3 s ─────────
-
-function shortFrame(t: number): Frame {
-  const f = blank();
-  f.veil = 1 - out3(seg(t, 0, 0.25));
-  f.dna = out3(seg(t, 0, 0.45));
-  f.out = seg(t, 0.95, 1.3);
-  f.brand = brandIn(t, 0.04);
-  f.sign = seg(t, 0.08, 0.32);
-  f.card = {
-    o: 1,
-    wt: out3(seg(t, 0.42, 0.52)),
-    bar: io3(seg(t, 0.5, 0.64)),
-    text: seg(t, 0.58, 0.68),
-    db: t < 0.72 ? 0 : t < 0.75 ? 1 : t < 0.78 ? 0.12 : 1,
-    markO: 1,
-    mark: { draw: io3(seg(t, 0.04, 0.42)), loops: seg(t, 0.4, 0.46), signs: back(seg(t, 0.4, 0.56)) },
-    name: out3(seg(t, 0.32, 0.56)),
-  };
-  f.cap = caption(t, [[3, 0.44, 0.95]]);
-  f.skip = hold(t, 0.4, 0.55, 0.95, 1.05);
-  return f;
-}
-
-const FULL: Score = { frame: fullFrame, welcome: 4.0, exit: 5.0, end: 5.4 };
-const SHORT: Score = { frame: shortFrame, welcome: 0.4, exit: 0.95, end: 1.3 };
-
-// ───────── writing a frame to the DOM ─────────
-
-type MarkEls = { contour: SVGPathElement; loops: SVGPathElement; plus: SVGPathElement; minus: SVGPathElement; head: SVGCircleElement; len: number };
+/** How the frame is finished: the exit's progress, the paper's wash, the SKIP button, whether
+ *  the corner lockup drops what is left of its slide (after a skip), and whether the white
+ *  frame still holds (nothing of the score shows yet). */
+type Look = { exit: number; wash: number; skip: number; settled: boolean; hold: boolean };
 
 const f2 = (n: number) => (Math.round(n * 100) / 100).toString();
-const rad = (deg: number) => (deg * Math.PI) / 180;
-const polar = (r: number, deg: number) => [Math.cos(rad(deg)) * r, Math.sin(rad(deg)) * r];
+const f4 = (n: number) => (Math.round(n * 10000) / 10000).toString();
 
-function arcPath({ r, a, sweep }: Arc, cx = 0, cy = 0) {
-  if (sweep < 0.3 || r <= 0) return "";
-  const s = Math.min(sweep, 359.9);
-  const [x0, y0] = polar(r, a);
-  const [x1, y1] = polar(r, a + s);
-  return `M${f2(cx + x0)} ${f2(cy + y0)}A${f2(r)} ${f2(r)} 0 ${s > 180 ? 1 : 0} 1 ${f2(cx + x1)} ${f2(cy + y1)}`;
+/** An arc of radius r from angle `start`, clockwise by `sweep` (radians); a full turn as two halves. */
+function arc(r: number, start: number, sweep: number, x = 960, y = 540) {
+  const p = (a: number) => `${f2(x + Math.cos(a) * r)} ${f2(y + Math.sin(a) * r)}`;
+  if (sweep >= Math.PI * 1.999) return `M${p(start)}A${f2(r)} ${f2(r)} 0 1 1 ${p(start + Math.PI)}A${f2(r)} ${f2(r)} 0 1 1 ${p(start + Math.PI * 2)}`;
+  return `M${p(start)}A${f2(r)} ${f2(r)} 0 ${sweep > Math.PI ? 1 : 0} 1 ${p(start + sweep)}`;
 }
 
 function collect(root: HTMLElement) {
@@ -231,50 +63,45 @@ function collect(root: HTMLElement) {
     if (!el) throw new Error(`boot: missing ${sel}`);
     return el;
   };
-  const all = <T extends Element = HTMLElement>(sel: string, from: ParentNode = root) => [...from.querySelectorAll<T>(sel)];
-  const marks: MarkEls[] = all<SVGSVGElement>(".boot__mark").map((svg) => {
-    const contour = q<SVGPathElement>(".boot__contour", svg);
-    return {
-      contour,
-      loops: q<SVGPathElement>(".boot__loops", svg),
-      plus: q<SVGPathElement>(".boot__plus", svg),
-      minus: q<SVGPathElement>(".boot__minus", svg),
-      head: q<SVGCircleElement>(".boot__head", svg),
-      len: contour.getTotalLength(),
-    };
-  });
-  const rings = q('[data-b="rings"]');
+  const all = <T extends Element = HTMLElement>(sel: string) => [...root.querySelectorAll<T>(sel)];
+  const logo = q('[data-b="logo"]');
+  const auth = q('[data-b="auth"]');
+  const hl = q(".boot__co-hl");
   return {
     scene: q('[data-b="scene"]'),
+    corner: q(".boot__corner"),
     access: q('[data-b="access"]'),
-    logo: q('[data-b="logo"]'),
-    name: q('[data-b="logo"] .boot__name'),
-    lines: all('[data-b="lines"] > li'),
-    rings,
-    outer: q<SVGPathElement>(".boot__r-outer", rings),
-    pale: q<SVGPathElement>(".boot__r-pale", rings),
-    arcs: all<SVGPathElement>(".boot__r-arc", rings),
-    sides: all<SVGPathElement>(".boot__r-side", rings),
-    core: q<SVGCircleElement>(".boot__r-core", rings),
-    head: q<SVGCircleElement>(".boot__r-head", rings),
-    phead: q<SVGCircleElement>(".boot__r-phead", rings),
-    orange: all<SVGCircleElement>(".boot__r-orange", rings),
-    perm: q(".boot__perm", rings),
+    accessT: q('[data-b="access"] .boot__t'),
+    logo,
+    contour: q<SVGPathElement>(".boot__contour", logo),
+    plus: q<SVGPathElement>(".boot__plus", logo),
+    minus: q<SVGPathElement>(".boot__minus", logo),
+    name: q(".boot__name .boot__t", logo),
+    auth,
+    authT: q(".boot__t", auth),
+    scan: q('[data-b="scan"]'),
+    rings: q<SVGGElement>(".boot__rings"),
+    outer: q<SVGPathElement>(".boot__r-outer"),
+    pale: q<SVGPathElement>(".boot__r-pale"),
+    inner: all<SVGPathElement>(".boot__r-inner"),
+    sides: all<SVGPathElement>(".boot__r-side"),
+    orange: all<SVGCircleElement>(".boot__r-orange"),
+    sats: all<SVGCircleElement>(".boot__r-sat"),
+    core: q<SVGCircleElement>(".boot__r-core"),
+    caps: all<SVGCircleElement>(".boot__r-cap"),
+    perm: q(".boot__perm"),
     card: q('[data-b="card"]'),
+    panel: q(".boot__panel"),
     wt: q(".boot__wt"),
-    bar: q(".boot__bar"),
-    barText: q(".boot__bar > span"),
+    co: q(".boot__co"),
+    hl,
+    hlText: q("span", hl),
     db: q(".boot__db"),
     wlogo: q(".boot__wlogo"),
-    wname: q(".boot__wlogo .boot__name"),
-    flashInk: q('[data-b="flash-ink"]'),
-    flashPale: q('[data-b="flash-pale"]'),
     brand: [...q('[data-b="brand"] > a').children],
     sign: q('[data-b="sign"]'),
     cap: q('[data-b="cap"]'),
     skip: q("[data-boot-skip]"),
-    bigMark: marks[0],
-    smallMark: marks[1],
   };
 }
 
@@ -286,21 +113,20 @@ class Painter {
     this.els = collect(root);
   }
 
-  private css(el: Element, prop: string, value: string) {
+  private set(el: Element, key: string, value: string, write: () => void) {
     let m = this.last.get(el);
     if (!m) this.last.set(el, (m = new Map()));
-    if (m.get(prop) === value) return;
-    m.set(prop, value);
-    (el as HTMLElement).style.setProperty(prop, value);
+    if (m.get(key) === value) return;
+    m.set(key, value);
+    write();
+  }
+
+  private css(el: Element, prop: string, value: string) {
+    this.set(el, prop, value, () => (el as HTMLElement).style.setProperty(prop, value));
   }
 
   private attr(el: Element, name: string, value: string) {
-    let m = this.last.get(el);
-    if (!m) this.last.set(el, (m = new Map()));
-    const key = `@${name}`;
-    if (m.get(key) === value) return;
-    m.set(key, value);
-    el.setAttribute(name, value);
+    this.set(el, `@${name}`, value, () => el.setAttribute(name, value));
   }
 
   private text(el: Element, value: string) {
@@ -312,142 +138,138 @@ class Painter {
     this.css(el, "visibility", o > 0.001 ? "visible" : "hidden");
   }
 
-  /** Typed text in place: `n` characters are set (fractional: the next one is a passing glyph). */
-  private type(host: Element, full: string, n: number, t: number) {
-    const on = host.querySelector("[data-on]")!;
-    const off = host.querySelector("[data-off]")!;
-    const chars = [...full];
-    const k = Math.floor(n);
-    let shown = chars.slice(0, k).join("");
-    let rest = chars.slice(k).join("");
-    if (k < chars.length && n > k && chars[k] !== " ") {
-      shown += GLYPHS[(Math.floor(t * 40) * 7 + k * 13) % GLYPHS.length];
-      rest = chars.slice(k + 1).join("");
-    }
-    this.text(on, shown);
-    this.text(off, rest);
+  /** Typed text in place: characters [from, to) show; the blanked lead and the untyped rest keep their room. */
+  private type(host: Element, full: string, from: number, to: number) {
+    const [ghost, on, off] = host.children;
+    this.text(ghost, full.slice(0, from));
+    this.text(on, full.slice(from, to));
+    this.text(off, full.slice(to));
   }
 
-  private mark(m: MarkEls, s: Mark) {
-    this.css(m.contour, "stroke-dasharray", `${f2(s.draw)} 2`);
-    this.css(m.contour, "opacity", s.draw > 0.002 ? f2(1 - s.loops) : "0");
-    this.css(m.loops, "opacity", f2(s.loops));
-    const sc = f2(Math.max(0, s.signs));
-    this.css(m.plus, "scale", sc);
-    this.css(m.minus, "scale", sc);
-    this.css(m.plus, "rotate", `${f2((1 - clamp(s.signs)) * -90)}deg`);
-    const drawing = s.draw > 0.002 && s.draw < 0.998;
-    this.css(m.head, "opacity", drawing ? "1" : "0");
-    if (drawing) {
-      const p = m.contour.getPointAtLength(s.draw * m.len);
-      this.attr(m.head, "cx", f2(p.x));
-      this.attr(m.head, "cy", f2(p.y));
-    }
-  }
-
-  /** `settled`: after a skip, the corner lockup drops what is left of its slide. */
-  paint(f: Frame, t: number, settled = false) {
+  paint(m: Motion, look: Look) {
     const e = this.els;
     const root = this.root;
-    this.css(root, "--veil", f2(f.veil));
-    this.css(root, "--dna", f2(f.dna));
-    this.css(root, "--drift", f2(t));
-    const out = f.out;
-    this.css(root, "--out", f2(out));
-    this.css(root, "--paper", f2(1 - out3(out)));
-    this.css(e.scene, "opacity", f2(1 - in2(out)));
-    this.css(e.scene, "scale", f2(1 - 0.06 * out3(out)));
-    this.css(e.scene, "filter", out > 0 ? `blur(${f2(out * 12)}px)` : "none");
-    this.css(root, "pointer-events", out > 0 ? "none" : "auto");
 
-    this.show(e.access, f.access.o * (f.access.n > 0 ? 1 : 0));
-    this.type(e.access, boot.access, f.access.n, t);
+    // paper: the reference's slow drift, the wash, and the dissolve into the page at the exit
+    this.css(root, "--dx", f2(Math.sin(m.t * 0.16) * 18));
+    this.css(root, "--dy", f2(-(m.t - 6) * 5));
+    this.css(root, "--wash", f2(look.wash));
+    const x = look.exit;
+    this.css(root, "--out", f2(x));
+    this.css(root, "--paper", f2(1 - x));
+    // the scene leaves as the PV's welcome card does: shrinking, blurring and tinting as it fades
+    this.css(e.scene, "opacity", look.hold ? "0" : f2(1 - x ** 3));
+    this.css(e.corner, "opacity", look.hold ? "0" : "1");
+    this.css(e.scene, "scale", f2(1 - 0.46 * x));
+    this.css(e.scene, "filter", x > 0 ? `blur(calc(${f2(8 * x)} * var(--u))) invert(${f2(0.22 * x)}) sepia(${f2(x)}) saturate(${f2(1 + 5 * x)}) hue-rotate(${f2(115 * x)}deg)` : "none");
+    this.css(root, "pointer-events", x > 0 ? "none" : "auto");
 
-    this.show(e.logo, f.logo.o);
-    if (f.logo.o > 0) {
-      this.mark(e.bigMark, f.logo.mark);
-      this.type(e.name, brand.mark, f.logo.name * brand.mark.length, t);
-      this.css(e.logo, "--shift", f2(f.logo.shift));
+    this.show(e.access, m.access.n > 0 ? m.access.o : 0);
+    if (m.access.n > 0) this.type(e.accessT, boot.access, 0, m.access.n);
+
+    this.show(e.logo, m.logo.o);
+    if (m.logo.o > 0) {
+      const g = m.logo.mark;
+      this.css(e.logo, "--lx", f2(g.left - 814));
+      this.css(e.contour, "stroke-dasharray", `${f4(g.length)} ${f4(1 - g.length)}`);
+      this.css(e.contour, "stroke-dashoffset", f4(-g.start));
+      this.attr(e.contour, "stroke-width", f2(g.strokeWidth));
+      const signs = g.symbolScale > 0 ? "1" : "0";
+      this.css(e.plus, "opacity", signs);
+      this.css(e.minus, "opacity", signs);
+      const k = f4(g.symbolScale);
+      this.attr(e.plus, "transform", `translate(${f2(g.plusX)} 70) rotate(${f2(g.plusAngle)}) scale(${k}) translate(-69 -70)`);
+      this.attr(e.minus, "d", `M${f2(-g.minusWidth / 2)} 0h${f2(g.minusWidth)}`);
+      this.attr(e.minus, "transform", `translate(${f2(g.minusX)} 70) scale(${k})`);
+      this.type(e.name, brand.mark, 0, m.logo.name);
     }
 
-    e.lines.forEach((li, i) => {
-      const on = f.line && f.line.i === i;
-      this.show(li, on ? f.line!.o : 0);
-      if (on) {
-        this.type(li, boot.lines[i], f.line!.n, t);
-        this.css(li, "--cursor", f.line!.n < boot.lines[i].length ? "1" : "0");
-      }
-    });
+    this.show(e.auth, m.auth.o);
+    if (m.auth.o > 0) this.type(e.authT, boot.lines[m.auth.line], m.auth.from, m.auth.to);
 
-    const r = f.rings;
-    this.show(e.rings, r ? r.o : 0);
-    if (r) {
-      this.css(e.rings, "filter", r.blur > 0 ? `blur(${f2(r.blur)}px)` : "none");
-      this.css(e.rings, "--rscale", f2(r.scale));
-      this.attr(e.outer, "d", arcPath(r.outer));
-      this.attr(e.pale, "d", arcPath(r.pale));
-      const [hx, hy] = polar(r.outer.r, r.outer.a + r.outer.sweep);
-      this.attr(e.head, "cx", f2(hx));
-      this.attr(e.head, "cy", f2(hy));
-      this.attr(e.head, "r", f2(lerp(3, 17, clamp(r.outer.sweep / 40)) * (1 - clamp((r.outer.sweep - 300) / 50))));
-      const [px, py] = polar(r.pale.r, r.pale.a);
-      this.attr(e.phead, "cx", f2(px));
-      this.attr(e.phead, "cy", f2(py));
-      this.attr(e.phead, "r", f2(7 * (1 - clamp((r.pale.sweep - 300) / 50))));
-      r.arcs.forEach((a, i) => this.attr(e.arcs[i], "d", arcPath(a)));
-      const side = r.sides * 290;
-      this.attr(e.sides[0], "d", arcPath({ r: 38, a: 35, sweep: side }, -132, 14));
-      this.attr(e.sides[1], "d", arcPath({ r: 38, a: 215, sweep: side }, 132, -14));
-      this.attr(e.core, "r", f2(43 * r.core));
-      e.orange.forEach((dot, i) => {
-        const [ox, oy] = polar(r.orange.r, r.orange.a[i]);
-        this.attr(dot, "cx", f2(ox));
-        this.attr(dot, "cy", f2(oy));
-        this.attr(dot, "r", f2(7.5 * r.orange.size));
-      });
-      this.type(e.perm, boot.permission, r.text.n * boot.permission.length, t);
-      this.css(e.perm, "opacity", f2(r.text.o * (r.text.n > 0 ? 1 : 0)));
-      this.css(e.perm, "--track", `${f2(r.text.track)}em`);
-      this.css(e.perm, "scale", f2(r.text.scale));
+    this.show(e.scan, m.scan ? 1 : 0);
+    if (m.scan) this.rings(m, m.scan);
+
+    const c = m.card;
+    this.show(e.card, c.on ? 1 : 0);
+    if (c.on) {
+      this.css(e.panel, "opacity", f2(c.panel));
+      this.css(e.wt, "color", c.ink >= 1 ? "var(--ink)" : `color-mix(in srgb, var(--ink) ${f2(c.ink * 100)}%, var(--boot-knock))`);
+      this.css(e.co, "opacity", c.company ? (c.mask ? "0.65" : "1") : "0");
+      this.css(e.hlText, "opacity", c.mask ? "0.06" : "1");
+      this.css(e.hl, "clip-path", `inset(0 ${f2((1 - c.bar) * 100)}% 0 0)`);
+      this.css(e.db, "opacity", String(c.db));
+      this.css(e.wlogo, "opacity", c.logo ? "1" : "0");
     }
-
-    const c = f.card;
-    this.show(e.card, c.o);
-    if (c.o > 0) {
-      this.css(e.wt, "opacity", f2(c.wt));
-      this.css(e.wt, "--rise", f2(1 - c.wt));
-      this.css(e.bar, "clip-path", `inset(0 ${f2((1 - c.bar) * 100)}% 0 0)`);
-      this.css(e.barText, "clip-path", `inset(0 ${f2((1 - c.text) * 100)}% 0 0)`);
-      this.css(e.db, "opacity", f2(c.db));
-      this.css(e.wlogo, "opacity", f2(c.markO));
-      this.css(e.wlogo, "--rise", f2(1 - c.markO));
-      this.mark(e.smallMark, c.mark);
-      this.css(e.wname, "opacity", f2(c.name));
-    }
-
-    this.show(e.flashInk, f.flash[0]);
-    this.show(e.flashPale, f.flash[1]);
 
     // the chrome's own lockup fades in at the exit: this copy must lie exactly on it, never beside it
     e.brand.forEach((line, i) => {
-      this.css(line, "opacity", f2(f.brand[i]));
-      this.css(line, "--rise", f2(settled ? 0 : 1 - f.brand[i]));
+      this.css(line, "opacity", f2(m.brand[i].o));
+      this.css(line, "--bx", f2(look.settled ? 0 : m.brand[i].x));
     });
-    this.css(e.sign, "clip-path", `inset(-20% ${f2((1 - f.sign) * 100)}% -20% 0)`);
-    this.show(e.sign, f.sign > 0 ? 1 : 0);
+    this.show(e.sign, m.powered > 0 ? 1 : 0);
+    this.css(e.sign, "clip-path", `inset(-20% ${f2((1 - m.powered) * 100)}% -20% 0)`);
 
-    if (f.cap.i >= 0) this.text(e.cap, boot.captions[f.cap.i]);
-    this.show(e.cap, f.cap.o);
+    if (m.cap.i >= 0) this.text(e.cap, boot.captions[m.cap.i]);
+    this.show(e.cap, m.cap.o);
 
-    this.show(e.skip, f.skip);
-    this.css(e.skip, "pointer-events", f.skip > 0.5 ? "auto" : "none");
+    this.show(e.skip, look.skip);
+    this.css(e.skip, "pointer-events", look.skip > 0.5 ? "auto" : "none");
+  }
+
+  private rings(m: Motion, s: NonNullable<Motion["scan"]>) {
+    const e = this.els;
+    const o = m.orbit;
+    // the glitch frames enlarge and dim the rings only: the words stay put
+    this.attr(e.rings, "transform", `translate(960 540) scale(${f2(m.ring.scale)}) translate(-960 -540)`);
+    this.css(e.rings, "opacity", f2(m.ring.o));
+    this.css(e.rings, "filter", m.ring.blur > 0 ? `blur(${f2(m.ring.blur)}px)` : "none");
+    this.attr(e.outer, "d", arc(s.radius, s.outerStart, s.outerSweep));
+    this.attr(e.pale, "d", arc(s.whiteRadius, s.whiteStart, s.whiteSweep));
+    this.css(e.outer, "stroke-width", f2(ringStroke(2.75, 248, s.radius)));
+    this.css(e.pale, "stroke-width", f2(ringStroke(5, 224, s.whiteRadius)));
+    e.inner.forEach((p, i) => this.attr(p, "d", arc(s.innerRadius, s.innerStart + i * Math.PI, s.innerSweep)));
+    e.sides.forEach((p, i) => {
+      const side = o.sides[i];
+      this.attr(p, "d", arc(side.radius, side.start, side.sweep, side.x, side.y));
+      this.css(p, "opacity", o.sideVisible ? "1" : "0");
+    });
+    e.orange.forEach((dot, i) => {
+      this.attr(dot, "cx", f2(960 + Math.cos(s.orbit + i * Math.PI) * s.orbitRadius));
+      this.attr(dot, "cy", f2(540 + Math.sin(s.orbit + i * Math.PI) * s.orbitRadius));
+      this.attr(dot, "r", f2(s.dotRadius));
+    });
+    e.sats.forEach((dot, i) => {
+      const p = o.satellites[i];
+      this.attr(dot, "cx", f2(p.x));
+      this.attr(dot, "cy", f2(p.y));
+      this.attr(dot, "r", f2(p.radius));
+    });
+    this.css(e.core, "opacity", m.ornament ? "1" : "0");
+    this.attr(e.core, "r", f2(o.coreRadius));
+    // a black cap rides the black ring's head, a white one the white ring's tail
+    const ends = [
+      { a: s.outerStart + s.outerSweep, r: s.radius, size: s.blackCap },
+      { a: s.whiteStart, r: s.whiteRadius, size: s.whiteCap },
+    ];
+    e.caps.forEach((cap, i) => {
+      const end = ends[i];
+      this.attr(cap, "cx", f2(960 + Math.cos(end.a) * end.r));
+      this.attr(cap, "cy", f2(540 + Math.sin(end.a) * end.r));
+      this.attr(cap, "r", f2(end.size));
+    });
+    this.css(e.perm, "opacity", f2(m.permission.o));
+    this.css(e.perm, "--track", f2(m.permission.track));
   }
 }
 
 // ───────── the run ─────────
 
 export function runBoot(root: HTMLElement, o: BootOptions): BootRun {
-  const score = o.short ? SHORT : FULL;
+  const v = o.short ? SHORT : FULL;
+  const welcomeAt = appAt(v, PV.welcome);
+  const exitAt = appAt(v, PV.exit);
+  const end = appAt(v, PV.end);
   const painter = new Painter(root);
   const fired = new Set<string>();
   const fire = (p: string) => {
@@ -460,11 +282,24 @@ export function runBoot(root: HTMLElement, o: BootOptions): BootRun {
   const finished = new Promise<void>((r) => (resolve = r));
   let raf = 0;
   let done = false;
-  let start = performance.now();
-  /** Dev seeking: a frozen time in seconds, or null while playing. */
+  const born = performance.now();
+  /** The clock's zero (ms), or null while the white frame holds for the page to settle. */
+  let start: number | null = null;
+  /** Dev seeking: a frozen app time in seconds, or null while playing. */
   let paused: number | null = null;
-  /** Skip / reduced: the frozen time, and when the fade-out began (ms). */
-  let cut: { at: number; t: number; ms: number } | null = null;
+  /** Skip / reduced: the frozen PV time, the exit already under way there, when the quick exit
+   *  began and how long it takes (ms), and whether it leaves from the still-blank white frame. */
+  let cut: { at: number; pv: number; exit: number; ms: number; hold: boolean } | null = null;
+  let fontsIn = !("fonts" in document);
+  if (!fontsIn) {
+    const fontsDone = () => (fontsIn = true);
+    document.fonts.ready.then(fontsDone, fontsDone);
+  }
+  let calm = 0;
+  let heldFor: number | null = null;
+  /** The PV time last painted (dev checks). */
+  let painted = 0;
+  let lastNow = -1;
 
   const skipBtn = root.querySelector<HTMLElement>("[data-boot-skip]");
   const finish = () => {
@@ -476,42 +311,61 @@ export function runBoot(root: HTMLElement, o: BootOptions): BootRun {
     resolve();
   };
 
-  /** Paints the score at `t` seconds, firing every phase it has passed. */
-  const at = (t: number) => {
-    if (t >= score.welcome) fire("welcome");
-    if (t >= score.exit) fire("exit");
-    painter.paint(score.frame(t), t);
+  /** App time at `now`, in seconds: 0 while the white frame holds. */
+  const clock = (now: number) => paused ?? (start === null ? 0 : Math.max(0, (now - start) / 1000));
+
+  /** Paints app time `s`, firing every phase it has passed. */
+  const at = (s: number, phases = true) => {
+    const m = bootMotion(pvAt(v, s), v);
+    painted = m.t;
+    if (phases && m.f >= v.idleAt) fire("idle");
+    if (phases && s >= welcomeAt) fire("welcome");
+    if (phases && s >= exitAt) fire("exit");
+    // SKIP shows once the opening is under way and leaves as the exit begins
+    const skipO = Math.min(progress(s, 0.4, 0.6), 1 - progress(s, exitAt, exitAt + 0.12));
+    painter.paint(m, { exit: m.exit, wash: m.wash, skip: skipO, settled: false, hold: start === null && paused === null });
   };
 
-  let lastNow = start;
   const tick = (now: number) => {
     if (done) return;
-    // a long gap means the tab was hidden: carry on where it stopped instead of jumping ahead
-    if (now - lastNow > 250) start += now - lastNow - 16;
+    const gap = lastNow < 0 ? 0 : now - lastNow;
     lastNow = now;
+    if (start === null) {
+      // page startup is the busiest moment of the load: let it pass before the first letter
+      calm = gap > 0 && gap < CALM_MS ? calm + 1 : 0;
+      const waited = now - born;
+      if (paused === null && !cut && waited >= HOLD_MIN_MS && ((fontsIn && calm >= CALM_FRAMES) || waited >= HOLD_MAX_MS)) {
+        start = now;
+        heldFor = Math.round(waited);
+      }
+    } else if (gap > TICK_MS) {
+      // a stall (a long task, a hidden tab) holds the clock: it resumes one PV frame on, never past a cut
+      start += gap - TICK_MS;
+    }
     if (cut) {
-      const k = clamp((now - cut.at) / cut.ms);
-      const f = o.reduced ? blank() : score.frame(cut.t);
-      f.out = Math.max(f.out, k);
-      f.skip = 0;
+      // a frame's timestamp may predate the skip itself
+      const k = Math.min(1, Math.max(0, (now - cut.at) / cut.ms));
+      const m = bootMotion(cut.pv, v);
       // the chrome's caption is already fading in: never show two
-      f.cap.o = 0;
-      painter.paint(f, cut.t, true);
+      m.cap.o = 0;
+      painter.paint(m, { exit: Math.max(cut.exit, smooth(k)), wash: o.reduced ? 0 : m.wash, skip: 0, settled: true, hold: cut.hold });
       if (k >= 1) return finish();
     } else {
-      const t = paused ?? (now - start) / 1000;
-      at(t);
-      if (paused === null && t >= score.end) return finish();
+      const s = clock(now);
+      at(s);
+      if (paused === null && s >= end) return finish();
     }
     raf = requestAnimationFrame(tick);
   };
 
   function skip() {
     if (done || cut) return;
-    // freeze where we are and fade out from there (an exit already under way just speeds up)
-    const t = paused ?? (performance.now() - start) / 1000;
-    cut = { at: performance.now(), t, ms: SKIP_MS };
+    // freeze where we are and leave from there (an exit already under way just speeds up)
+    const now = performance.now();
+    const pv = pvAt(v, Math.min(clock(now), end));
+    cut = { at: now, pv, exit: bootMotion(pv, v).exit, ms: SKIP_MS, hold: start === null && paused === null };
     paused = null;
+    fire("idle");
     fire("welcome");
     fire("exit");
   }
@@ -519,16 +373,22 @@ export function runBoot(root: HTMLElement, o: BootOptions): BootRun {
   skipBtn?.addEventListener("click", skip);
 
   if (o.reduced) {
-    cut = { at: performance.now(), t: 0, ms: REDUCED_MS };
-    painter.paint(blank(), 0);
-    queueMicrotask(() => fire("exit"));
+    // straight to the resting frame (corner lockup only) and away
+    cut = { at: performance.now(), pv: PV.end, exit: 0, ms: REDUCED_MS, hold: false };
+    queueMicrotask(() => {
+      fire("idle");
+      fire("exit");
+    });
   } else {
-    painter.paint(score.frame(0), 0);
+    at(0, false);
   }
   raf = requestAnimationFrame(tick);
 
   if (import.meta.env.DEV) {
-    // __bootSeek(2.8) freezes the opening at 2.8 s; __bootSeek(null) plays on from there.
+    // __bootSeek(2.8) freezes the opening at app time 2.8 s, __bootSeek.pv(20.5) at PV time
+    // 20.5 s; __bootSeek(null) plays on from there. __bootSeek.held() is how long the white
+    // frame held before the clock started (ms), or null while it still holds; .painted() the
+    // PV time of the last frame painted.
     const seek = (s: number | null) => {
       if (done || cut) return;
       if (s === null) {
@@ -539,7 +399,15 @@ export function runBoot(root: HTMLElement, o: BootOptions): BootRun {
         at(paused);
       }
     };
-    (window as unknown as { __bootSeek?: unknown }).__bootSeek = Object.assign(seek, { short: o.short, end: score.end });
+    (window as unknown as { __bootSeek?: unknown }).__bootSeek = Object.assign(seek, {
+      short: o.short,
+      end,
+      speed: SPEED,
+      from: v.from,
+      pv: (pv: number) => seek(appAt(v, pv)),
+      held: () => heldFor,
+      painted: () => painted,
+    });
   }
 
   return { finished, skip };

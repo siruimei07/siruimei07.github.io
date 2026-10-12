@@ -118,8 +118,9 @@ export class App {
       /* storage unavailable */
     }
 
+    // the 3D's first frames are long tasks: they wait for a still moment of the opening ("idle")
+    const hadFocus = await this.playBoot({ reduced: this.prefs.reduced() || deepLink, short: seen, onIdle: () => void this.loadPlates(first) });
     void this.loadPlates(first);
-    const hadFocus = await this.playBoot({ reduced: this.prefs.reduced() || deepLink, short: seen });
     // a click during the exit fade may already have opened a screen
     if (this.current === null) this.show(first, { initial: true });
     // a deep link lands in its section, so the arrow keys scroll it straight away (phones)
@@ -129,7 +130,7 @@ export class App {
   // ───────── opening ─────────
 
   /** Plays the opening. Resolves to whether it held keyboard focus (SKIP) at the end. */
-  private async playBoot(o: { reduced: boolean; short: boolean; onWelcome?: () => void }): Promise<boolean> {
+  private async playBoot(o: { reduced: boolean; short: boolean; onIdle?: () => void; onWelcome?: () => void }): Promise<boolean> {
     const root = document.querySelector<HTMLElement>("[data-boot]");
     if (!root) return false;
     this.html.classList.add("is-booting");
@@ -150,6 +151,7 @@ export class App {
       reduced: o.reduced,
       short: o.short,
       onPhase: (p) => {
+        if (p === "idle") o.onIdle?.();
         if (p === "welcome") {
           welcome();
           this.plates?.setFormation("hidden", { immediate: true });

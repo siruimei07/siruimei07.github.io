@@ -1,22 +1,25 @@
-/* The opening (PV 0:06–0:27). Static layout in --u, measured from the PV
-   frames around the centre of the 1920×1080 frame; boot.ts only feeds it
-   progress values (--shift, --rise, --veil, --paper…), opacity, clip-path and
-   ring geometry. Dark theme is the PV's dark version: black paper, pale ink.
-   Without JavaScript the whole thing is display: none (base.css). */
+/* The opening (PV 0:06–0:27) on RhineLabUI's timeline (src/boot/motion.ts).
+   Static layout in --u, measured from the PV frames around the centre of the
+   1920×1080 frame; boot.ts writes opacity, a few custom properties (--lx, --bx,
+   --track, --dx/--dy, --wash, --paper, --out), clip-paths, the rings' stroke
+   widths and the mark's and rings' SVG geometry. Dark theme is the PV's dark
+   version: dark paper, pale ink. Without JavaScript the whole thing is
+   display: none (base.css). */
 
 .boot {
   display: none;
 }
 
 html.js .boot {
-  /* the white ring, the black cut, the white flash, the DNA strokes and the grey the paper fades up from */
+  /* the white ring and its cap, words knocked out of the black panel, the exit's wash, the DNA strokes */
   --boot-pale: #fff;
-  --boot-cut: var(--ink);
-  --boot-flash: #fbfaf8;
+  --boot-knock: var(--tag-ink);
+  --boot-wash: #fff;
   --boot-dna: rgba(255, 255, 255, 0.8);
-  --boot-veil: color-mix(in srgb, var(--sub) 42%, var(--bg));
-  --logo-dx: calc(-296 * var(--u));
-  --ring: calc(1000 * var(--u));
+  /* the mark slides left of the identity line, and PERMISSION AUTHORIZED closes from a wide
+     tracking: both in full on the 16:9 frame, less on phones */
+  --logo-k: 1;
+  --track-k: 1;
 
   position: fixed;
   inset: 0;
@@ -31,11 +34,8 @@ html.js .boot {
 
 :root[data-theme="dark"] .boot {
   --boot-pale: color-mix(in srgb, var(--ink) 42%, transparent);
-  /* the cut stays black: the pale ink would make it a full-screen white flash */
-  --boot-cut: #000;
-  --boot-flash: color-mix(in srgb, var(--ink) 16%, var(--bg));
+  --boot-wash: color-mix(in srgb, var(--ink) 14%, var(--bg));
   --boot-dna: color-mix(in srgb, var(--ink) 9%, transparent);
-  --boot-veil: #000;
 }
 
 /* ───────── paper ───────── */
@@ -48,19 +48,12 @@ html.js .boot {
   opacity: var(--paper, 1);
 }
 
-.boot__paper::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: var(--boot-veil);
-  opacity: var(--veil, 1);
-}
-
 .boot__drift {
   position: absolute;
-  inset: -48px;
-  opacity: calc(var(--dna, 0) * 0.42);
-  translate: 0 calc(var(--drift, 0) * -9 * var(--u));
+  inset: -64px;
+  opacity: 0.42;
+  translate: calc(var(--dx, 0) * var(--u)) calc(var(--dy, 0) * var(--u));
+  scale: 1.08;
   will-change: translate;
 }
 
@@ -87,12 +80,21 @@ html.js .boot {
   opacity: 0.45;
 }
 
+/* behind the words: the paper whitens, the ink stays */
+.boot__wash {
+  position: absolute;
+  inset: 0;
+  background: var(--boot-wash);
+  opacity: var(--wash, 0);
+}
+
 /* ───────── scene (everything that leaves at the exit) ───────── */
 
 .boot__scene {
   position: absolute;
   inset: 0;
-  transform-origin: 50% 52%;
+  /* the welcome card's own origin in the PV (50% / 44% of its box) */
+  transform-origin: 50% calc(50% + 12.6 * var(--u));
 }
 
 /* the corner copy inherits whatever the real chrome uses; the scene is set in Montserrat */
@@ -101,22 +103,32 @@ html.js .boot {
   font-family: var(--f-latin);
 }
 
+/* low specificity, so each line's own margin below wins */
+:where(.boot__scene) p {
+  margin: 0;
+}
+
 .boot__access,
 .boot__logo,
-.boot__lines > li,
-.boot__rings,
+.boot__auth,
+.boot__scan,
 .boot__card,
-.boot__flash,
 .boot__cap,
 .boot__skip {
   opacity: 0;
   visibility: hidden;
 }
 
+.boot__t {
+  white-space: pre;
+}
+
+.boot__t > [data-ghost],
 .boot__t > [data-off] {
   visibility: hidden;
 }
 
+/* typed from a fixed left, centred on the frame as a whole line */
 .boot__access {
   position: absolute;
   left: 50%;
@@ -129,9 +141,23 @@ html.js .boot {
   white-space: nowrap;
 }
 
-/* the ∞ (drawn in, then settled into the open loops) */
+/* ───────── the ∞, drawn as one dash along its contour ───────── */
+
+.boot__logo {
+  position: absolute;
+  /* starts centred; --lx (frame px) slides it to x = 516, left of the identity line */
+  left: calc(50% - 148 * var(--u));
+  top: calc(50% - 77 * var(--u));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: calc(296 * var(--u));
+  translate: calc(var(--lx, 0) * var(--logo-k) * var(--u)) 0;
+}
+
 .boot__mark {
   display: block;
+  width: 100%;
   height: auto;
   aspect-ratio: 310 / 145;
   overflow: visible;
@@ -142,78 +168,40 @@ html.js .boot {
   stroke: var(--ink);
 }
 
-.boot__contour,
-.boot__loops {
-  stroke-width: 26;
-}
-
 .boot__contour {
-  stroke-linecap: round;
-  stroke-dasharray: 0 2;
-}
-
-.boot__loops {
-  opacity: 0;
+  stroke-width: 26;
+  stroke-dasharray: 0 1;
 }
 
 .boot__plus,
 .boot__minus {
   stroke-width: 15;
-  transform-box: fill-box;
-  transform-origin: center;
-  scale: 0;
-}
-
-.boot__head {
-  fill: var(--orange);
   opacity: 0;
 }
 
-.boot__logo {
-  position: absolute;
-  left: 50%;
-  top: calc(50% - 79 * var(--u));
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  translate: calc(-50% + var(--shift, 0) * var(--logo-dx)) 0;
-}
-
-.boot__mark--lg {
-  width: calc(300 * var(--u));
-}
-
 .boot__name {
-  margin-top: calc(14 * var(--u));
+  margin-top: calc(16 * var(--u));
   /* the tracking would push the word off centre: pay it back on the left */
-  padding-left: 0.9em;
+  padding-left: 1.05em;
   font-weight: 700;
-  font-size: max(10px, calc(16.5 * var(--u)));
+  font-size: max(10px, calc(15.5 * var(--u)));
   line-height: 1;
-  letter-spacing: 0.9em;
+  letter-spacing: 1.05em;
   white-space: nowrap;
 }
 
-/* ───────── identity lines ───────── */
+/* ───────── identity line ───────── */
 
-.boot__lines {
+.boot__auth {
   position: absolute;
-  left: calc(50% - 28 * var(--u));
+  left: calc(50% - 27 * var(--u));
   top: 50%;
-  margin: 0;
-  padding: 0;
-}
-
-.boot__lines > li {
-  position: absolute;
-  left: 0;
-  top: 0;
   display: flex;
   align-items: center;
   gap: 0.42em;
   translate: 0 -50%;
   font-weight: 500;
-  font-size: max(12px, calc(21.5 * var(--u)));
+  font-size: max(12px, calc(19.5 * var(--u)));
   line-height: 1;
   letter-spacing: 0.012em;
   white-space: nowrap;
@@ -226,132 +214,139 @@ html.js .boot {
   background: currentColor;
 }
 
-.boot__lines [data-on] {
-  position: relative;
-}
+/* ───────── permission rings, drawn in the frame's own pixels ───────── */
 
-.boot__lines [data-on]::after {
-  content: "";
-  position: absolute;
-  left: 100%;
-  top: 0.06em;
-  bottom: 0.02em;
-  width: 0.5em;
-  margin-left: 0.08em;
-  background: currentColor;
-  opacity: var(--cursor, 0);
-}
-
-/* ───────── permission rings ───────── */
-
-.boot__rings {
+.boot__scan {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: var(--ring);
-  height: var(--ring);
+  width: calc(1920 * var(--u));
+  height: calc(1080 * var(--u));
   translate: -50% -50%;
 }
 
-.boot__rings svg {
+.boot__scan svg {
+  display: block;
   width: 100%;
   height: 100%;
   max-width: none;
   overflow: visible;
-  scale: var(--rscale, 1);
 }
 
 .boot__rings path {
   fill: none;
+  stroke: var(--ink);
+  stroke-width: 2;
   stroke-linecap: round;
 }
 
-.boot__r-outer {
-  stroke: var(--ink);
-  stroke-width: 3;
+/* resting widths; while the rings close in, boot.ts thickens them with their radius */
+.boot__rings .boot__r-outer {
+  stroke-width: 2.75;
 }
 
-.boot__r-pale {
+.boot__rings .boot__r-pale {
   stroke: var(--boot-pale);
-  stroke-width: 5.5;
-}
-
-.boot__r-arc,
-.boot__r-side {
-  stroke: var(--ink);
-  stroke-width: 2.2;
-}
-
-.boot__r-core,
-.boot__r-head {
-  fill: var(--ink);
-}
-
-.boot__r-phead {
-  fill: var(--boot-pale);
+  stroke-width: 5;
 }
 
 .boot__r-orange {
   fill: var(--orange);
 }
 
+.boot__r-sat,
+.boot__r-core,
+.boot__r-cap {
+  fill: var(--ink);
+}
+
+.boot__r-cap--pale {
+  fill: var(--boot-pale);
+}
+
 .boot__perm {
+  --perm-track: calc(var(--track, 40) * var(--track-k) * var(--u));
+
   position: absolute;
   left: 50%;
   top: 50%;
   translate: -50% -50%;
   /* tracking is animated; the same amount on the left keeps the line centred */
-  padding-left: var(--track, 0.17em);
-  font-weight: 500;
-  font-size: max(11px, calc(var(--ring) * 0.0265));
+  padding-left: var(--perm-track);
+  font-weight: 400;
+  font-size: max(12px, calc(27.5 * var(--u)));
   line-height: 1;
-  letter-spacing: var(--track, 0.17em);
+  letter-spacing: var(--perm-track);
   white-space: nowrap;
+  opacity: 0;
 }
 
-/* ───────── welcome card ───────── */
+/* ───────── welcome card (the PV's 480 × 340 box at 720, 403) ───────── */
 
 .boot__card {
   position: absolute;
-  /* above the flash: the cut whitens the paper, not the words */
-  z-index: 1;
   left: 50%;
-  top: calc(50% + 20 * var(--u));
+  top: calc(50% - 137 * var(--u));
   display: flex;
   flex-direction: column;
   align-items: center;
-  translate: -50% -50%;
+  width: calc(480 * var(--u));
+  translate: -50% 0;
   font-weight: 700;
   line-height: 1;
   white-space: nowrap;
 }
 
+/* the black panel of the cut in */
+.boot__panel {
+  position: absolute;
+  left: 50%;
+  top: calc(-59 * var(--u));
+  width: calc(470 * var(--u));
+  height: calc(392 * var(--u));
+  translate: -50% 0;
+  background: var(--tag-bg);
+  opacity: 0;
+}
+
 .boot__wt {
-  font-size: max(19px, calc(52 * var(--u)));
+  position: relative;
+  font-size: max(19px, calc(52.5 * var(--u)));
+  line-height: max(23px, calc(65 * var(--u)));
   letter-spacing: 0.035em;
   padding-left: 0.035em;
-  translate: 0 calc(var(--rise, 0) * 14 * var(--u));
 }
 
-.boot__bar {
-  align-self: stretch;
-  margin-top: calc(11 * var(--u));
-  padding: 0.12em 0.4em 0.08em;
-  font-size: max(17px, calc(50 * var(--u)));
-  line-height: 1;
-  text-align: center;
+/* the name, and the black bar sweeping over it (inverting what it covers) */
+.boot__co {
+  position: relative;
+  width: calc(407 * var(--u));
+  height: max(21px, calc(58 * var(--u)));
+  margin-top: calc(2 * var(--u));
+  font-size: max(17px, calc(48 * var(--u)));
   letter-spacing: 0.03em;
-  clip-path: inset(0 100% 0 0);
+  opacity: 0;
 }
 
-.boot__bar > span {
-  display: inline-block;
+.boot__co > span {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-left: 0.03em;
+}
+
+.boot__co-hl {
+  background: var(--tag-bg);
+  color: var(--tag-ink);
   clip-path: inset(0 100% 0 0);
 }
 
 .boot__db {
-  margin-top: calc(14 * var(--u));
-  font-size: max(13px, calc(33 * var(--u)));
+  margin-top: calc(6 * var(--u));
+  font-size: max(13px, calc(33.5 * var(--u)));
+  line-height: max(16px, calc(43 * var(--u)));
   letter-spacing: 0.012em;
   opacity: 0;
 }
@@ -360,31 +355,22 @@ html.js .boot {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: calc(18 * var(--u));
-  translate: 0 calc(var(--rise, 0) * 10 * var(--u));
-}
-
-.boot__mark--sm {
-  width: calc(208 * var(--u));
-}
-
-.boot__name--sm {
-  margin-top: calc(14 * var(--u));
-  font-size: max(10px, calc(12 * var(--u)));
-  letter-spacing: 0.86em;
-  padding-left: 0.86em;
+  margin-top: calc(12 * var(--u));
   opacity: 0;
 }
 
-/* the black / white cut before the card */
-.boot__flash {
-  position: absolute;
-  inset: 0;
-  background: var(--boot-cut);
+.boot__wmark {
+  display: block;
+  width: calc(203 * var(--u));
+  height: auto;
+  aspect-ratio: 310 / 145;
 }
 
-.boot__flash--pale {
-  background: var(--boot-flash);
+.boot__name--sm {
+  margin-top: calc(10 * var(--u));
+  font-size: max(10px, calc(11 * var(--u)));
+  letter-spacing: 0.95em;
+  padding-left: 0.95em;
 }
 
 /* ───────── the boot's own corner lockup and signature (same metrics as the chrome) ───────── */
@@ -393,9 +379,10 @@ html.js .boot {
   pointer-events: none;
 }
 
+/* each line slides in from --bx frame px to the right */
 .boot__brand a > * {
   opacity: 0;
-  translate: calc(var(--rise, 1) * 64 * var(--u)) 0;
+  translate: calc(var(--bx, 234) * var(--u)) 0;
 }
 
 .boot__sign {
@@ -459,32 +446,42 @@ html.js .boot {
   color: var(--hover);
 }
 
-/* ───────── phones, tablets & narrow windows: everything stacks on the centre line ───────── */
+/* ───────── phones, tablets & narrow windows ───────── */
 
-@media (max-width: 899px), (max-aspect-ratio: 1/1), (max-height: 539px), (pointer: coarse) and (max-width: 1400px) {
+/* the picture stacks on the centre line wherever the frame is narrow, portrait or short */
+@media (max-width: 899px), (max-aspect-ratio: 1/1), (max-height: 539px) {
   html.js .boot {
-    --logo-dx: 0px;
-    /* the rings fill 88% of their box: a box as wide as the screen keeps them inside the gutters,
-       and one this tall keeps them clear of the caption, which the bottom inset lifts */
-    --ring: min(calc(1000 * var(--u)), 100vw, calc((100dvh - 150px - 2 * env(safe-area-inset-bottom)) * 1.12));
+    --logo-k: 0;
+    /* the full 40 px opening tracking would run off a phone */
+    --track-k: 0.3;
   }
 
   /* one helix, on the right, as in the PV's portrait crops */
   .boot__drift {
-    inset: -48px auto -48px auto;
+    inset: -64px auto -64px auto;
     right: calc(-26dvh);
-    width: calc((100dvh + 96px) * 1920 / 1080);
+    width: calc((100dvh + 128px) * 1920 / 1080);
   }
 
-  .boot__lines {
+  .boot__auth {
     left: 50%;
     top: calc(50% + 150 * var(--u));
-  }
-
-  .boot__lines > li {
     translate: -50% -50%;
   }
+}
 
+/* A touch tablet held landscape lays the site out in CSS pixels (tokens.css), but the opening
+   is one fixed full-screen frame, not a page: its picture keeps the 16:9 frame's unit. The
+   corner copy, caption and SKIP below keep the chrome's metrics, so the hand-off still lines up. */
+@media (pointer: coarse) and (min-width: 900px) and (max-width: 1400px) and (min-aspect-ratio: 1001/1000) and (min-height: 540px) {
+  .boot__paper,
+  .boot__scene {
+    --u: min(calc(100vw / 1920), calc(100dvh / 1080));
+  }
+}
+
+/* wherever the chrome itself switches to its phone layout (the same query as app.css) */
+@media (max-width: 899px), (max-aspect-ratio: 1/1), (max-height: 539px), (pointer: coarse) and (max-width: 1400px) {
   /* clear of a landscape notch; the same left as the chrome's .brand (app.css), so the hand-off lines up */
   html.js .boot__brand {
     left: max(16px, env(safe-area-inset-left));

@@ -1,16 +1,12 @@
 // Markup of the white opening (PV 0:06–0:27): paper with blurred DNA, the
-// access line, the mark drawing itself, the identity lines, the permission
+// access line, the mark drawing itself, the identity line, the permission
 // rings and the welcome card, plus the boot's own copy of the corner lockup
-// and signature. Every moving part starts invisible; boot.ts drives it from a
-// clock. Hidden without JavaScript. Runs at build time: strings only.
+// and signature. Every moving part starts invisible; boot.ts drives it from
+// the score in motion.ts. Hidden without JavaScript. Runs at build time:
+// strings only.
 
 import { boot, brand } from "../content.ts";
-import { esc, MARK_LOOPS } from "../markup.ts";
-
-/** MARK_CONTOUR walked the other way round, starting at the top of the left loop,
- *  so the stroke draws down the left loop and up through the crossing as in the PV. */
-const MARK_DRAW =
-  "M70 15C37 15 15 39 15 70C15 101 38 128 70 128C103 128 127 96 176 52C181 47 186 43 192 38C207 23 221 15 240 15C273 15 295 41 295 73C295 105 273 128 240 128C208 128 182 99 156 75C127 48 103 15 70 15Z";
+import { esc, MARK_CONTOUR, mark } from "../markup.ts";
 
 /** One double helix along the axis a→b: two strands half a turn apart and the rungs between them. */
 function helix(ax: number, ay: number, bx: number, by: number, amp: number, period: number, phase: number) {
@@ -37,36 +33,38 @@ function dna(): string {
   return `<svg class="boot__dna" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice"><path class="boot__strand" d="${a.strands}${b.strands}"/><path class="boot__rung" d="${a.rungs}${b.rungs}"/></svg>`;
 }
 
-/** The ∞ in its drawable form: the closed contour that is drawn in, the open loops it
- *  settles into (the gap at the crossing), the + and − that pop, and the draw head. */
-const drawMark = (cls: string) =>
-  `<svg class="boot__mark ${cls}" viewBox="0 0 310 145"><path class="boot__contour" d="${MARK_DRAW}" pathLength="1"/><path class="boot__loops" d="${MARK_LOOPS}"/><path class="boot__plus" d="M44 70h50M69 45v50"/><path class="boot__minus" d="M219 70h44"/><circle class="boot__head" r="7" cx="70" cy="15"/></svg>`;
+/** Text that is typed in place: the untyped rest keeps its room, so nothing shifts as it grows.
+ *  [data-ghost] holds a leading part that is blanked out (the PV's glitch frames). */
+const typed = (text: string, cls = "boot__t") => `<span class="${cls}"><span data-ghost></span><span data-on></span><span data-off>${esc(text)}</span></span>`;
 
-/** Text that is typed in place: the untyped rest keeps its room, so centred lines never shift. */
-const typed = (text: string, cls = "") => `<span class="boot__t${cls ? ` ${cls}` : ""}"><span data-on></span><span data-off>${esc(text)}</span></span>`;
+/** The permission rings, in the frame's own pixels (centre 960, 540): black and white
+ *  rings, the inner arcs, the side circles, the orange pair, six satellites, the core
+ *  and the two end caps, in the PV's stacking order. */
+const rings = () => {
+  const n = (k: number, el: string) => el.repeat(k);
+  return `<svg viewBox="0 0 1920 1080"><g class="boot__rings"><path class="boot__r-outer"/><path class="boot__r-pale"/>${n(2, '<path class="boot__r-inner"/>')}${n(2, '<path class="boot__r-side"/>')}${n(2, '<circle class="boot__r-orange" r="0"/>')}${n(6, '<circle class="boot__r-sat" r="0"/>')}<circle class="boot__r-core" cx="959.5" cy="539.5" r="0"/><circle class="boot__r-cap" r="0"/><circle class="boot__r-cap boot__r-cap--pale" r="0"/></g></svg>`;
+};
 
 export function renderBoot(): string {
-  const lines = boot.lines.map((l) => `<li><i class="boot__dash"></i>${typed(l)}</li>`).join("");
   // the picture is all aria-hidden: this line tells a screen reader what the pause is
   return `<div class="boot" data-boot>
   <p class="sr-only" role="status">正在打开 Sirui Mei 的个人档案 · 按任意键跳过</p>
-  <div class="boot__paper" aria-hidden="true"><div class="boot__drift">${dna()}</div></div>
+  <div class="boot__paper" aria-hidden="true"><div class="boot__drift">${dna()}</div><i class="boot__wash"></i></div>
   <div class="boot__scene" data-b="scene" aria-hidden="true">
     <p class="boot__access" data-b="access">${typed(boot.access)}</p>
-    <div class="boot__logo" data-b="logo">${drawMark("boot__mark--lg")}<p class="boot__name">${typed(brand.mark)}</p></div>
-    <ul class="boot__lines" data-b="lines">${lines}</ul>
-    <div class="boot__rings" data-b="rings">
-      <svg viewBox="-500 -500 1000 1000"><path class="boot__r-outer"/><path class="boot__r-pale"/><path class="boot__r-arc"/><path class="boot__r-arc"/><path class="boot__r-side"/><path class="boot__r-side"/><circle class="boot__r-core" r="0"/><circle class="boot__r-head" r="0"/><circle class="boot__r-phead" r="0"/><circle class="boot__r-orange" r="0"/><circle class="boot__r-orange" r="0"/></svg>
-      <p class="boot__perm">${typed(boot.permission)}</p>
+    <div class="boot__logo" data-b="logo">
+      <svg class="boot__mark" viewBox="0 0 310 145"><path class="boot__contour" d="${MARK_CONTOUR}" pathLength="1"/><path class="boot__plus" d="M44 70h50M69 45v50"/><path class="boot__minus" d="M-7.5 0h15"/></svg>
+      <p class="boot__name">${typed(brand.mark)}</p>
     </div>
+    <p class="boot__auth" data-b="auth"><i class="boot__dash"></i>${typed("")}</p>
+    <div class="boot__scan" data-b="scan">${rings()}<p class="boot__perm">${esc(boot.permission)}</p></div>
     <div class="boot__card" data-b="card">
+      <i class="boot__panel"></i>
       <p class="boot__wt">${esc(boot.welcome[0])}</p>
-      <p class="boot__bar namebar"><span>${esc(boot.welcome[1])}</span></p>
+      <p class="boot__co"><span class="boot__co-ink">${esc(boot.welcome[1])}</span><span class="boot__co-hl"><span>${esc(boot.welcome[1])}</span></span></p>
       <p class="boot__db">${esc(boot.welcome[2])}</p>
-      <div class="boot__wlogo">${drawMark("boot__mark--sm")}<p class="boot__name boot__name--sm">${esc(brand.mark)}</p></div>
+      <div class="boot__wlogo">${mark("boot__wmark")}<p class="boot__name boot__name--sm">${esc(brand.mark)}</p></div>
     </div>
-    <i class="boot__flash" data-b="flash-ink"></i>
-    <i class="boot__flash boot__flash--pale" data-b="flash-pale"></i>
   </div>
   <div class="boot__corner" aria-hidden="true">
     <p class="brand boot__brand" data-b="brand"><a><b>${esc(brand.title)}</b><span>${esc(brand.sub)}</span><i><span>${esc(brand.os[0])}</span><b>${esc(brand.os[1])}</b></i></a></p>
