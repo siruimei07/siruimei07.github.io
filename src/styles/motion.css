@@ -1,166 +1,50 @@
-/* Screen transitions. The app adds .is-leaving to the outgoing screen and
-   .is-entering to the incoming one; everything here keys off those. Animated
-   with `translate`/`opacity`/`filter` so each element's own `transform`
-   (the glass tilt) is left alone. Reduced motion turns it all off. */
+/* Motion that CSS owns. Screen changes, the section reveal and the chrome
+   builds are app.ts timelines on the PV's 1.1× clock (MOTION-SPEC §7); the
+   screens' own builds key on [data-phase] in their files. What is left here:
+   the theme cascade (§7.10), the hold of an overtaken entry (§7.6) and the
+   reduced-motion kill switch. */
 
-html.js .screen.is-leaving {
-  opacity: 0;
-  translate: calc(-24 * var(--u)) 0;
-  transition:
-    opacity 240ms var(--ease-io),
-    translate 240ms var(--ease-io);
-}
+/* ───────── theme cascade (RhineLabUI theme wave ÷ 1.1) ─────────
+   Each [data-tc] cell eases the registered colour tokens (tokens.css) after its
+   own delay --td, set by app.ts from its distance to the control that changed
+   the theme. Descendants do not transition: they inherit the cell's tokens
+   frame by frame, gradients included. Cells never nest. */
 
-/* tile: slides in along the rule with a grain flash */
-html.js .screen.is-entering .sect__tile {
-  animation: m-tile-in 720ms var(--ease-out) both;
+html.is-theming [data-tc] * {
+  transition: none !important;
 }
 
-html.js .screen.is-entering .sect__tile .tile::after {
-  animation: m-grain-flash 520ms steps(4) 120ms both;
+html.is-theming [data-tc] {
+  transition-property:
+    --bg, --bg-hi, --bg-lo, --ink, --ink-2, --sub, --line, --hair, --tile, --tile-ink, --tag-bg, --tag-ink, --glass, --glass-hi, --glass-edge,
+    --glass-shadow, --ghost, --hex, --orange, --orange-soft, --lime, --lime-ink, --hover, --select !important;
+  transition-duration: 527ms !important;
+  transition-timing-function: var(--ease-smooth) !important;
+  transition-delay: var(--td, 0ms) !important;
+  /* text inherits a computed colour from <html>, which flips at once: each cell
+     resolves it from its own (still easing) ink instead */
+  color: var(--ink);
 }
 
-html.js .screen.is-entering .sect__tab {
-  animation: m-wipe-in 380ms var(--ease-out) 360ms both;
+/* the root's tokens flip at once; only its painted background eases */
+html.is-theming,
+html.is-theming body {
+  transition: background-color 773ms var(--ease-smooth) !important;
 }
 
-/* glass: drifts in from the right, out of focus, and settles */
-html.js .screen.is-entering .sect__glass {
-  animation: m-glass-in 860ms var(--ease-out) 90ms both;
+/* ───────── an overtaken entry (§7.6) ─────────
+   A screen navigated away from mid-build keeps its data-phase through the exit
+   (app.ts marks it .is-held), so its CSS builds stay matched and stop where they
+   are while the shell carries it off; deactivation clears both. */
+
+.screen.is-held,
+.screen.is-held *,
+.screen.is-held *::before,
+.screen.is-held *::after {
+  animation-play-state: paused !important;
 }
 
-html.js .screen.is-entering .sect__head,
-html.js .screen.is-entering .sect__foot {
-  animation: m-fade-up 520ms var(--ease-out) 420ms both;
-}
-
-html.js .screen.is-entering .sect__ghost {
-  animation: m-ghost-in 1200ms var(--ease-out) 260ms both;
-}
-
-/* content blocks reveal one after another, each behind a retreating bar */
-html.js .screen.is-entering [data-reveal] {
-  animation: m-reveal 620ms var(--ease-out) both;
-  animation-delay: calc(360ms + var(--i, 0) * 80ms);
-}
-
-html.js .screen.is-entering [data-reveal]::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 5;
-  background: var(--ink);
-  transform-origin: right;
-  animation: m-bar-off 520ms var(--ease-io) both;
-  animation-delay: calc(380ms + var(--i, 0) * 80ms);
-  pointer-events: none;
-}
-
-html.js .screen.is-entering [data-reveal] {
-  position: relative;
-}
-
-/* overview */
-html.js .home.is-entering .home__co {
-  animation: m-fade-up 620ms var(--ease-out) both;
-}
-
-html.js .home.is-entering .home__co--left {
-  animation-delay: 260ms;
-}
-html.js .home.is-entering .home__co--cross {
-  animation-delay: 340ms;
-}
-html.js .home.is-entering .home__co--right-top {
-  animation-delay: 420ms;
-}
-html.js .home.is-entering .home__co--right-bottom {
-  animation-delay: 500ms;
-}
-
-html.js .home.is-entering .callout__rule {
-  animation: m-rule 560ms var(--ease-out) both;
-  animation-delay: inherit;
-}
-
-html.js .home.is-entering .home__centre {
-  animation: m-wipe-in 520ms var(--ease-out) 600ms both;
-}
-
-html.js .home.is-entering .home__id {
-  animation: m-fade-up 700ms var(--ease-out) 200ms both;
-}
-
-html.js .home.is-entering .home__leaders {
-  animation: m-fade 600ms var(--ease-out) 700ms both;
-}
-
-/* the clip reaches past the tile's box (SECTION tab above, white ring, drop
-   shadow), so nothing pops in when the animation lets go; on phones 40u is
-   20px, still above the tab at -14px */
-@keyframes m-tile-in {
-  from {
-    opacity: 0;
-    translate: calc(-60 * var(--u)) 0;
-    clip-path: inset(calc(-40 * var(--u)) calc(100% + 70 * var(--u)) calc(-90 * var(--u)) calc(-70 * var(--u)));
-  }
-  60% {
-    opacity: 1;
-  }
-  to {
-    opacity: 1;
-    translate: 0 0;
-    clip-path: inset(calc(-40 * var(--u)) calc(-70 * var(--u)) calc(-90 * var(--u)) calc(-70 * var(--u)));
-  }
-}
-
-@keyframes m-grain-flash {
-  0% {
-    opacity: 0.9;
-  }
-  50% {
-    opacity: 0.5;
-  }
-  100% {
-    opacity: 0.2;
-  }
-}
-
-@keyframes m-wipe-in {
-  from {
-    opacity: 0;
-    clip-path: inset(0 100% 0 0);
-  }
-  to {
-    opacity: 1;
-    clip-path: inset(0 0 0 0);
-  }
-}
-
-@keyframes m-glass-in {
-  from {
-    opacity: 0;
-    translate: calc(110 * var(--u)) 0;
-    filter: blur(10px);
-  }
-  to {
-    opacity: 1;
-    translate: 0 0;
-    filter: blur(0);
-  }
-}
-
-@keyframes m-fade-up {
-  from {
-    opacity: 0;
-    translate: 0 calc(14 * var(--u));
-  }
-  to {
-    opacity: 1;
-    translate: 0 0;
-  }
-}
-
+/* kept until contact.css stops using it */
 @keyframes m-fade {
   from {
     opacity: 0;
@@ -170,43 +54,9 @@ html.js .home.is-entering .home__leaders {
   }
 }
 
-@keyframes m-ghost-in {
-  from {
-    opacity: 0;
-    translate: calc(-80 * var(--u)) 0;
-  }
-  to {
-    opacity: 1;
-    translate: 0 0;
-  }
-}
-
-@keyframes m-reveal {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes m-bar-off {
-  from {
-    transform: scaleX(1);
-  }
-  to {
-    transform: scaleX(0);
-  }
-}
-
-@keyframes m-rule {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
-}
+/* ───────── reduced motion ─────────
+   CSS motion collapses to its end state; app.ts plays a 145 ms cross-fade
+   for screen changes and skips every other script-driven effect. */
 
 html[data-motion="reduced"] *,
 html[data-motion="reduced"] *::before,

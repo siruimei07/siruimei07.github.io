@@ -3,6 +3,7 @@
 @import "./components.css";
 @import "./app.css";
 @import "./motion.css";
+@import "./ambient.css";
 @import "./boot.css";
 @import "./home.css";
 @import "./screens/profile.css";

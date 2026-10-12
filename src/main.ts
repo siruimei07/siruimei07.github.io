@@ -8,6 +8,7 @@ import "@fontsource/jetbrains-mono/latin-400.css";
 import "@fontsource/jetbrains-mono/latin-500.css";
 import "./fonts/fonts.css";
 import "./styles/index.css";
+import "./fx/ambient.ts";
 import { App } from "./app/app.ts";
 
 const fallback = (e: unknown) => {

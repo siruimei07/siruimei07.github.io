@@ -125,7 +125,7 @@ button {
   font-size: 13px;
   letter-spacing: 0.08em;
   transform: translateY(-160%);
-  transition: transform var(--t-fast) var(--ease-out);
+  transition: transform var(--t-hover) var(--ease-enter);
 }
 
 .skiplink:focus-visible {
@@ -140,7 +140,8 @@ button {
   z-index: var(--z-canvas);
   pointer-events: none;
   opacity: 0;
-  transition: opacity 900ms var(--ease-out);
+  /* RhineLabUI canvas .45 s ÷ 1.1 */
+  transition: opacity 409ms var(--ease-enter);
 }
 
 html.gl-on #gl {
@@ -154,6 +155,7 @@ html:not(.js) body {
 }
 
 html:not(.js) #gl,
+html:not(.js) .veil,
 html:not(.js) [data-boot],
 html:not(.js) .rule,
 html:not(.js) .home__leaders,

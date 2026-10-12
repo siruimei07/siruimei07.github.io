@@ -25,7 +25,8 @@ export const brand = {
   sub: "SYNTHESIZE INFORMATION",
   os: ["ANALYSIS", "OS"],
   /** letter-spaced line under the mark */
-  mark: "SIRUI · MEI",
+  /** the name under the ∞ mark, as the PV prints RHINE·LAB under it */
+  mark: "RHINE LAB LLC.",
   powered: ["POWERED BY", "RHINE LAB"],
   database: "SIRUI MEI DATABASE",
   command: "COMMAND ENTERED",

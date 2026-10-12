@@ -2,7 +2,8 @@
 // the left ending in a square) turned into channel status; the open channels;
 // Toronto local time as a FILE readout; a message typed into a terminal that
 // leaves through the visitor's own mail client; and the PERMISSION AUTHORIZED
-// rings (0:20) beside it, which spin once when the message is sent.
+// rings (0:20) beside it, which spin once when the message is sent and turn
+// toward the pointer. Typed lines keep one whole copy for screen readers.
 
 import { contact, identity, sectionById, worksText } from "../content.ts";
 import { esc, link, pad } from "../markup.ts";
@@ -27,30 +28,34 @@ function dot(r: number, deg: number, size: number, cls: string): string {
 }
 
 // Proportions measured from the PV frame at 0:20.5 (outer arc r≈420 px).
+// Each ring is its own stacked <svg>, so turning one is a compositor-only rotation
+// of its layer: a <g> turned inside one SVG repaints the whole emblem every frame.
 function rings(): string {
-  return `<svg class="rings" viewBox="0 0 240 240" aria-hidden="true" data-rings>
-    <g class="rings__a"><path class="rings__ink" pathLength="1" d="${arc(104, 72, 352)}"/>${dot(104, 352, 4.4, "rings__knob")}</g>
-    <g class="rings__b"><path class="rings__white" pathLength="1" d="${arc(83, 184, 478)}"/>${dot(83, 184, 2.2, "rings__pip")}</g>
-    <g class="rings__c"><path class="rings__thin" pathLength="1" d="${arc(27, 152, 266)}"/><path class="rings__thin" pathLength="1" d="${arc(27, 332, 440)}"/></g>
-    <g class="rings__d">${dot(50, 174, 2.4, "rings__dot")}${dot(50, 352, 2.4, "rings__dot")}</g>
-  </svg>`;
+  const layer = (cls: string, inner: string) => `<svg class="rings__layer ${cls}" viewBox="0 0 240 240" focusable="false">${inner}</svg>`;
+  return `<div class="rings" aria-hidden="true" data-rings>
+    ${layer("rings__a", `<path class="rings__ink" pathLength="1" d="${arc(104, 72, 352)}"/>${dot(104, 352, 4.4, "rings__knob")}`)}
+    ${layer("rings__b", `<path class="rings__white" pathLength="1" d="${arc(83, 184, 478)}"/>${dot(83, 184, 2.2, "rings__pip")}`)}
+    ${layer("rings__c", `<path class="rings__thin" pathLength="1" d="${arc(27, 152, 266)}"/><path class="rings__thin" pathLength="1" d="${arc(27, 332, 440)}"/>`)}
+    ${layer("rings__d", `${dot(50, 174, 2.4, "rings__dot")}${dot(50, 352, 2.4, "rings__dot")}`)}
+  </div>`;
 }
 
 export function renderContact(): string {
   const s = sectionById.contact;
   const channels = contact.channels
     .map(
-      (c, i) => `<li class="channel channel--${c.id}">
+      (c, i) => `<li class="channel channel--${c.id}" style="--n:${i}"><div class="channel__in lift">
       <p class="channel__label"><span class="channel__no" aria-hidden="true">CH-${pad(i + 1, 2)}</span><span>${esc(c.label)}</span><small class="zh">${esc(c.zh)}</small></p>
-      ${link(c.href, esc(c.value), `class="channel__value"`)}
+      ${link(c.href, esc(c.value), `class="channel__value hl"`)}
       <p class="channel__act">${c.id === "mail" ? `<button type="button" class="btn" data-copy="${esc(c.value)}">${esc(contact.copy)}</button>` : link(c.href, "OPEN ›", `class="btn" aria-label="OPEN ${esc(c.label)} ${esc(c.value)}"`)}</p>
-    </li>`,
+    </div></li>`,
     )
     .join("");
+  const fileNo = `${esc(worksText.file)}: ${esc(s.code)}`;
   const body = `<div class="comms">
   <div class="comms__file">
     <i class="comms__wire" aria-hidden="true"></i>
-    <p class="comms__box"><span data-type>${esc(worksText.file)}: ${esc(s.code)}</span><span><span data-type>${esc(contact.file)}: </span><b data-type>${esc(contact.open)}</b><i class="comms__led" aria-hidden="true"></i></span></p>
+    <p class="comms__box"><span class="sr-only">${fileNo} · ${esc(contact.file)}: ${esc(contact.open)}</span><span aria-hidden="true" data-type>${fileNo}</span><span aria-hidden="true"><span data-type>${esc(contact.file)}: </span><b data-type>${esc(contact.open)}</b><i class="comms__led" data-led></i></span></p>
   </div>
   <ul class="comms__channels" data-reveal>${channels}</ul>
   <div class="comms__time cornered" data-reveal>
@@ -59,13 +64,13 @@ export function renderContact(): string {
     <p class="comms__zone"><span data-local-date>${esc(identity.homebase.toUpperCase())}</span><span data-local-zone>${esc(identity.timezone)}</span></p>
   </div>
   <form class="comms__form" data-letter data-reveal action="mailto:${esc(identity.email)}" method="get" enctype="text/plain">
-    <p class="comms__lead zh">${esc(contact.lead)}</p>
+    <p class="comms__lead zh" data-occlude>${esc(contact.lead)}</p>
     <div class="comms__term">
-      <p class="comms__term-h"><label for="letter-text">${esc(contact.message)}</label><span aria-hidden="true">${esc(s.code)} · <span data-chars>000</span>/800</span></p>
+      <p class="comms__term-h"><label for="letter-text">${esc(contact.message)}</label><span aria-hidden="true"><span data-blink="text">${esc(s.code)}</span> · <span data-chars>000</span>/800</span></p>
       <div class="comms__field">
         <span class="comms__prompt" aria-hidden="true">&gt;</span>
         <textarea id="letter-text" name="body" rows="3" maxlength="800" placeholder="${esc(contact.placeholder)}"></textarea>
-        <i class="comms__caret" aria-hidden="true"></i>
+        <i class="comms__caret breathe" aria-hidden="true"></i>
       </div>
       <p class="comms__send"><span class="comms__thanks zh" data-thanks role="status"></span><button class="btn btn--ink" type="submit">${esc(contact.send)} <small>${esc(contact.sendZh)}</small></button></p>
     </div>
@@ -73,5 +78,5 @@ export function renderContact(): string {
   </form>
   <div class="comms__rings">${rings()}</div>
 </div>`;
-  return sectionScreen(s, { ghost: "CHANNEL", body });
+  return sectionScreen(s, { ghost: "CHANNEL", body, buildMs: 4600, revealMs: 2800 });
 }

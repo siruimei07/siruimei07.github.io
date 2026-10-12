@@ -2,7 +2,9 @@
 // physical transmission: wrap light from the upper left, a soft fresnel rim,
 // brighter end faces and the cassette's front-face detailing drawn from
 // object-space position, all faint. Colours stay in sRGB so fogged plates
-// melt into the page's own background gradient exactly.
+// melt into the page's own background gradient exactly. Both palettes live in
+// the shader: each plate carries its own light→dark mix, so a theme change can
+// travel across the figure as a wave (MOTION-SPEC §7.10).
 
 import { ShaderMaterial, Vector2, Vector3, FrontSide } from "three";
 
@@ -18,7 +20,11 @@ export type Palette = {
   looseAlpha: number;
 };
 
-export const PALETTES: Record<"light" | "dark", Palette> = {
+export type Theme = "light" | "dark";
+/** The page's own radial background (--bg-hi, --bg, --bg-lo) for one theme. */
+export type Backdrop = { hi: string; bg: string; lo: string };
+
+export const PALETTES: Record<Theme, Palette> = {
   light: {
     shade: "#a8927b",
     lit: "#eadfcf",
@@ -59,8 +65,27 @@ export function srgb(css: string, out = new Vector3()): Vector3 {
   return out;
 }
 
+// the palette is constant per plate: blended once per vertex, not per fragment
+const PALETTE_VARYINGS = /* glsl */ `
+flat varying vec3 vShade;
+flat varying vec3 vLit;
+flat varying vec3 vRim;
+flat varying vec3 vEdge;
+flat varying vec3 vInk;
+flat varying vec3 vAmber;
+flat varying vec3 vAlphaK; // face, side, loose
+`;
+
 const vertex = /* glsl */ `
 attribute vec4 aInst; // tone, fade, glow, tube
+attribute vec4 aInst2; // the ribbon's across-axis (world, untwisted), theme mix
+uniform vec3 uShade[2];
+uniform vec3 uLit[2];
+uniform vec3 uRim[2];
+uniform vec3 uEdge[2];
+uniform vec3 uInk[2];
+uniform vec3 uAmber[2];
+uniform vec3 uAlpha[2];
 varying vec3 vObj;
 varying vec3 vObjN;
 varying vec3 vN;
@@ -68,13 +93,26 @@ varying vec3 vV;
 varying float vDepth;
 varying vec4 vInst;
 varying vec3 vAxis;
-
+varying float vTubeS;
+${PALETTE_VARYINGS}
 void main() {
+  float th = aInst2.w;
+  vShade = mix(uShade[0], uShade[1], th);
+  vLit = mix(uLit[0], uLit[1], th);
+  vRim = mix(uRim[0], uRim[1], th);
+  vEdge = mix(uEdge[0], uEdge[1], th);
+  vInk = mix(uInk[0], uInk[1], th);
+  vAmber = mix(uAmber[0], uAmber[1], th);
+  vAlphaK = mix(uAlpha[0], uAlpha[1], th);
   vec4 mv = modelViewMatrix * instanceMatrix * vec4(position, 1.0);
   vN = normalize(mat3(modelViewMatrix) * mat3(instanceMatrix) * normal);
   vV = -mv.xyz;
   vDepth = -mv.z;
-  vAxis = mat3(modelViewMatrix) * mat3(instanceMatrix) * vec3(1.0, 0.0, 0.0);
+  // the tube light belongs to the ribbon, not to the plate: measured across
+  // the untwisted axis, it stays put while the plates turn in place
+  vAxis = mat3(modelViewMatrix) * aInst2.xyz;
+  float sc = max(1e-4, length(instanceMatrix[0].xyz));
+  vTubeS = dot(mat3(instanceMatrix) * position, aInst2.xyz) / (2.5 * sc);
   vObj = position;
   vObjN = normal;
   vInst = aInst;
@@ -83,21 +121,13 @@ void main() {
 `;
 
 const fragment = /* glsl */ `
-uniform vec3 uShade;
-uniform vec3 uLit;
-uniform vec3 uRim;
-uniform vec3 uEdge;
-uniform vec3 uInk;
-uniform vec3 uAmber;
-uniform vec3 uBgHi;
-uniform vec3 uBg;
-uniform vec3 uBgLo;
+uniform vec3 uBgHi[2];
+uniform vec3 uBg[2];
+uniform vec3 uBgLo[2];
+uniform float uBgMix;
 uniform vec2 uRes;
 uniform float uFogNear;
 uniform float uFogFar;
-uniform float uFaceAlpha;
-uniform float uSideAlpha;
-uniform float uLooseAlpha;
 uniform vec3 uLight;
 uniform float uWrap;
 uniform float uRimK;
@@ -112,7 +142,8 @@ varying vec3 vV;
 varying float vDepth;
 varying vec4 vInst;
 varying vec3 vAxis;
-uniform vec3 uPlaneN;
+varying float vTubeS;
+${PALETTE_VARYINGS}uniform vec3 uPlaneN;
 
 float sdBox(vec2 p, vec2 b) {
   vec2 d = abs(p) - b;
@@ -139,15 +170,27 @@ float screw(vec2 q) {
   return fill(r - 0.075) * 0.6 + stroke(r - 0.12, 0.012) + slot * 0.6;
 }
 
-// the page background: radial-gradient(120% 90% at 50% 40%, hi 0, bg 55%, lo 120%)
+// the page background: radial-gradient(120% 90% at 50% 40%, hi 0, bg 55%, lo 120%),
+// eased between the themes with the page's own background transition
 vec3 paper() {
   vec2 uv = gl_FragCoord.xy / uRes;
   vec2 d = vec2((uv.x - 0.5) / 1.2, ((1.0 - uv.y) - 0.4) / 0.9);
   float r = length(d);
-  return r < 0.55 ? mix(uBgHi, uBg, r / 0.55) : mix(uBg, uBgLo, clamp((r - 0.55) / 0.65, 0.0, 1.0));
+  vec3 hi = mix(uBgHi[0], uBgHi[1], uBgMix);
+  vec3 bg = mix(uBg[0], uBg[1], uBgMix);
+  vec3 lo = mix(uBgLo[0], uBgLo[1], uBgMix);
+  return r < 0.55 ? mix(hi, bg, r / 0.55) : mix(bg, lo, clamp((r - 0.55) / 0.65, 0.0, 1.0));
 }
 
 void main() {
+  vec3 shadeC = vShade;
+  vec3 litC = vLit;
+  vec3 rimC = vRim;
+  vec3 edgeC = vEdge;
+  vec3 inkC = vInk;
+  vec3 amberC = vAmber;
+  vec3 alphaK = vAlphaK;
+
   vec3 N = normalize(vN);
   vec3 V = normalize(vV);
   vec3 L = normalize(uLight);
@@ -160,7 +203,7 @@ void main() {
     vec3 A = normalize(vAxis);
     vec3 Bv = normalize((viewMatrix * vec4(uPlaneN, 0.0)).xyz);
     Bv = normalize(Bv - A * dot(Bv, A));
-    float s = clamp(vObj.x / 2.5, -1.0, 1.0);
+    float s = clamp(vTubeS, -1.0, 1.0);
     vec3 nt = normalize(A * s + Bv * sqrt(1.0 - s * s));
     float tube = clamp((dot(nt, L) + uWrap) / (1.0 + uWrap), 0.0, 1.0);
     wrap = mix(wrap, tube, vInst.w);
@@ -168,17 +211,17 @@ void main() {
   float face = smoothstep(0.55, 0.92, abs(vObjN.z));
   float fres = pow(1.0 - ndv, 3.0);
 
-  vec3 col = mix(uShade, uLit, wrap);
+  vec3 col = mix(shadeC, litC, wrap);
   // end faces: brighter ivory with a warm cast, like lit acrylic edges
-  vec3 side = mix(uEdge, uRim, wrap * 0.55);
+  vec3 side = mix(edgeC, rimC, wrap * 0.55);
   col = mix(side, col, face);
-  col = mix(col, uRim, fres * uRimK);
+  col = mix(col, rimC, fres * uRimK);
   // loose plates (the chain) are seen alone against the paper: paler, glassier
   float loose = 1.0 - vInst.w;
-  col = mix(col, mix(uLit, uRim, 0.5), loose * 0.4 * face);
+  col = mix(col, mix(litC, rimC, 0.5), loose * 0.4 * face);
 
   // packed into the ∞ the plates read as one solid body; loose ones stay glassy
-  float alpha = mix(uSideAlpha, mix(uLooseAlpha, uFaceAlpha, vInst.w), face) + fres * 0.18;
+  float alpha = mix(alphaK.y, mix(alphaK.z, alphaK.x, vInst.w), face) + fres * 0.18;
 
   // cassette detailing on both large faces (mirrored on the back, so it reads the same way round)
   vec2 p = vec2(vObj.x * sign(vObjN.z + 1e-4), vObj.y);
@@ -186,11 +229,11 @@ void main() {
   float rimD = -sdBox(p, vec2(2.5, 1.85));
   float border = (1.0 - smoothstep(0.0, 0.45, rimD)) * face;
   float borderK = uBorder + loose * 0.32;
-  col = mix(col, uShade, border * borderK);
+  col = mix(col, shadeC, border * borderK);
   // in the dense ∞ only the top strip of each face shows; it darkens toward
   // the edge of the plate stacked over it
   float ao = (1.0 - smoothstep(uAOFrom, 1.85, vObj.y)) * face * vInst.w;
-  col = mix(col, uShade * 0.92, ao * uAO);
+  col = mix(col, shadeC * 0.92, ao * uAO);
   alpha += border * borderK * 0.3;
   // fade the detailing out once it would shrink below a couple of pixels
   vec2 fw = fwidth(p);
@@ -224,16 +267,17 @@ void main() {
     float hi = grooveHi * 0.22 + label * 0.28;
     float amber = clamp(arc1 * 0.5 + arc2 * 0.55 + chip * 0.7, 0.0, 1.0);
 
-    col = mix(col, uInk, min(1.0, ink * detail));
-    col = mix(col, uRim, min(1.0, hi * detail));
-    col = mix(col, uAmber, min(1.0, amber * detail));
+    col = mix(col, inkC, min(1.0, ink * detail));
+    col = mix(col, rimC, min(1.0, hi * detail));
+    col = mix(col, amberC, min(1.0, amber * detail));
     alpha += (ink * 0.25 + hi * 0.12 + amber * 0.25) * detail;
   }
 
-  // per-plate variation and the navigation pulse
+  // per-plate variation, then the live brightening (waves, cursor, callout
+  // highlight), already weighted per plate by the scene
   // tone < 1 darkens toward the warm shade rather than toward grey
-  col = mix(col, uShade, clamp((1.0 - vInst.x) * 2.0, 0.0, 1.0));
-  col = mix(col, uRim, vInst.z * 0.35);
+  col = mix(col, shadeC, clamp((1.0 - vInst.x) * 2.0, 0.0, 1.0));
+  col = mix(col, rimC, clamp(vInst.z, 0.0, 1.0));
 
   float fog = smoothstep(uFogNear, uFogFar, vDepth);
   col = mix(col, paper(), fog);
@@ -242,6 +286,8 @@ void main() {
   gl_FragColor = vec4(col, alpha);
 }
 `;
+
+const pair = () => ({ value: [new Vector3(), new Vector3()] });
 
 export function createPlateMaterial(): ShaderMaterial {
   return new ShaderMaterial({
@@ -252,21 +298,20 @@ export function createPlateMaterial(): ShaderMaterial {
     depthTest: true,
     side: FrontSide,
     uniforms: {
-      uShade: { value: new Vector3() },
-      uLit: { value: new Vector3() },
-      uRim: { value: new Vector3() },
-      uEdge: { value: new Vector3() },
-      uInk: { value: new Vector3() },
-      uAmber: { value: new Vector3() },
-      uBgHi: { value: new Vector3() },
-      uBg: { value: new Vector3() },
-      uBgLo: { value: new Vector3() },
+      uShade: pair(),
+      uLit: pair(),
+      uRim: pair(),
+      uEdge: pair(),
+      uInk: pair(),
+      uAmber: pair(),
+      uAlpha: pair(),
+      uBgHi: pair(),
+      uBg: pair(),
+      uBgLo: pair(),
+      uBgMix: { value: 0 },
       uRes: { value: new Vector2(1, 1) },
       uFogNear: { value: 100 },
       uFogFar: { value: 200 },
-      uFaceAlpha: { value: 0.5 },
-      uSideAlpha: { value: 0.8 },
-      uLooseAlpha: { value: 0.4 },
       uLight: { value: new Vector3(-0.4, 0.85, 0.45) },
       uWrap: { value: 0.4 },
       uRimK: { value: 0.55 },
@@ -278,20 +323,20 @@ export function createPlateMaterial(): ShaderMaterial {
   });
 }
 
-/** Load a palette plus the page background (read from CSS) into the material. */
-export function applyPalette(m: ShaderMaterial, theme: "light" | "dark", bg: { hi: string; bg: string; lo: string }) {
-  const p = PALETTES[theme];
+/** Load both palettes plus both page backgrounds (read from CSS) into the material. */
+export function applyPalettes(m: ShaderMaterial, bg: Record<Theme, Backdrop>) {
   const u = m.uniforms;
-  srgb(p.shade, u.uShade.value);
-  srgb(p.lit, u.uLit.value);
-  srgb(p.rim, u.uRim.value);
-  srgb(p.edge, u.uEdge.value);
-  srgb(p.ink, u.uInk.value);
-  srgb(p.amber, u.uAmber.value);
-  srgb(bg.hi, u.uBgHi.value);
-  srgb(bg.bg, u.uBg.value);
-  srgb(bg.lo, u.uBgLo.value);
-  u.uFaceAlpha.value = p.faceAlpha;
-  u.uSideAlpha.value = p.sideAlpha;
-  u.uLooseAlpha.value = p.looseAlpha;
+  (["light", "dark"] as const).forEach((theme, k) => {
+    const p = PALETTES[theme];
+    srgb(p.shade, u.uShade.value[k]);
+    srgb(p.lit, u.uLit.value[k]);
+    srgb(p.rim, u.uRim.value[k]);
+    srgb(p.edge, u.uEdge.value[k]);
+    srgb(p.ink, u.uInk.value[k]);
+    srgb(p.amber, u.uAmber.value[k]);
+    (u.uAlpha.value[k] as Vector3).set(p.faceAlpha, p.sideAlpha, p.looseAlpha);
+    srgb(bg[theme].hi, u.uBgHi.value[k]);
+    srgb(bg[theme].bg, u.uBg.value[k]);
+    srgb(bg[theme].lo, u.uBgLo.value[k]);
+  });
 }

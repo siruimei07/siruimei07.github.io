@@ -23,7 +23,7 @@ html.js .home__flat {
   width: 100%;
   height: 100%;
   opacity: 0.9;
-  transition: opacity 700ms var(--ease-out);
+  transition: opacity 409ms var(--ease-enter);
 }
 
 .home__flat g {
@@ -52,13 +52,58 @@ html.gl-on .home__flat {
   pointer-events: none;
 }
 
-.home__leaders line {
+/* one pen path a callout: dot → elbow → along the underline (atlas L2); it is the
+   underline too, so the callout's own rule stays hidden on desktop */
+.home__lead {
+  fill: none;
   stroke: color-mix(in srgb, var(--ink) 60%, transparent);
   stroke-width: max(1px, calc(1.6 * var(--u)));
+  transition:
+    stroke var(--t-hover) var(--ease-enter),
+    stroke-width var(--t-hover) var(--ease-enter);
 }
 
-.home__leaders circle {
+.home__lead.is-hot {
+  stroke: var(--ink);
+  stroke-width: max(1.5px, calc(2.4 * var(--u)));
+}
+
+.home__dot,
+.home__halo-g circle {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.home__dot {
   fill: var(--ink);
+  transition: transform var(--t-hover) var(--ease-enter);
+}
+
+/* the dot pops 1 → 1.6 r on hover (218 ms) and settles back in 182 */
+.home__dot.is-hot {
+  transform: scale(1.6);
+  transition: transform 218ms var(--ease-pop);
+}
+
+/* R9 halo, played by the screen on hover */
+.home__halo-disc {
+  fill: var(--glass-edge);
+  opacity: 0;
+}
+
+.home__halo-ring {
+  fill: none;
+  stroke: color-mix(in srgb, var(--ink) 25%, transparent);
+  stroke-width: 1px;
+  opacity: 0;
+}
+
+:root[data-theme="dark"] .home__halo-disc {
+  fill: color-mix(in srgb, var(--ink) 34%, transparent);
+}
+
+html.js .home__co .callout__rule {
+  visibility: hidden;
 }
 
 /* ───────── callouts ───────── */
@@ -100,21 +145,6 @@ html.js .home__co--right-bottom {
 
 .home__co .callout {
   min-width: calc(250 * var(--u));
-}
-
-/* each rule draws with its own callout (motion.css's `inherit` reads the
-   link's delay, not the list item's) */
-html.js .home.is-entering .home__co--left .callout__rule {
-  animation-delay: 260ms;
-}
-html.js .home.is-entering .home__co--cross .callout__rule {
-  animation-delay: 340ms;
-}
-html.js .home.is-entering .home__co--right-top .callout__rule {
-  animation-delay: 420ms;
-}
-html.js .home.is-entering .home__co--right-bottom .callout__rule {
-  animation-delay: 500ms;
 }
 
 /* a halo of paper keeps the copy legible where it crosses the plates */
@@ -167,6 +197,7 @@ html.js .home__centre {
   font-weight: 600;
   font-size: max(12px, calc(17 * var(--u)));
   letter-spacing: 0.04em;
+  transition: color var(--t-hover) var(--ease-enter);
 }
 
 .home__pill small {
@@ -198,6 +229,40 @@ html.js .home__centre {
 /* dark --glass-edge is a 16% veil, which vanishes over the lit plates */
 :root[data-theme="dark"] .home__ring {
   --ring: color-mix(in srgb, var(--ink) 60%, transparent);
+}
+
+/* R9 halo on the ◎ (the screen plays it on hover): a disc and two hairline rings */
+.home__halo {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  pointer-events: none;
+}
+
+.home__halo > i {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: calc(50 * var(--u));
+  aspect-ratio: 1;
+  border-radius: 50%;
+  translate: -50% -50%;
+  background: var(--glass-edge);
+  opacity: 0;
+}
+
+.home__halo > i + i {
+  width: calc(90 * var(--u));
+  background: none;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 25%, transparent);
+}
+
+.home__halo > i + i + i {
+  width: calc(100 * var(--u));
+}
+
+:root[data-theme="dark"] .home__halo > i:first-child {
+  background: color-mix(in srgb, var(--ink) 34%, transparent);
 }
 
 .home__centre:hover .home__pill b,
@@ -248,8 +313,8 @@ html.js .home__id {
 .home__badge small {
   font-size: max(4.5px, calc(5.5 * var(--u)));
   font-weight: 700;
-  letter-spacing: 0.7em;
-  margin-right: -0.7em;
+  letter-spacing: 0.4em;
+  margin-right: -0.4em;
   white-space: nowrap;
 }
 
@@ -332,22 +397,22 @@ html.js .home__hint {
   white-space: nowrap;
 }
 
-.home__hint::before {
-  content: "";
+/* the ■ breathes (.breathe) */
+.home__sq {
+  flex: none;
   width: 0.6em;
   height: 0.6em;
   background: var(--ink);
-  animation: home-blink 1.1s steps(1) infinite;
+}
+
+.home__hint-t {
+  display: flex;
+  align-items: center;
+  gap: 1em;
 }
 
 .home__hint small {
   letter-spacing: 0.16em;
-}
-
-@keyframes home-blink {
-  50% {
-    opacity: 0;
-  }
 }
 
 /* ───────── phones, tablets, short windows ───────── */
@@ -394,6 +459,15 @@ html.js .home__hint {
     display: none;
   }
 
+  /* no leaders here: the callout keeps its own underline, drawn with its build */
+  html.js .home__co .callout__rule {
+    visibility: visible;
+  }
+
+  html.js .home[data-phase="enter"] .home__co .callout__rule {
+    animation: home-rule 800ms var(--ease-l2) var(--c) backwards;
+  }
+
   html.js .home__callouts {
     order: 3;
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -436,5 +510,175 @@ html.js .home__hint {
   /* inside the gutter, or the screen scrolls sideways */
   .home__role::after {
     right: 0;
+  }
+}
+
+/* ───────── the overview build (MOTION-SPEC §8.1, atlas §2.14) ─────────
+   t1 is the moment the screen enters (its "enter" phase). Every rule below applies
+   only while that phase lasts and counts from it; the base styles are the end state,
+   so settling (on time, or early on any input) shows the finished overview at once.
+   A callout's own start c is its --c (views/home.ts). The typing and the hint's
+   flicker are the screen's (screens/home.ts). */
+
+/* typed twins (screens/home.ts typeIn): the real text keeps its place, invisible,
+   while an aria-hidden copy is typed over it; the profile's code uses them too */
+[data-ty] {
+  position: relative;
+}
+
+.ty {
+  display: none;
+}
+
+[data-typing] > .ty {
+  display: block;
+  position: absolute;
+  inset: 0;
+  padding: inherit;
+  pointer-events: none;
+}
+
+[data-typing] > .ty__src {
+  opacity: 0;
+}
+
+/* t1 + 182: the centre ◎ pops (R7) and the name block slides in from the left (M18) */
+html.js .home[data-phase="enter"] .home__ring {
+  animation: home-pop 327ms var(--ease-pop) 182ms backwards;
+}
+
+html.js .home[data-phase="enter"] .home__id {
+  animation:
+    home-slide 764ms cubic-bezier(0.1, 0, 0, 1) 182ms backwards,
+    home-fade 145ms linear 182ms backwards;
+}
+
+/* t1 + 509: the pill's plate runs out from a 1px cursor (B3); its text types at + 891 */
+html.js .home[data-phase="enter"] .home__pill {
+  animation:
+    home-bar 836ms var(--ease-b3) 509ms backwards,
+    d1-wait 0s 509ms backwards;
+}
+
+/* t1 + 946: the links' plates wipe in (B2 first entrance), the second two frames later */
+html.js .home[data-phase="enter"] .home__links .btn {
+  animation:
+    home-wipe 436ms var(--ease-wipe) 946ms backwards,
+    d1-wait 0s 946ms backwards;
+}
+
+html.js .home[data-phase="enter"] .home__links .btn + .btn {
+  animation-delay: 1019ms;
+}
+
+/* c: the anchor dot pops and the leader draws out of it, over the elbow, along the rule */
+html.js .home[data-phase="enter"] .home__dot {
+  animation: home-dot 73ms var(--ease-expo) var(--c) backwards;
+}
+
+html.js .home[data-phase="enter"] .home__lead {
+  stroke-dasharray: 1 1;
+  animation: home-draw 800ms var(--ease-l2) var(--c) backwards;
+}
+
+/* c + 36: the white Γ — its upright grows up (145 ms, accelerating), then the arm runs out (436) */
+html.js .home[data-phase="enter"] .home__co .callout__br {
+  animation: home-arm 581ms linear calc(var(--c) + 36ms) backwards;
+}
+
+/* c + 509: the black label bar runs out from a 1px cursor, white caps only under it (B3) */
+html.js .home[data-phase="enter"] .home__co .tag {
+  animation:
+    home-bar 836ms var(--ease-b3) calc(var(--c) + 509ms) backwards,
+    d1-wait 0s calc(var(--c) + 509ms) backwards;
+}
+
+/* hidden until its delay, then nothing: a 0 s animation holds its first frame only while it waits
+   (shared by the profile and research builds) */
+@keyframes d1-wait {
+  from,
+  to {
+    opacity: 0;
+  }
+}
+
+/* opaque from its first frame, invisible before it */
+@keyframes home-pop {
+  0% {
+    scale: 0.3;
+    opacity: 0;
+  }
+  0.1% {
+    opacity: 1;
+  }
+  100% {
+    scale: 1;
+  }
+}
+
+@keyframes home-slide {
+  from {
+    translate: calc(-160 * var(--u)) 0;
+  }
+}
+
+@keyframes home-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+/* the clip reaches past the plate's glow above, below and to the right */
+@keyframes home-bar {
+  from {
+    clip-path: inset(calc(-24 * var(--u)) calc(100% - 1px) calc(-24 * var(--u)) 0);
+  }
+  to {
+    clip-path: inset(calc(-24 * var(--u)) calc(-24 * var(--u)) calc(-24 * var(--u)) 0);
+  }
+}
+
+@keyframes home-wipe {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes home-dot {
+  from {
+    scale: 0;
+  }
+}
+
+@keyframes home-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* 145 of the 581 ms is the upright (24.96 %) */
+@keyframes home-arm {
+  0% {
+    clip-path: inset(100% calc(100% - max(3px, calc(7 * var(--u)))) 0 0);
+    animation-timing-function: var(--ease-in-fade);
+  }
+  24.96% {
+    clip-path: inset(0 calc(100% - max(3px, calc(7 * var(--u)))) 0 0);
+    animation-timing-function: var(--ease-expo);
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes home-rule {
+  from {
+    transform: scaleX(0);
   }
 }

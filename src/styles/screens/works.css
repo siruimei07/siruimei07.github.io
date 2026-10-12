@@ -1,7 +1,16 @@
 /* PROJECT ARCHIVE — the PV's file selection. Index of files on the left (a
    vertical tab list that scrolls past ~7 files); the selected file on the
    right: FILE NUMBER box (t0032), the drawn cassette (t0040) with its data
-   beside it, then title, CONFIDENTIALITY, notes and ACCESS FILE. */
+   beside it, then title, CONFIDENTIALITY, notes and ACCESS FILE. Motion
+   (MOTION-SPEC §8.4): the index builds in CSS from the dock; the record, the
+   glint and the cassette are driven from screens/works.ts. */
+
+/* the D9 scan front on the cassette, read by its mask and its glow line */
+@property --cas-scan {
+  syntax: "<percentage>";
+  inherits: true;
+  initial-value: 100%;
+}
 
 .sect--works {
   --files-plate: rgba(255, 255, 255, 0.42);
@@ -22,6 +31,8 @@
   --cas-emboss: rgba(118, 108, 94, 0.36);
   --cas-screw: #eceae6;
   --cas-shadow: rgba(60, 48, 36, 0.16);
+  /* D11: the warm light that catches the rack (f717–776) */
+  --glint: color-mix(in srgb, var(--orange-soft) 72%, #fff);
 }
 
 :root[data-theme="dark"] .sect--works {
@@ -42,6 +53,7 @@
   --cas-emboss: rgba(224, 227, 220, 0.22);
   --cas-screw: #2a363b;
   --cas-shadow: rgba(0, 0, 0, 0.4);
+  --glint: var(--orange-soft);
 }
 
 .files {
@@ -76,6 +88,7 @@
 }
 
 .files__list {
+  position: relative;
   display: grid;
   gap: calc(8 * var(--u));
   max-height: calc(560 * var(--u));
@@ -102,9 +115,12 @@
   background: var(--files-plate);
   box-shadow: inset 0 0 0 1px var(--hair);
   color: var(--ink);
+  overflow: hidden;
+  /* RhineLabUI hover lift (200 ms ÷ 1.1), sideways: the rows hang on their bars */
   transition:
-    background-color var(--t-mid) var(--ease-out),
-    color var(--t-mid) var(--ease-out);
+    translate var(--t-hover) var(--ease-enter),
+    background-color var(--t-hover) var(--ease-enter),
+    color var(--t-hover) var(--ease-enter);
 }
 
 .file-row::before {
@@ -115,7 +131,42 @@
   bottom: 0;
   width: max(3px, calc(5 * var(--u)));
   background: var(--line);
-  transition: background-color var(--t-mid) var(--ease-out);
+  transition:
+    background-color var(--t-hover) var(--ease-enter),
+    box-shadow var(--t-hover) var(--ease-enter);
+}
+
+/* the glint stays as a glow under the chosen row's bar */
+.file-row.is-glow::before {
+  box-shadow: 0 0 calc(16 * var(--u)) max(1px, calc(2 * var(--u))) var(--select);
+}
+
+/* ambient D11: a glint runs along the row's lower edge (screens/works.ts animates it) */
+.file-row::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: calc(90 * var(--u));
+  height: max(2px, calc(3 * var(--u)));
+  background: linear-gradient(90deg, transparent, var(--glint) 70%, transparent);
+  translate: -100% 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* the travelling glint: a warm sliver running down the rows' bars to the chosen one */
+.files__glint {
+  position: absolute;
+  z-index: 2;
+  left: 0;
+  top: 0;
+  width: max(3px, calc(5 * var(--u)));
+  height: calc(96 * var(--u));
+  background: linear-gradient(180deg, transparent, var(--glint) 42%, #fff 50%, var(--glint) 58%, transparent);
+  box-shadow: 0 0 calc(10 * var(--u)) color-mix(in srgb, var(--glint) 70%, transparent);
+  opacity: 0;
+  pointer-events: none;
 }
 
 .file-row__code {
@@ -172,6 +223,16 @@
   color: var(--hover);
 }
 
+@media (hover: hover) and (pointer: fine) {
+  .file-row:hover {
+    translate: calc(6 * var(--u)) 0;
+  }
+
+  .file-row[aria-selected="false"]:hover::before {
+    background: var(--select);
+  }
+}
+
 /* the scrolling list would clip a ring drawn outside the row */
 .file-row:focus-visible {
   outline-offset: -4px;
@@ -210,7 +271,7 @@
   gap: 0 0.6em;
   min-height: 32px;
   padding-bottom: 4px;
-  border-bottom: 1px solid currentColor;
+  border-bottom: 1px solid var(--line);
 }
 
 .files__more small {
@@ -240,23 +301,24 @@ html.js .files__detail {
   display: grid;
 }
 
-/* stacked in one cell so files can cross-fade */
+/* stacked in one cell: a switch clears the old file over the new one (P4) */
 html.js .file {
   grid-area: 1 / 1;
   visibility: hidden;
-  opacity: 0;
-  transition:
-    opacity 200ms var(--ease-io),
-    visibility 0s linear 200ms;
 }
 
 html.js .file.is-on {
   /* inherit, not visible: a hidden screen must hide its open panel too */
   visibility: inherit;
-  opacity: 1;
-  transition:
-    opacity 360ms var(--ease-out) 80ms,
-    visibility 0s;
+}
+
+/* the file being cleared: its FILE box goes at once (the new one stands in its place) */
+html.js .file.is-out {
+  pointer-events: none;
+}
+
+html.js .file.is-out .file__no {
+  visibility: hidden;
 }
 
 .file {
@@ -309,15 +371,79 @@ html.js .file.is-on {
   /* its size at 1920×1080: a wider plate must not push the record below the fold */
   max-width: calc(498 * var(--u));
   margin-bottom: calc(22 * var(--u));
+  /* an object on the glass, not the glass: it alone leans toward the pointer */
+  perspective: calc(900 * var(--u));
+  /* a sideways drag turns it; an upright one still scrolls the page */
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  html.js .cassette {
+    cursor: grab;
+  }
+
+  html.js .cassette.is-drag {
+    cursor: grabbing;
+  }
+}
+
+.cassette__obj {
+  position: relative;
 }
 
 .cassette__art {
   position: relative;
   z-index: 1;
+  display: block;
   width: 100%;
   height: auto;
   overflow: visible;
   filter: drop-shadow(0 calc(16 * var(--u)) calc(26 * var(--u)) var(--cas-shadow));
+}
+
+/* the reels turn about their own hubs (view-box units) */
+.cassette__reel {
+  transform-box: view-box;
+  transform-origin: 288px 230px;
+}
+
+.cassette__reel--s {
+  transform-origin: 468px 148px;
+}
+
+/* the stack's shadow, which pops two frames ahead of it (S4) */
+.cassette__shade {
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  top: calc(100% - 16 * var(--u));
+  height: calc(40 * var(--u));
+  background: radial-gradient(closest-side, var(--cas-shadow), transparent);
+  pointer-events: none;
+}
+
+/* D9 scan-print: solid above the glowing slice, a pale ghost below it */
+.cassette__obj.is-scan .cassette__art {
+  mask-image: linear-gradient(#000 var(--cas-scan), rgb(0 0 0 / 0.18) calc(var(--cas-scan) + 1px));
+}
+
+.cassette__scan {
+  position: absolute;
+  z-index: 3;
+  left: 0;
+  right: 0;
+  top: var(--cas-scan);
+  height: max(1px, calc(2 * var(--u)));
+  background: var(--glass-edge);
+  box-shadow: 0 0 calc(12 * var(--u)) color-mix(in srgb, var(--orange-soft) 50%, transparent);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.cassette__obj.is-scan .cassette__scan {
+  opacity: 1;
 }
 
 /* the cassettes stacked below it, as in the PV's extraction shot */
@@ -347,17 +473,6 @@ html.js .file.is-on {
 .cassette__stack i:nth-child(3) {
   width: 94%;
   opacity: 0.28;
-}
-
-.cassette__sheen {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  background: linear-gradient(105deg, transparent 38%, rgba(255, 255, 255, 0.55) 50%, transparent 62%) no-repeat;
-  background-size: 260% 100%;
-  background-position: 130% 0;
-  opacity: 0;
-  pointer-events: none;
 }
 
 .cassette__s1 {
@@ -645,133 +760,43 @@ html.js .file.is-on {
   margin-top: calc(18 * var(--u));
 }
 
-/* ───────── selection: the cassette lifts out of its stack, the record re-reveals ───────── */
+/* ───────── entry (MOTION-SPEC §8.4; delays from the dock, t0) ───────── */
 
-.file.is-in .file__no {
-  animation: cas-fade 300ms var(--ease-out) both;
+/* before the dock nothing of the build shows, even where the glass is already up */
+.sect--works[data-phase="enter"] :is(.files__h .tag, .files__list > li, .file__nov, .file__title, .file__side > div, .file__conf b, .file__go),
+.sect--works:is([data-phase="enter"], [data-phase="dock"]) :is(.cassette__shade, .cassette__stack, .cassette__art) {
+  opacity: 0;
 }
 
-.file.is-in .file__no > span {
-  display: inline-block;
-  animation: cas-wipe 520ms var(--ease-out) 80ms both;
+/* ARCHIVE INDEX: B5 tag box from +342u at t0 + 509 */
+.sect--works:is([data-phase="dock"], [data-phase="reveal"]) .files__h .tag {
+  animation:
+    works-box 763.64ms var(--ease-box) 509.09ms both,
+    works-on 145.45ms linear 509.09ms both;
 }
 
-.file.is-in .file__no::after {
-  transform-origin: left;
-  animation: cas-rule 760ms var(--ease-out) 200ms both;
+/* the rows: B5 from −60u out of the list's own edge, two frames apart, from t0 + 655 */
+.sect--works:is([data-phase="dock"], [data-phase="reveal"]) .files__list > li:not(.files__glint) {
+  animation:
+    works-row 545.45ms var(--ease-expo) calc(654.55ms + var(--n, 0) * 72.73ms) both,
+    works-on 145.45ms linear calc(654.55ms + var(--n, 0) * 72.73ms) both;
 }
 
-.file.is-in .cassette__art {
-  animation: cas-lift 900ms var(--ease-out) 60ms both;
-}
-
-.file.is-in .cassette__stack {
-  animation: cas-fade 500ms var(--ease-out) both;
-}
-
-.file.is-in .cassette__sheen {
-  animation: cas-sheen 1100ms var(--ease-io) 520ms both;
-}
-
-.file.is-in .file__side > div {
-  animation: cas-up 460ms var(--ease-out) both;
-  animation-delay: calc(420ms + var(--n, 0) * 70ms);
-}
-
-.file__side > div:nth-child(2) {
-  --n: 1;
-}
-
-.file__side > div:nth-child(3) {
-  --n: 2;
-}
-
-.file__side > div:nth-child(4) {
-  --n: 3;
-}
-
-.file.is-in :is(.file__title, .file__conf, .file__desc, .file__go) {
-  animation: cas-up 520ms var(--ease-out) both;
-}
-
-.file.is-in .file__title {
-  animation-delay: 300ms;
-}
-
-.file.is-in .file__conf {
-  animation-delay: 360ms;
-}
-
-.file.is-in .file__desc {
-  animation-delay: 440ms;
-}
-
-.file.is-in .file__go {
-  animation-delay: 520ms;
-}
-
-@keyframes cas-wipe {
+@keyframes works-box {
   from {
-    clip-path: inset(0 100% 0 0);
-  }
-  to {
-    clip-path: inset(0 0 0 0);
+    translate: calc(342 * var(--u)) 0;
   }
 }
 
-@keyframes cas-rule {
+@keyframes works-row {
   from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
+    translate: calc(-60 * var(--u)) 0;
   }
 }
 
-@keyframes cas-lift {
+@keyframes works-on {
   from {
     opacity: 0;
-    translate: 0 calc(52 * var(--u));
-    filter: blur(6px) drop-shadow(0 0 0 var(--cas-shadow));
-  }
-  55% {
-    opacity: 1;
-  }
-  to {
-    opacity: 1;
-    translate: 0 0;
-    filter: blur(0) drop-shadow(0 calc(16 * var(--u)) calc(26 * var(--u)) var(--cas-shadow));
-  }
-}
-
-@keyframes cas-fade {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes cas-sheen {
-  0% {
-    opacity: 1;
-    background-position: 130% 0;
-  }
-  100% {
-    opacity: 1;
-    background-position: -30% 0;
-  }
-}
-
-@keyframes cas-up {
-  from {
-    opacity: 0;
-    translate: 0 calc(14 * var(--u));
-  }
-  to {
-    opacity: 1;
-    translate: 0 0;
   }
 }
 

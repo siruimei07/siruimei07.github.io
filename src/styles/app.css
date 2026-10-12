@@ -1,6 +1,8 @@
 /* The terminal layout (html.js): fixed chrome around full-viewport screens,
    measured in --u from the PV's 1920×1080 frames. Section frame shared by all
-   six files lives here too. Phones get their own flow at the bottom. */
+   six files lives here too. Phones get their own flow at the bottom. Motion is
+   driven by app.ts (WAAPI on the PV's clock); the states here are the rest
+   states, so a cancelled or finished animation always lands on them. */
 
 html.js,
 html.js body {
@@ -88,9 +90,17 @@ html.js .screen:focus {
   letter-spacing: 0.06em;
 }
 
+.brand a > b {
+  transition: color var(--t-hover) var(--ease-enter);
+}
+
 .brand a:hover > b,
 .brand a:focus-visible > b {
   color: var(--hover);
+}
+
+.brand__g.is-off {
+  opacity: 0;
 }
 
 html.js .chrome {
@@ -140,9 +150,8 @@ html.js[data-view="sect"] .pager {
   border-radius: 50%;
   background: var(--orange);
   transition:
-    transform var(--t-mid) var(--ease-out),
-    background-color var(--t-mid) var(--ease-out),
-    box-shadow var(--t-mid) var(--ease-out);
+    background-color var(--t-hover) var(--ease-enter),
+    box-shadow var(--t-hover) var(--ease-enter);
 }
 
 .pager a > span {
@@ -157,7 +166,6 @@ html.js[data-view="sect"] .pager {
   white-space: nowrap;
   color: var(--ink);
   opacity: 0;
-  transition: opacity var(--t-fast);
   pointer-events: none;
 }
 
@@ -210,16 +218,11 @@ html.js .rail {
   /* hidden, not just transparent, on the overview: no invisible tab stops */
   opacity: 0;
   visibility: hidden;
-  transition:
-    opacity var(--t-mid) var(--ease-out),
-    visibility 0s linear var(--t-mid);
 }
 
-/* fading in waits for the overview to clear; visibility switches on at once */
 html.js[data-view="sect"] .rail {
   opacity: 1;
   visibility: visible;
-  transition-delay: 180ms, 0s;
 }
 
 html.js[data-view="sect"] .rail > * {
@@ -298,7 +301,7 @@ html.js[data-view="sect"] .rail > * {
   letter-spacing: 0.06em;
   line-height: 1.15;
   color: var(--sub);
-  transition: color var(--t-fast);
+  transition: color var(--t-hover) var(--ease-enter);
 }
 
 .rail__nav a > b {
@@ -405,13 +408,11 @@ html.js .rule {
   background: color-mix(in srgb, var(--ink) 88%, transparent);
   transform-origin: top;
   transform: scaleY(0);
-  transition: transform 700ms var(--ease-out);
   pointer-events: none;
 }
 
 html.js[data-view="sect"] .rule {
   transform: scaleY(1);
-  transition-delay: 180ms;
 }
 
 /* the lime marker rides on the rule but is not part of it, so the rule's
@@ -431,17 +432,14 @@ html.js .rule__mark {
   min-width: 18px;
   min-height: 10px;
   background: var(--lime);
-  transform: translate(-50%, calc(var(--mark-y, 336px) - 50%));
+  transform: translate(-50%, -50%);
+  translate: 0 var(--mark-y, 336px);
   opacity: 0;
-  transition:
-    opacity var(--t-fast) var(--ease-out),
-    transform 520ms var(--ease-snap);
   pointer-events: none;
 }
 
 html.js[data-view="sect"] .rule__mark {
   opacity: 1;
-  transition-delay: 300ms, 0s;
 }
 
 /* ───────── foot lines, clock, caption ───────── */
@@ -465,6 +463,10 @@ html.js .foot-sect {
   letter-spacing: 0.01em;
   line-height: 1;
   white-space: nowrap;
+}
+
+[data-foot-sect] {
+  display: inline-block;
 }
 
 .foot-sect > i {
@@ -492,6 +494,15 @@ html.js .foot-sign {
   letter-spacing: 0.12em;
   color: var(--sub);
   font-variant-numeric: tabular-nums;
+}
+
+.foot-clock__d {
+  display: inline-flex;
+  letter-spacing: 0;
+}
+
+.foot-clock__d .roll__slot {
+  padding-right: 0.12em;
 }
 
 .foot-powered {
@@ -554,7 +565,38 @@ html.js .foot-sect,
 html.js .foot-sign,
 html.js .caption,
 html.js .screens {
-  transition: opacity 500ms var(--ease-out);
+  transition: opacity 545ms var(--ease-enter);
+}
+
+/* the screen-change veil: over the canvas and the ambient layer, under the screens
+   (white for the white-out, tile black for the push-in; app.ts sets its opacity) */
+.veil,
+.mb-defs {
+  display: none;
+}
+
+html.js .veil {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+}
+
+:root[data-theme="dark"] .veil {
+  background: var(--tile);
+}
+
+/* the motion-blur filter is referenced by url(); it must exist, not render */
+html.js .mb-defs {
+  display: block;
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
 }
 
 /* ───────── toast ───────── */
@@ -570,17 +612,15 @@ html.js .screens {
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.06em;
-  transform: translate(-50%, -12px);
+  transform: translateX(-50%);
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
-  transition:
-    opacity var(--t-mid) var(--ease-out),
-    transform var(--t-mid) var(--ease-out);
 }
 
 .toast.is-on {
   opacity: 1;
-  transform: translate(-50%, 0);
+  visibility: visible;
 }
 
 html:not(.js) .toast {
@@ -596,6 +636,13 @@ html.js .sect__tile {
   width: calc(400 * var(--u));
   height: calc(288 * var(--u));
   z-index: 2;
+}
+
+/* the card is what flies in, holds, docks and drifts; the tile box itself only takes parallax */
+.sect__card {
+  position: relative;
+  width: 100%;
+  height: 100%;
 }
 
 .sect__tile .tile {
@@ -735,15 +782,123 @@ html.js .sect__glass {
   padding-inline: 0.8em;
 }
 
-.sect__body {
+.sect__bodywrap {
   position: relative;
   flex: 1;
+  min-height: 0;
+  isolation: isolate;
+}
+
+/* a stacking context of its own, so nothing in the content paints above the frost */
+.sect__body {
+  position: relative;
+  z-index: 0;
+  height: 100%;
   min-height: 0;
   overflow: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
   scrollbar-color: var(--line) transparent;
   padding-right: calc(8 * var(--u));
+}
+
+/* ── the reveal (MOTION-SPEC §7.5): frost over the body, the decryption marks and
+   line above it, and the CONFIDENTIALITY label; all hidden unless app.ts shows them ── */
+.sect__frost,
+.sect__decrypt,
+.sect__decrypt-label {
+  display: none;
+}
+
+html.js .sect__frost {
+  display: block;
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  visibility: hidden;
+  opacity: 0;
+  background: color-mix(in srgb, var(--bg-hi) 55%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(0.9);
+  backdrop-filter: blur(14px) saturate(0.9);
+  pointer-events: none;
+}
+
+html.js .sect__decrypt {
+  display: block;
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.decrypt__line {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: max(1px, calc(2 * var(--u)));
+  stroke-linecap: butt;
+}
+
+.decrypt__mark,
+.decrypt__pt {
+  fill: var(--ink);
+}
+
+html.js .sect__decrypt-label {
+  display: block;
+  position: absolute;
+  right: 4%;
+  top: 50%;
+  z-index: 6;
+  translate: 0 -50%;
+  visibility: hidden;
+  font-size: max(12px, calc(21 * var(--u)));
+  line-height: 1.2;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  color: var(--ink);
+  pointer-events: none;
+}
+
+.sect__decrypt-label > span {
+  font-weight: 600;
+}
+
+.sect__decrypt-label > b {
+  font-weight: 700;
+}
+
+/* RhineLabUI occlusion bars (document decryption) laid over [data-occlude] lines */
+.is-occluded {
+  position: relative;
+}
+
+.occl {
+  position: absolute;
+  z-index: 1;
+  display: block;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+}
+
+.occl > i {
+  position: absolute;
+  inset: 0;
+  display: block;
+  background: var(--ink);
+}
+
+/* the head's tags take their text in through their own right edge (T7b) */
+.sect__access .tag {
+  overflow: clip;
+}
+
+.sect__access .tag > span {
+  display: inline-block;
 }
 
 .sect__foot {
@@ -947,7 +1102,12 @@ html.js .sect__glass {
     display: none;
   }
 
+  .sect__bodywrap {
+    flex: none;
+  }
+
   .sect__body {
+    height: auto;
     overflow: visible;
     padding-right: 0;
   }

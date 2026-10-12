@@ -2,6 +2,8 @@
 // holds the left of the glass; to its right the rank tag, name bar, section
 // box and file code; below, the intro beside INFO + lime rings and the white
 // PROFILE card; along the foot, the GitHub meters as one VISUALIZED strip.
+// It builds like the PV's dossiers (MOTION-SPEC §8.2); the hooks for that
+// (wrappers, the ■ cursors, the portrait's inspection line) are inert without JS.
 
 import { brand, identity, profile, sectionById } from "../content.ts";
 import { summarize, type GitHubSnapshot } from "../github.ts";
@@ -28,32 +30,32 @@ export function renderProfile(data: GitHubSnapshot | null): string {
         ] as [string, string, number, number, boolean][]
       )
         .map(
-          ([k, zh, v, max, hi]) =>
-            `<li${hi ? ` class="is-hi"` : ""} style="--v:${Math.min(1, v / max).toFixed(3)}"><span>${k}<small>${zh}</small></span><b data-count="${v}">${v}</b><i aria-hidden="true"></i></li>`,
+          ([k, zh, v, max, hi], n) =>
+            `<li class="lift${hi ? " is-hi" : ""}" style="--v:${Math.min(1, v / max).toFixed(3)};--n:${n}"><span><em><i class="dossier__sq" aria-hidden="true"></i>${k}</em><small>${zh}</small></span><b>${v}</b><i aria-hidden="true"></i></li>`,
         )
         .join("")
     : "";
   const body = `<div class="dossier">
-  <figure class="dossier__portrait" data-reveal>
+  <figure class="dossier__portrait">
     <span class="dossier__bg" aria-hidden="true"></span>
     <img src="/assets/avatar-512.webp" srcset="/assets/avatar-256.webp 256w, /assets/avatar-512.webp 512w, /assets/avatar.webp 1024w" sizes="(max-width: 409px) calc(100vw - 70px), 340px" width="1024" height="1024" alt="${esc(identity.name)} 的头像" decoding="async" fetchpriority="low" />
-    <i class="dossier__scan" aria-hidden="true"></i>
+    <i class="dossier__scan" aria-hidden="true"><i class="dossier__scan-l"><b class="dossier__scan-y">Y 0.00</b></i></i>
   </figure>
-  <div class="dossier__id" data-reveal>
+  <div class="dossier__id">
     ${tag(profile.rank, "tag--tilt dossier__rank")}
     <p class="namebar dossier__name">${esc(identity.name.toUpperCase())}</p>
-    <p class="dossier__en" lang="en">${esc(profile.introEn)}</p>
+    <p class="dossier__en" lang="en" data-occlude>${esc(profile.introEn)}</p>
     <div class="dossier__sec">
-      <span class="tile tile--light dossier__mini" aria-hidden="true">${logotype(s.tile)}</span>
-      <p class="dossier__loaded">${esc(profile.loaded)}&nbsp;<i aria-hidden="true">■</i></p>
+      <span class="dossier__plate" aria-hidden="true"><i class="dossier__plate-sh"></i><span class="tile tile--light dossier__mini">${logotype(s.tile)}</span></span>
+      <p class="dossier__loaded"><span class="dossier__loaded-t">${esc(profile.loaded)}</span><i class="breathe" aria-hidden="true">■</i></p>
     </div>
     <div class="dossier__coderow">
-      <p class="dossier__code"><i aria-hidden="true">■</i> ${esc(s.code)}</p>
+      <p class="dossier__code"><i class="breathe" aria-hidden="true">■</i> <span class="dossier__cv">${esc(s.code)}</span></p>
       ${lockup(brand.mark, "lockup lockup--orange dossier__lockup")}
     </div>
   </div>
-  <div class="dossier__info" data-reveal>
-    <p class="dossier__intro zh">${esc(profile.intro)}</p>
+  <div class="dossier__info">
+    <p class="dossier__intro zh" data-occlude>${esc(profile.intro)}</p>
     <p class="dossier__links">${ext(identity.githubUrl, `${esc(profile.links.github)} <small>@${esc(identity.github)}</small>`, `class="btn btn--ink"`)}<a class="btn" href="mailto:${esc(identity.email)}">${esc(profile.links.mail)} <small>${esc(identity.email)}</small></a></p>
   </div>
   <div class="dossier__deck">
@@ -61,17 +63,19 @@ export function renderProfile(data: GitHubSnapshot | null): string {
       <span class="ghost dossier__ghost">INFO</span>
       <span class="rings3 dossier__rings"><i></i><i></i><i></i></span>
     </div>
-    <div class="card dossier__card" data-reveal>
-      <p class="card__head">${esc(profile.card)}</p>
-      <dl class="card__fields">${fields}</dl>
-      <p class="card__foot">${esc(brand.title)}.</p>
+    <div class="dossier__lift lift">
+      <div class="card dossier__card">
+        <p class="card__head">${esc(profile.card)}</p>
+        <dl class="card__fields">${fields}</dl>
+        <p class="card__foot">${esc(brand.title)}.</p>
+      </div>
     </div>
   </div>
   ${
     meters
-      ? `<div class="dossier__params" data-reveal><p class="dossier__params-h"><span class="tag">${esc(profile.params)}</span><span class="tag tag--lime">VISUALIZED</span></p><ul class="bars dossier__bars">${meters}</ul></div>`
+      ? `<div class="dossier__params"><p class="dossier__params-h"><span class="tag"><span class="dossier__mq">${esc(profile.params)}</span></span><span class="tag tag--lime" data-blink><span class="dossier__mq">VISUALIZED</span></span></p><ul class="bars dossier__bars">${meters}</ul></div>`
       : ""
   }
 </div>`;
-  return sectionScreen(s, { ghost: identity.name.toUpperCase(), body });
+  return sectionScreen(s, { ghost: identity.name.toUpperCase(), body, buildMs: 7600, revealMs: 0 });
 }

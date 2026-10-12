@@ -1,5 +1,5 @@
 // Plane curves in 1920×1080 frame pixels, reparametrised by arc length so
-// plates can be spaced evenly and flow along them at constant speed.
+// plates sit evenly along them and can slide by whole pitches.
 
 export type Vec2 = { x: number; y: number };
 
@@ -39,6 +39,8 @@ export function chainPath(t: number, out: Vec2): Vec2 {
 export class ArcCurve {
   readonly length: number;
   private table: Float32Array;
+  /** Cumulative arc length at each uniform step of t. */
+  private cum: Float64Array;
 
   constructor(
     readonly fn: (t: number, out: Vec2) => Vec2,
@@ -58,6 +60,7 @@ export class ArcCurve {
       py = p.y;
     }
     this.length = cum[samples];
+    this.cum = cum;
     // invert: uniform arc-length grid → t
     this.table = new Float32Array(samples + 1);
     let j = 0;
@@ -77,6 +80,15 @@ export class ArcCurve {
     const i = Math.min(n - 1, Math.floor(x));
     const f = x - i;
     return this.table[i] * (1 - f) + this.table[i + 1] * f;
+  }
+
+  /** Arc-length fraction (0..1) at parameter t: the inverse of tAt(). */
+  sAt(t: number): number {
+    const n = this.cum.length - 1;
+    const x = Math.min(1, Math.max(0, (t - this.t0) / (this.t1 - this.t0))) * n;
+    const i = Math.min(n - 1, Math.floor(x));
+    const f = x - i;
+    return (this.cum[i] * (1 - f) + this.cum[i + 1] * f) / (this.length || 1);
   }
 
   at(t: number, out: Vec2): Vec2 {

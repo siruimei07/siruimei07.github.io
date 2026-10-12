@@ -182,11 +182,11 @@ html.js .boot {
 .boot__name {
   margin-top: calc(16 * var(--u));
   /* the tracking would push the word off centre: pay it back on the left */
-  padding-left: 1.05em;
+  padding-left: 0.68em;
   font-weight: 700;
   font-size: max(10px, calc(15.5 * var(--u)));
   line-height: 1;
-  letter-spacing: 1.05em;
+  letter-spacing: 0.68em;
   white-space: nowrap;
 }
 
@@ -369,8 +369,8 @@ html.js .boot {
 .boot__name--sm {
   margin-top: calc(10 * var(--u));
   font-size: max(10px, calc(11 * var(--u)));
-  letter-spacing: 0.95em;
-  padding-left: 0.95em;
+  letter-spacing: 0.6em;
+  padding-left: 0.6em;
 }
 
 /* ───────── the boot's own corner lockup and signature (same metrics as the chrome) ───────── */

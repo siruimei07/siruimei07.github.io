@@ -2,7 +2,7 @@
 // sections called out around it, like the PV's "structure of Rhine Lab"
 // (3:40–3:58). The 2D figure-eight underneath stands in when 3D is off.
 
-import { home, identity, profile, sectionById, sections } from "../content.ts";
+import { brand, home, identity, profile, sectionById, sections } from "../content.ts";
 import { esc, ext, mark } from "../markup.ts";
 import { lemniscate, type Vec2 } from "../three/curves.ts";
 
@@ -16,6 +16,12 @@ export const ANCHOR_T: Record<string, number> = {
   "right-bottom": 0.31,
   centre: 0, // the right tip, behind the ◎
 };
+
+/** When each callout's build starts, ms after the overview's enter (MOTION-SPEC §8.1:
+ *  t1 + 545 + [0, 691, 2182, 3055], the PV's +19 / +41 / +24 frame stagger). home.css
+ *  carries the same numbers as --c. */
+export const CALLOUT_AT: Record<string, number> = { left: 545, cross: 1236, "right-top": 2727, "right-bottom": 3600 };
+export const HOME_BUILD_MS = 6800;
 
 /** The anchor points in 1920×1080 frame pixels. */
 export function anchorPoints(): Record<string, Vec2> {
@@ -49,20 +55,22 @@ export function renderHome(yearContributions: number | null): string {
     .map((c) => {
       const s = sectionById[c.to];
       const desc = c.to === "activity" && yearContributions !== null ? `${yearContributions} CONTRIBUTIONS IN THE LAST YEAR` : c.desc;
-      return `<li class="home__co home__co--${c.anchor}" data-callout="${c.anchor}"><a class="callout" href="#${s.id}" data-go="${s.id}"><i class="callout__br" aria-hidden="true"></i><span class="tag">${esc(c.tag)}</span><b class="callout__title">${esc(c.title)}</b><i class="callout__rule" data-rule aria-hidden="true"></i><small class="callout__desc">${esc(desc)}</small><small class="callout__zh">${esc(c.zh)}</small></a></li>`;
+      return `<li class="home__co home__co--${c.anchor}" data-callout="${c.anchor}" style="--c:${CALLOUT_AT[c.anchor] ?? 0}ms"><a class="callout" href="#${s.id}" data-go="${s.id}"><i class="callout__br" aria-hidden="true"></i><span class="tag">${esc(c.tag)}</span><b class="callout__title">${esc(c.title)}</b><i class="callout__rule" data-rule aria-hidden="true"></i><small class="callout__desc">${esc(desc)}</small><small class="callout__zh">${esc(c.zh)}</small></a></li>`;
     })
     .join("");
-  return `<section id="top" class="screen home" data-screen="home" aria-label="总览">
+  // the build runs 6.8 s from the overview's enter (MOTION-SPEC §8.1: the last
+  // callout's Chinese line ends at t1 + 6782); nothing is revealed after it
+  return `<section id="top" class="screen home" data-screen="home" aria-label="总览" data-build-ms="${HOME_BUILD_MS}" data-reveal-ms="0">
   <h2 class="sr-only">总览 · OVERVIEW</h2>
   <svg class="home__leaders" data-leaders aria-hidden="true"></svg>
   <div class="home__frame" data-home-frame>
     ${flatInfinity()}
     <ul class="home__callouts">${callouts}</ul>
     <a class="home__centre" href="#profile" data-go="profile" data-callout="centre"><span class="home__pill"><b>${esc(home.centre)}</b><small>${esc(home.centreSub)}</small></span><i class="home__ring" aria-hidden="true"></i></a>
-    <p class="home__hint" aria-hidden="true"><span>${esc(home.hint)}</span><small class="zh">${esc(home.hintZh)}</small></p>
+    <p class="home__hint" aria-hidden="true"><i class="home__sq breathe"></i><span class="home__hint-t"><span>${esc(home.hint)}</span><small class="zh">${esc(home.hintZh)}</small></span></p>
   </div>
   <div class="home__id">
-    <span class="home__badge" aria-hidden="true">${mark("home__badge-mark")}<small>SIRUI · MEI</small></span>
+    <span class="home__badge" aria-hidden="true">${mark("home__badge-mark")}<small data-blink>${esc(brand.mark)}</small></span>
     <p class="home__role"><span>${esc(profile.rank)}</span><span>${esc(identity.affiliation.en.toUpperCase())}</span></p>
     <p class="home__line"><b>${esc(identity.focusEn.join(" · "))}</b><span class="zh">${esc(identity.oneLiner)}</span></p>
     <p class="home__links">${ext(identity.githubUrl, `GITHUB <small>@${esc(identity.github)}</small>`, `class="btn btn--ink"`)}<a class="btn" href="mailto:${esc(identity.email)}">MAIL <small>${esc(identity.email)}</small></a></p>

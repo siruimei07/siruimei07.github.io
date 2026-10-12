@@ -2,6 +2,8 @@
 // the left; on the right the selected file — FILE NUMBER box with its corner
 // squares, the drawn archive cassette (t0040), CONFIDENTIALITY, notes and the
 // way out to GitHub. The index is a vertical tab list, built for up to ~8 files.
+// Typed lines keep a whole copy for screen readers; the glint, scan line and
+// stack are decoration (screens/works.ts drives them).
 
 import { brand, identity, sectionById, worksText } from "../content.ts";
 import { mergeWorks, type GitHubSnapshot, type WorkView } from "../github.ts";
@@ -25,7 +27,9 @@ function cassette(no: number): string {
   const [bx, by] = [288, 230];
   const [sx, sy] = [468, 148];
   const hatch = Array.from({ length: 9 }, (_, i) => `M${430 + i * 9} 364l9-13`).join("");
-  return `<div class="cassette" aria-hidden="true">
+  return `<div class="cassette" aria-hidden="true" data-cassette>
+  <div class="cassette__obj">
+  <i class="cassette__shade"></i>
   <span class="cassette__stack"><i></i><i></i><i></i></span>
   <svg class="cassette__art" viewBox="0 0 600 400">
     <defs><linearGradient id="${g}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" class="cassette__s1"/><stop offset="0.5" class="cassette__s2"/><stop offset="1" class="cassette__s3"/></linearGradient></defs>
@@ -70,7 +74,8 @@ function cassette(no: number): string {
     <path class="cassette__hatch" d="${hatch}"/>
     <path class="cassette__tick" d="M150 350v11M162 350v11"/>
   </svg>
-  <span class="cassette__sheen"></span>
+  <i class="cassette__scan"></i>
+  </div>
 </div>`;
 }
 
@@ -85,7 +90,7 @@ export function renderWorks(data: GitHubSnapshot | null): string {
   const rows = list
     .map(
       (w, i) =>
-        `<li role="presentation"><button type="button" role="tab" class="file-row${i === 0 ? " is-on" : ""}" id="filetab-${i}" aria-controls="file-${i}" aria-selected="${i === 0}" tabindex="${i === 0 ? 0 : -1}" data-file="${i}"><b class="file-row__code">${esc(codeOf(w, i))}</b><em class="file-row__state file-row__state--${w.state}">${esc(state(w))}</em><span class="file-row__title">${esc(w.title)}</span><small class="zh">${esc(w.zh)}</small></button></li>`,
+        `<li role="presentation" style="--n:${i}"><button type="button" role="tab" class="file-row${i === 0 ? " is-on" : ""}" id="filetab-${i}" aria-controls="file-${i}" aria-selected="${i === 0}" tabindex="${i === 0 ? 0 : -1}" data-file="${i}"><b class="file-row__code" data-code="${esc(codeOf(w, i))}"><span aria-hidden="true">${esc(codeOf(w, i))}</span><span class="sr-only">${esc(codeOf(w, i))}</span></b><em class="file-row__state file-row__state--${w.state}">${esc(state(w))}</em><span class="file-row__title">${esc(w.title)}</span><small class="zh">${esc(w.zh)}</small></button></li>`,
     )
     .join("");
   const files = list
@@ -93,30 +98,31 @@ export function renderWorks(data: GitHubSnapshot | null): string {
       const code = codeOf(w, i);
       const chips = w.stack.length ? `<ul class="chips">${w.stack.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>` : "—";
       const side = [
-        `<div class="file__st file__st--${w.state}"><dt>STATUS</dt><dd>${esc(state(w))}</dd></div>`,
-        w.stars !== null ? `<div><dt>${esc(worksText.stars)}</dt><dd><b>★</b> ${w.stars}</dd></div>` : "",
-        w.updated ? `<div><dt>${esc(worksText.updated)}</dt><dd>${esc(w.updated.slice(0, 10))}</dd></div>` : "",
+        `<div class="file__st file__st--${w.state}"><dt>STATUS</dt><dd data-slide>${esc(state(w))}</dd></div>`,
+        w.stars !== null ? `<div><dt>${esc(worksText.stars)}</dt><dd data-slide><b>★</b> ${w.stars}</dd></div>` : "",
+        w.updated ? `<div><dt>${esc(worksText.updated)}</dt><dd data-slide>${esc(w.updated.slice(0, 10))}</dd></div>` : "",
         `<div class="file__stack"><dt>${esc(worksText.stack)}</dt><dd>${chips}</dd></div>`,
       ].join("");
+      const no = `${esc(worksText.file)}: ${esc(code)}`;
       return `<article class="file${i === 0 ? " is-on" : ""}" id="file-${i}" role="tabpanel" aria-labelledby="filetab-${i}" tabindex="0" data-file-card="${i}">
-    <p class="file__no cornered"><span>${esc(worksText.file)}: ${esc(code)}</span></p>
+    <p class="file__no cornered"><span class="file__nov" aria-hidden="true" data-no="${no}">${no}</span><span class="sr-only">${no}</span></p>
     <h3 class="file__title"><span class="file__name">${esc(w.title)}</span><small class="zh">${esc(w.zh)}</small></h3>
-    <p class="file__conf">${esc(worksText.confidentiality)}: <b data-conf>${esc(worksText.public)}</b></p>
+    <p class="file__conf">${esc(worksText.confidentiality)}: <b data-conf aria-hidden="true">${esc(worksText.public)}</b><span class="sr-only">${esc(worksText.public)}</span></p>
     ${cassette(i + 1)}
     <dl class="file__side">${side}</dl>
-    <p class="file__desc zh">${esc(w.description)}</p>
+    <p class="file__desc zh" data-occlude>${esc(w.description)}</p>
     <p class="file__go">${ext(w.href, `${esc(worksText.open)} <small>${esc(worksText.openZh)}</small>`, `class="btn btn--ink"`)}</p>
   </article>`;
     })
     .join("");
   const body = `<div class="files" data-files>
   <div class="files__index">
-    <p class="files__h"><span class="tag">${esc(worksText.index)}</span><span class="files__count">${pad(list.length, 2)} FILES</span></p>
-    <ol class="files__list" role="tablist" aria-orientation="vertical" aria-label="项目档案">${rows}</ol>
+    <p class="files__h"><span class="tag">${esc(worksText.index)}</span><span class="files__count" data-blink>${pad(list.length, 2)} FILES</span></p>
+    <ol class="files__list" role="tablist" aria-orientation="vertical" aria-label="项目档案">${rows}<li class="files__glint" role="presentation" aria-hidden="true" data-glint></li></ol>
     <p class="keys files__keys" aria-hidden="true"><span><kbd>↑</kbd><kbd>↓</kbd>SELECT FILE</span></p>
-    <p class="files__more">${ext(identity.githubUrl, `<span>${esc(worksText.more)} <span aria-hidden="true">›</span></span> <small>@${esc(identity.github)}</small>`)}</p>
+    <p class="files__more">${ext(identity.githubUrl, `<span>${esc(worksText.more)} <span aria-hidden="true">›</span></span> <small>@${esc(identity.github)}</small>`, `class="hl"`)}</p>
   </div>
   <div class="files__detail">${files}</div>
 </div>`;
-  return sectionScreen(s, { ghost: "ARCHIVE", body });
+  return sectionScreen(s, { ghost: "ARCHIVE", body, buildMs: 2400, revealMs: 1000 });
 }
