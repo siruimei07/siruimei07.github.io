@@ -1,0 +1,1328 @@
+/* RESEARCH — the PV's STRUCTURAL STUDIES / STUDY · EXPLOIT BIOTHERM plates.
+   Tag-like tabs on top; each panel puts the white title box, motto, notes and
+   topic plates on the left and the specimen drawing big on the right, with a
+   crosshair through its orange core. On entry the specimen prints in under a
+   glowing line (D9); a tab switch collapses the title plate into its accent bar,
+   clears the panel and grows the next specimen on (MOTION-SPEC §8.3). Under the
+   pointer the specimen reads out what it shows. */
+
+.sect--skills {
+  --lab-box: rgba(255, 255, 255, 0.74);
+  --lab-plate: rgba(255, 255, 255, 0.46);
+}
+
+:root[data-theme="dark"] .sect--skills {
+  --lab-box: color-mix(in srgb, var(--bg-hi) 84%, transparent);
+  --lab-plate: color-mix(in srgb, var(--bg-hi) 60%, transparent);
+}
+
+/* ───────── the section tile: one logotype per research section ───────── */
+
+/* the words differ in width; keep each at about the PV's 4/5 of the tile */
+.sect--skills .sect__tile .lt {
+  --lt-size: calc(146 * var(--u) * var(--lt-k, 1));
+}
+
+.sect--skills [data-tile-alt="stats"] {
+  --lt-k: 0.85;
+}
+
+.sect--skills [data-tile-alt="econ"] {
+  --lt-k: 0.77;
+}
+
+.sect--skills [data-tile-alt="quant"] {
+  --lt-k: 0.96;
+}
+
+/* the Q's tail drops below the line; the sub line steps down to keep clear of it */
+.sect--skills [data-tile-alt="quant"] .lt__sub {
+  margin-top: calc(var(--lt-size) * 0.25);
+}
+
+/* ───────── tabs ───────── */
+
+.lab {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: calc(22 * var(--u));
+  min-height: 100%;
+}
+
+.lab__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(10 * var(--u));
+  /* the tabs slide in from the plate's edge: they appear here, and never widen the body */
+  overflow-x: clip;
+}
+
+.lab__tab {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.6em;
+  min-height: max(38px, calc(46 * var(--u)));
+  padding: 0.62em 1.15em 0.5em 0.95em;
+  box-shadow: inset 0 0 0 max(1.5px, calc(2 * var(--u))) var(--ink);
+  color: var(--ink);
+  font-weight: 600;
+  font-size: max(11px, calc(13.5 * var(--u)));
+  letter-spacing: 0.08em;
+  line-height: 1.1;
+  text-transform: uppercase;
+  /* the B2 plate, as on .btn: one edge (--wipe) paints the plate and the text, so the
+     label inverts exactly where the plate is; hover wipes it in, leaving collapses it */
+  --wipe: 0%;
+  background-image:
+    linear-gradient(90deg, var(--tag-ink) var(--wipe), var(--ink) var(--wipe)),
+    linear-gradient(90deg, var(--tag-bg) var(--wipe), transparent var(--wipe));
+  -webkit-background-clip: text, border-box;
+  background-clip: text, border-box;
+  -webkit-text-fill-color: transparent;
+  transition: --wipe var(--t-collapse) var(--ease-collapse);
+}
+
+.lab__tab b {
+  font-weight: 800;
+  font-size: 1.18em;
+  letter-spacing: -0.01em;
+}
+
+/* <small> alone would put the zh name under the floor in the small frames */
+.lab__tab small {
+  font-weight: 400;
+  font-size: max(11px, 0.83em);
+  letter-spacing: 0.1em;
+}
+
+@media (hover: hover) {
+  .lab__tab:hover {
+    --wipe: 100%;
+    transition: --wipe var(--t-wipe) var(--ease-wipe);
+  }
+}
+
+.lab__tab:focus-visible,
+.lab__tab[aria-selected="true"] {
+  --wipe: 100%;
+  transition: --wipe var(--t-wipe) var(--ease-wipe);
+}
+
+@media (forced-colors: active) {
+  .lab__tab {
+    -webkit-text-fill-color: currentColor;
+    background-image: none;
+  }
+}
+
+/* the tabs sit in the scrolling body's top-left corner, which would clip a ring drawn outside */
+.lab__tab:focus-visible {
+  outline-offset: -4px;
+}
+
+/* ───────── panels ───────── */
+
+html.js .lab__stack {
+  display: grid;
+  flex: 1;
+  min-height: 0;
+}
+
+/* stacked in one cell, so the outgoing panel can clear while the next one builds over it */
+html.js .lab__panel {
+  grid-area: 1 / 1;
+  visibility: hidden;
+}
+
+/* inherit, not visible: a hidden screen must hide its open panel too */
+html.js .lab__panel:is(.is-on, .is-out) {
+  visibility: inherit;
+}
+
+html.js .lab__panel.is-out {
+  pointer-events: none;
+}
+
+.lab__panel {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, max(272px, calc(345 * var(--u)))) minmax(0, 1fr);
+  grid-template-areas: "text viz";
+  align-items: center;
+  column-gap: calc(10 * var(--u));
+  /* the crosshair runs edge to edge of the panel, never beyond */
+  overflow: clip;
+}
+
+.lab__panel:focus-visible {
+  outline-offset: -2px;
+}
+
+.lab__text {
+  grid-area: text;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+/* the white translucent title box (STUDY / EXPLOIT — BIOTHERM) */
+.lab__title {
+  position: relative;
+  width: max-content;
+  max-width: calc(100% + 140 * var(--u));
+  /* room for the accent bar, which the panel would otherwise clip: a switch collapses the
+     plate into it */
+  margin-left: calc(16 * var(--u));
+  padding: calc(16 * var(--u)) calc(36 * var(--u)) calc(14 * var(--u)) calc(26 * var(--u));
+  background: var(--lab-box);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.6),
+    0 calc(12 * var(--u)) calc(32 * var(--u)) rgba(40, 32, 24, 0.08);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+:root[data-theme="dark"] .lab__title {
+  box-shadow:
+    inset 0 0 0 1px var(--hair),
+    0 calc(12 * var(--u)) calc(32 * var(--u)) rgba(0, 0, 0, 0.3);
+}
+
+.lab__title::before {
+  content: "";
+  position: absolute;
+  left: calc(-16 * var(--u));
+  top: 0;
+  bottom: 0;
+  width: max(4px, calc(8 * var(--u)));
+  background: var(--ink);
+}
+
+/* T7b: the text marquees in through the box's right inner edge */
+.lab__study,
+.lab__count {
+  overflow: clip;
+}
+
+.lab__study > span,
+.lab__count > span {
+  display: inline-block;
+}
+
+.lab__study {
+  font-weight: 700;
+  font-size: max(11px, calc(17 * var(--u)));
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  color: var(--ink-2);
+}
+
+.lab__name {
+  margin-top: calc(2 * var(--u));
+  font-weight: 800;
+  font-size: max(28px, calc(60 * var(--u)));
+  line-height: 0.98;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  text-shadow: 0 calc(2 * var(--u)) calc(6 * var(--u)) rgba(0, 0, 0, 0.12);
+}
+
+.lab__motto {
+  display: flex;
+  align-items: center;
+  gap: calc(14 * var(--u));
+  margin-top: calc(26 * var(--u));
+  font-weight: 500;
+  font-size: max(15px, calc(22 * var(--u)));
+  line-height: 1.35;
+  letter-spacing: 0.06em;
+}
+
+.lab__motto > span:first-child {
+  font-weight: 700;
+}
+
+.lab__motto > i {
+  width: calc(26 * var(--u));
+  height: max(1.5px, calc(2 * var(--u)));
+  background: var(--ink);
+}
+
+.lab__body {
+  max-width: calc(340 * var(--u));
+  margin-top: calc(12 * var(--u));
+  font-size: max(13px, calc(15.5 * var(--u)));
+  line-height: 1.85;
+  letter-spacing: 0.02em;
+  color: var(--ink-2);
+  /* no single character left alone on the last line */
+  text-wrap: pretty;
+}
+
+.lab__th {
+  display: flex;
+  align-items: center;
+  gap: calc(10 * var(--u));
+  margin-top: calc(24 * var(--u));
+}
+
+.lab__count {
+  display: inline-block;
+  font-family: var(--f-mono);
+  font-size: max(10px, calc(12 * var(--u)));
+  color: var(--sub);
+}
+
+/* topics as the PV's stacked white bar plates */
+.lab__topics {
+  container-type: inline-size;
+  align-self: stretch;
+  display: grid;
+  gap: calc(7 * var(--u));
+  margin-top: calc(10 * var(--u));
+}
+
+/* the Chinese name sits under the English one, whole: the meaning is never cut */
+.lab__topics li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "no en rule"
+    "no zh rule";
+  align-items: center;
+  column-gap: calc(12 * var(--u));
+  min-height: max(30px, calc(40 * var(--u)));
+  padding-right: calc(12 * var(--u));
+  background: linear-gradient(90deg, var(--lab-plate), transparent 130%);
+  box-shadow: inset 0 0 0 1px var(--hair);
+}
+
+.lab__tno {
+  grid-area: no;
+  align-self: stretch;
+  display: grid;
+  place-items: center;
+  padding: 0 calc(10 * var(--u));
+  background: var(--tag-bg);
+  color: var(--tag-ink);
+  font-family: var(--f-mono);
+  font-weight: 500;
+  font-size: max(10px, calc(12 * var(--u)));
+  letter-spacing: 0.04em;
+}
+
+.lab__topics b {
+  grid-area: en;
+  align-self: end;
+  padding-top: calc(4 * var(--u));
+  font-weight: 700;
+  font-size: max(11.5px, calc(14.5 * var(--u)));
+  line-height: 1.2;
+  letter-spacing: 0.06em;
+}
+
+.lab__topics small {
+  grid-area: zh;
+  align-self: start;
+  padding-bottom: calc(4 * var(--u));
+  font-size: max(12px, calc(14 * var(--u)));
+  line-height: 1.2;
+  color: var(--sub);
+}
+
+/* a ruler stub, the same on every row: decoration, not a score */
+.lab__topics li > i {
+  grid-area: rule;
+  justify-self: end;
+  width: calc(30 * var(--u));
+  height: max(5px, calc(8 * var(--u)));
+  background: repeating-linear-gradient(90deg, var(--ink) 0 max(1px, calc(2 * var(--u))), transparent 0 calc(6 * var(--u)));
+  opacity: 0.4;
+}
+
+.lab__topics li:first-child > i {
+  background: var(--lime);
+  opacity: 1;
+}
+
+/* a narrow column keeps the words and drops the stub */
+@container (max-width: 300px) {
+  .lab__topics li > i {
+    display: none;
+  }
+}
+
+/* ───────── specimen ───────── */
+
+.lab__viz {
+  grid-area: viz;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: calc(12 * var(--u));
+  /* big: it runs to the plate edge; only the title box overlaps it */
+  margin: 0 calc(-12 * var(--u)) 0 calc(-6 * var(--u));
+  min-width: 0;
+}
+
+/* but no bigger than at 1920×1080, so a wide plate cannot grow it past the fold */
+.lab__plot,
+.lab__cap {
+  width: 100%;
+  max-width: calc(564 * var(--u));
+  margin-inline: auto;
+}
+
+.lab__plot {
+  position: relative;
+}
+
+/* the printed specimen (what the scan line prints) */
+.lab__print {
+  position: relative;
+}
+
+.lab__plot .viz {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.lab__hatch {
+  position: absolute;
+  left: 9%;
+  top: 4%;
+  width: 26%;
+  height: 32%;
+  background: repeating-linear-gradient(-45deg, color-mix(in srgb, var(--orange-soft) 70%, transparent) 0 max(1.5px, calc(3 * var(--u))), transparent 0 calc(12 * var(--u)));
+  opacity: 0.55;
+}
+
+[data-skill-panel="econ"] .lab__hatch {
+  left: auto;
+  right: 6%;
+  top: auto;
+  bottom: 18%;
+  background: repeating-linear-gradient(-45deg, color-mix(in srgb, var(--ink) 30%, transparent) 0 max(1px, calc(2 * var(--u))), transparent 0 calc(12 * var(--u)));
+}
+
+/* far enough in that its blur clears the panel's clip (the plot runs 12u past it) */
+.lab__chip {
+  position: absolute;
+  right: 4%;
+  bottom: 6%;
+  width: 12%;
+  aspect-ratio: 1;
+  background: var(--orange-soft);
+  opacity: 0.4;
+  filter: blur(2px);
+}
+
+/* the crosshair through the glass */
+.lab__xh {
+  position: absolute;
+  z-index: 0;
+  background: color-mix(in srgb, var(--ink) 26%, transparent);
+  pointer-events: none;
+}
+
+.lab__xh--v {
+  left: var(--cx);
+  top: calc(-1200 * var(--u));
+  bottom: calc(-1200 * var(--u));
+  width: max(1px, calc(1.5 * var(--u)));
+}
+
+.lab__xh--h {
+  top: var(--cy);
+  left: calc(-1000 * var(--u));
+  right: calc(-600 * var(--u));
+  height: max(1px, calc(1.5 * var(--u)));
+  /* fades out before it reaches the text column */
+  -webkit-mask: linear-gradient(90deg, transparent 30%, #000 46%);
+  mask: linear-gradient(90deg, transparent 30%, #000 46%);
+}
+
+.lab__cap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: calc(8 * var(--u));
+  padding-left: calc(40 * var(--u));
+  font-size: max(11px, calc(13 * var(--u)));
+  color: var(--sub);
+}
+
+.lab__cap .zh {
+  margin-left: calc(6 * var(--u));
+  letter-spacing: 0.04em;
+}
+
+/* the caption word ticks over on a switch (T9): it drops out of and into this clip */
+.lab__tick {
+  display: inline-block;
+  overflow: clip;
+  vertical-align: bottom;
+}
+
+.lab__tick > span {
+  display: inline-block;
+}
+
+/* the drawing itself: hairlines in ink, faint fills, one orange core */
+.viz * {
+  vector-effect: non-scaling-stroke;
+}
+
+.viz__grid path {
+  fill: none;
+  stroke: color-mix(in srgb, var(--ink) 7%, transparent);
+  stroke-width: 1;
+}
+
+.viz__axis path {
+  fill: none;
+  stroke: color-mix(in srgb, var(--ink) 60%, transparent);
+  stroke-width: 1;
+}
+
+.viz__bars rect {
+  fill: color-mix(in srgb, var(--ink) 6%, transparent);
+  stroke: color-mix(in srgb, var(--ink) 34%, transparent);
+  stroke-width: 1;
+}
+
+.viz__line {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.viz__line--b {
+  stroke: color-mix(in srgb, var(--ink) 62%, transparent);
+}
+
+.viz__line--hi {
+  stroke: var(--orange);
+  stroke-width: 2;
+}
+
+.viz__dots circle {
+  fill: color-mix(in srgb, var(--ink) 55%, transparent);
+}
+
+.viz__cross circle,
+.viz__cross path {
+  fill: none;
+  stroke: color-mix(in srgb, var(--ink) 45%, transparent);
+  stroke-width: 1;
+}
+
+.viz__ci path {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.2;
+}
+
+.viz__ci text,
+.viz__note {
+  fill: var(--ink-2);
+  font-family: var(--f-mono);
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+}
+
+.viz__ci text {
+  text-anchor: middle;
+}
+
+.viz__note--dim {
+  fill: var(--sub);
+  font-size: 12px;
+}
+
+.viz__dash {
+  fill: none;
+  stroke: color-mix(in srgb, var(--ink) 50%, transparent);
+  stroke-width: 1;
+  stroke-dasharray: 4 5;
+}
+
+.viz__band {
+  fill: color-mix(in srgb, var(--orange-soft) 14%, transparent);
+  stroke: none;
+}
+
+.viz__paths path {
+  fill: none;
+  stroke: color-mix(in srgb, var(--ink) 24%, transparent);
+  stroke-width: 1;
+}
+
+.viz__core {
+  fill: var(--orange);
+  filter: drop-shadow(0 0 5px var(--orange));
+}
+
+/* ───────── phones & narrow windows ───────── */
+
+@media (max-width: 899px), (max-aspect-ratio: 1/1), (max-height: 539px), (pointer: coarse) and (max-width: 1400px) {
+  .sect--skills .sect__tile .lt {
+    --lt-size: calc(82px * var(--lt-k, 1));
+  }
+
+  .lab {
+    gap: 18px;
+  }
+
+  .lab__tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .lab__tab {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    min-height: 60px;
+    padding: 9px 10px 8px;
+    font-size: 10.5px;
+    letter-spacing: 0.04em;
+  }
+
+  .lab__tab b {
+    font-size: 15px;
+  }
+
+  .lab__tab small {
+    font-size: 11px;
+  }
+
+  .lab__th .tag--xs,
+  .lab__cap .tag--xs {
+    font-size: 10px;
+  }
+
+  .lab__panel {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: none;
+    row-gap: 0;
+  }
+
+  /* title, then the specimen, then the notes */
+  .lab__text {
+    display: contents;
+  }
+
+  .lab__title {
+    order: 1;
+    max-width: 100%;
+    margin-left: 10px;
+    padding: 12px 20px 10px 16px;
+  }
+
+  .lab__title::before {
+    left: -10px;
+    width: 4px;
+  }
+
+  .lab__name {
+    font-size: clamp(28px, 10vw, 44px);
+  }
+
+  .lab__viz {
+    order: 2;
+    grid-area: auto;
+    margin: 14px 0 0;
+  }
+
+  .lab__cap {
+    padding-left: 0;
+  }
+
+  /* u is a fixed half pixel here; cap the specimen in real pixels instead */
+  .lab__plot,
+  .lab__cap {
+    max-width: 600px;
+  }
+
+  /* the vertical hair stays with the drawing instead of crossing the notes */
+  .lab__xh--v {
+    top: -24px;
+    bottom: -24px;
+  }
+
+  .lab__motto {
+    order: 3;
+    margin-top: 20px;
+  }
+
+  .lab__body {
+    order: 4;
+    max-width: none;
+  }
+
+  .lab__th {
+    order: 5;
+    margin-top: 20px;
+  }
+
+  .lab__topics {
+    order: 6;
+    gap: 6px;
+  }
+
+  .lab__topics li {
+    min-height: 40px;
+    column-gap: 12px;
+  }
+
+  .lab__topics li > i {
+    width: 28px;
+  }
+}
+
+/* ───────── the specimen's live layers ───────── */
+
+/* the dashed outer ring round the core (8u dashes, 6u gaps), an HTML layer so it turns
+   on the compositor at the PV's specimen rate, 4.95°/s */
+.lab__ring {
+  position: absolute;
+  z-index: 2;
+  left: var(--cx);
+  top: var(--cy);
+  width: calc(2 * var(--cr));
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 45%, transparent);
+  -webkit-mask: repeating-conic-gradient(#000 0 var(--dash), transparent 0 calc(var(--dash) + var(--gap)));
+  mask: repeating-conic-gradient(#000 0 var(--dash), transparent 0 calc(var(--dash) + var(--gap)));
+  pointer-events: none;
+  /* the turn, as one slot of every animation list below: "none" on a hidden screen and on phones */
+  --lab-turn: lab-turn 72.73s linear infinite;
+}
+
+/* only the open panel's ring turns */
+.lab__panel:is(.is-on, .is-out) .lab__ring {
+  animation: var(--lab-turn);
+}
+
+/* …and only on the screen that is shown (§8.0): a hidden one is merely visibility: hidden */
+html.js .screen:not(.is-active) .lab__ring {
+  --lab-turn: none;
+}
+
+/* the core's R9 halo: a pale disc swells r 10 → 25u, two hairline rings spread to 45u and 50u */
+.lab__halo {
+  position: absolute;
+  z-index: 0;
+  left: var(--cx);
+  top: var(--cy);
+  pointer-events: none;
+}
+
+.lab__halo > i {
+  --s0: 0.4;
+  --o0: 0.9;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: calc(50 * var(--u));
+  aspect-ratio: 1;
+  border-radius: 50%;
+  translate: -50% -50%;
+  background: var(--glass-edge);
+  opacity: 0;
+}
+
+.lab__halo > i + i {
+  --s0: 0.13;
+  --o0: 1;
+  width: calc(90 * var(--u));
+  background: none;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 25%, transparent);
+}
+
+.lab__halo > i + i + i {
+  --s0: 0.12;
+  width: calc(100 * var(--u));
+}
+
+:root[data-theme="dark"] .lab__halo > i:first-child {
+  background: color-mix(in srgb, var(--ink) 30%, transparent);
+}
+
+.viz__cross circle,
+.viz__core {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* D9's glowing slice line; it rides the print edge (--scan) while the specimen prints */
+@property --scan {
+  syntax: "<percentage>";
+  inherits: true;
+  initial-value: 100%;
+}
+
+.lab__scan {
+  position: absolute;
+  z-index: 3;
+  left: 0;
+  right: 0;
+  top: var(--scan);
+  height: max(1px, calc(2 * var(--u)));
+  margin-top: calc(-1 * var(--u));
+  background: var(--glass-edge);
+  box-shadow: 0 0 calc(12 * var(--u)) color-mix(in srgb, var(--orange-soft) 50%, transparent);
+  opacity: 0;
+  pointer-events: none;
+}
+
+:root[data-theme="dark"] .lab__scan {
+  background: color-mix(in srgb, var(--ink) 70%, transparent);
+}
+
+/* ───────── readouts under the pointer (screens/skills.ts) ───────── */
+
+.lab__probe {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--t-hover) var(--ease-enter);
+}
+
+.lab__probe * {
+  vector-effect: non-scaling-stroke;
+}
+
+.lab__px {
+  fill: none;
+  stroke: color-mix(in srgb, var(--ink) 45%, transparent);
+  stroke-width: 1;
+}
+
+.lab__pd {
+  fill: var(--ink);
+}
+
+.lab__pp {
+  fill: none;
+  stroke: color-mix(in srgb, var(--ink) 50%, transparent);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+}
+
+/* top right, above the CI bracket */
+.lab__readout {
+  position: absolute;
+  z-index: 3;
+  right: 1.5%;
+  top: 0;
+  padding: 0.2em 0.45em 0.12em;
+  background: color-mix(in srgb, var(--bg-hi) 74%, transparent);
+  color: var(--ink-2);
+  font-family: var(--f-mono);
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--t-hover) var(--ease-enter);
+}
+
+.lab__readout b {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.lab__plot.is-probe :is(.lab__probe, .lab__readout) {
+  opacity: 1;
+}
+
+/* the pointer's surface over the drawing; vertical swipes still scroll on touch */
+.lab__hit {
+  position: absolute;
+  z-index: 4;
+  inset: 0;
+  cursor: crosshair;
+  touch-action: pan-y;
+}
+
+/* QUANT: the path nearest the pointer comes forward, the rest dim */
+.viz__paths path {
+  transition:
+    opacity var(--t-hover) var(--ease-enter),
+    stroke var(--t-hover) var(--ease-enter),
+    stroke-width var(--t-hover) var(--ease-enter);
+}
+
+.lab__plot.is-probe .viz__paths path {
+  opacity: 0.4;
+}
+
+.lab__plot.is-probe .viz__paths path.is-near {
+  opacity: 1;
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+
+/* ───────── entry (MOTION-SPEC §8.3; t0 = dock, the hero counts from the reveal) ─────────
+   The rules apply from "enter" through "reveal": held at their first frame until their
+   phase comes, then counting from it. The base styles are the end state, so settling on
+   time or early (any input) shows the finished panel at once. */
+
+.sect--skills[data-phase="enter"] .lab *,
+.sect--skills[data-phase="enter"] .lab *::before,
+.sect--skills:is([data-phase="enter"], [data-phase="dock"]) .lab__viz,
+.sect--skills:is([data-phase="enter"], [data-phase="dock"]) .lab__viz * {
+  /* the shorthand in each build rule resets the play state: this has to win over it */
+  animation-play-state: paused !important;
+}
+
+/* + 109: the name comes in from the glass's right edge, grey to ink (T12); its STUDY line
+   marquees into the box (T7b) */
+.sect--skills:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) .lab__panel.is-on .lab__name {
+  animation:
+    lab-t12 800ms var(--ease-expo) 109ms backwards,
+    lab-ink 800ms var(--ease-expo) 109ms backwards,
+    home-fade 291ms linear 109ms backwards;
+}
+
+.sect--skills:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) .lab__panel.is-on .lab__study > span {
+  animation: lab-mq 436ms var(--ease-marquee) 109ms backwards;
+}
+
+/* + 509: the three tab boxes slide in from the plate's edge, two frames apart (B5) */
+.sect--skills:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) .lab__tab {
+  animation:
+    lab-x342 764ms var(--ease-box) calc(509ms + var(--n, 0) * 72.73ms) backwards,
+    d1-wait 0s calc(509ms + var(--n, 0) * 72.73ms) backwards;
+}
+
+/* + 655: the motto follows the name (T12 subtitle) */
+.sect--skills:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) .lab__panel.is-on .lab__motto {
+  animation:
+    lab-x70 600ms var(--ease-expo) 655ms backwards,
+    home-fade 291ms linear 655ms backwards;
+}
+
+/* + 945: the RESEARCH TOPICS bar slides in (B5); its count marquees in at + 1782 (T7b) */
+.sect--skills:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) .lab__panel.is-on .lab__th .tag {
+  animation:
+    lab-x342 727ms var(--ease-box) 945ms backwards,
+    d1-wait 0s 945ms backwards;
+}
+
+.sect--skills:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) .lab__panel.is-on .lab__count > span {
+  animation: lab-mq 436ms var(--ease-marquee) 1782ms backwards;
+}
+
+/* + 1018 + n · 73: the topic plates, short from the left (T12) */
+.sect--skills:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) .lab__panel.is-on .lab__topics li {
+  animation:
+    lab-x-24 509ms var(--ease-expo) calc(1018ms + var(--n, 0) * 72.73ms) backwards,
+    lab-fade7 255ms linear calc(1018ms + var(--n, 0) * 72.73ms) backwards;
+}
+
+/* reveal: the specimen prints top to bottom under a glowing slice (D9) — solid above the
+   line, a pale ghost below it */
+.sect--skills:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) .lab__panel.is-on .lab__plot {
+  animation: lab-scan 800ms var(--ease-in-fade) backwards;
+}
+
+.sect--skills:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) .lab__panel.is-on .lab__print {
+  -webkit-mask: linear-gradient(#000 var(--scan), rgb(0 0 0 / 0.18) calc(var(--scan) + 1px));
+  mask: linear-gradient(#000 var(--scan), rgb(0 0 0 / 0.18) calc(var(--scan) + 1px));
+}
+
+/* 1 ms late: unseen while it waits for the reveal */
+.sect--skills:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) .lab__panel.is-on .lab__scan {
+  animation: lab-scanline 800ms linear 1ms;
+}
+
+/* reveal + 800: the cross rings and the core pop (R7), the core haloes (R9), the crosshair
+   draws out (L3) and the caption fades up */
+.sect--skills:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) .lab__panel.is-on :is(.viz__cross circle, .viz__core) {
+  animation: lab-pop 327ms var(--ease-pop) 800ms backwards;
+}
+
+.sect--skills:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) .lab__panel.is-on .lab__ring {
+  animation:
+    lab-pop 327ms var(--ease-pop) 800ms backwards,
+    var(--lab-turn);
+}
+
+.sect--skills:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) .lab__panel.is-on .lab__halo > i {
+  animation: lab-halo1 1455ms var(--ease-expo) 800ms;
+}
+
+.sect--skills:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) .lab__panel.is-on .lab__xh--v {
+  transform-origin: 50% 0;
+  animation: lab-xv 400ms var(--ease-draw) 800ms backwards;
+}
+
+.sect--skills:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) .lab__panel.is-on .lab__xh--h {
+  transform-origin: 100% 50%;
+  animation: lab-xh 400ms var(--ease-draw) 800ms backwards;
+}
+
+.sect--skills:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) .lab__panel.is-on .lab__cap {
+  animation: lab-p1 491ms var(--ease-p1) 800ms backwards;
+}
+
+/* settled: the core re-swells every 1455 ms (the atlas halo re-swell) */
+.sect--skills[data-phase="settled"] .lab__panel.is-on .lab__halo > i {
+  animation: lab-halo 1455ms var(--ease-expo) 1455ms infinite;
+}
+
+/* ───────── tab switch (atlas §6.4: B2 title swap, P4 clear, grow-on) ─────────
+   The screen adds .is-out to the old panel and .is-grow to the new one at the click
+   (s = 0); both go at the end. The title plate collapses into its accent bar (327),
+   the bar holds alone (164), the next plate wipes in (800); the panel clears (473),
+   the glass stays empty 182 ms, then the next specimen grows on, part by part. */
+
+html.js .lab__panel.is-out .lab__title {
+  animation: lab-collapse 327ms var(--ease-collapse) forwards;
+}
+
+html.js .lab__panel.is-out :is(.lab__motto, .lab__body, .lab__th, .lab__topics, .lab__viz) {
+  animation: lab-clear 473ms var(--ease-p4) forwards;
+}
+
+html.js .lab__panel.is-out .lab__tick > span {
+  animation: lab-t9out 73ms var(--ease-in-cubic) forwards;
+}
+
+html.js .lab__panel.is-grow .lab__title {
+  animation: lab-rewipe 800ms var(--ease-swap) 491ms backwards;
+}
+
+/* s + 218: the caption's word drops in (T9), its tags with it */
+html.js .lab__panel.is-grow .lab__cap {
+  animation: d1-wait 0s 218ms backwards;
+}
+
+html.js .lab__panel.is-grow .lab__tick > span {
+  animation: lab-t9in 145ms var(--ease-cubic-out) 218ms backwards;
+}
+
+/* s + 655: the notes come up in place */
+html.js .lab__panel.is-grow .lab__motto {
+  animation: lab-p1 491ms var(--ease-p1) 655ms backwards;
+}
+
+html.js .lab__panel.is-grow .lab__body {
+  animation: lab-p1 491ms var(--ease-p1) 728ms backwards;
+}
+
+html.js .lab__panel.is-grow .lab__th {
+  animation: lab-p1 491ms var(--ease-p1) 801ms backwards;
+}
+
+html.js .lab__panel.is-grow .lab__topics li {
+  animation:
+    lab-x-24 509ms var(--ease-expo) calc(874ms + var(--n, 0) * 72.73ms) backwards,
+    lab-fade7 255ms linear calc(874ms + var(--n, 0) * 72.73ms) backwards;
+}
+
+/* the grow-on, 73 ms a part: grid (P1), axis and crosshair (L3), bars (B4), lines and
+   paths (dash draw), dots, cross (R7), core (R7 + R9); the notes are typed (screen) */
+html.js .lab__panel.is-grow :is(.viz__grid, .viz__band, .lab__hatch, .lab__chip) {
+  animation: lab-p1 491ms var(--ease-p1) 655ms backwards;
+}
+
+html.js .lab__panel.is-grow .viz__axis path[pathLength] {
+  stroke-dasharray: 1 1;
+  animation: lab-draw 400ms var(--ease-draw) 728ms backwards;
+}
+
+html.js .lab__panel.is-grow .viz__axis path:not([pathLength]) {
+  animation: lab-p1 491ms var(--ease-p1) 728ms backwards;
+}
+
+html.js .lab__panel.is-grow .lab__xh--v {
+  transform-origin: 50% 0;
+  animation: lab-xv 400ms var(--ease-draw) 728ms backwards;
+}
+
+html.js .lab__panel.is-grow .lab__xh--h {
+  transform-origin: 100% 50%;
+  animation: lab-xh 400ms var(--ease-draw) 728ms backwards;
+}
+
+html.js .lab__panel.is-grow .viz__bars rect {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: lab-grow 800ms var(--ease-bar) calc(801ms + var(--k, 0) * 36.36ms) backwards;
+}
+
+html.js .lab__panel.is-grow :is(.viz__line, .viz__ci path) {
+  stroke-dasharray: 1 1;
+  animation: lab-draw 800ms var(--ease-draw) 874ms backwards;
+}
+
+html.js .lab__panel.is-grow .viz__paths path {
+  stroke-dasharray: 1 1;
+  animation: lab-draw 800ms var(--ease-draw) calc(874ms + var(--k, 0) * 36.36ms) backwards;
+}
+
+html.js .lab__panel.is-grow .viz__dots circle {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: lab-dot 327ms var(--ease-expo) calc(947ms + var(--k, 0) * 36.36ms) backwards;
+}
+
+html.js .lab__panel.is-grow .viz__cross circle {
+  animation: lab-pop 327ms var(--ease-pop) 1020ms backwards;
+}
+
+html.js .lab__panel.is-grow .lab__ring {
+  animation:
+    lab-pop 327ms var(--ease-pop) 1020ms backwards,
+    var(--lab-turn);
+}
+
+html.js .lab__panel.is-grow .viz__core {
+  animation: lab-pop 327ms var(--ease-pop) 1093ms backwards;
+}
+
+.sect--skills .lab__panel.is-on.is-grow .lab__halo > i {
+  animation: lab-halo1 1455ms var(--ease-expo) 1093ms;
+}
+
+html.js .lab__panel.is-grow .viz__dash {
+  animation: lab-fade400 400ms linear 1164ms backwards;
+}
+
+@keyframes lab-x342 {
+  from {
+    translate: calc(342 * var(--u)) 0;
+  }
+}
+
+@keyframes lab-t12 {
+  from {
+    translate: calc(505 * var(--u)) 0;
+  }
+}
+
+@keyframes lab-ink {
+  from {
+    color: var(--sub);
+  }
+}
+
+@keyframes lab-mq {
+  from {
+    translate: calc(195 * var(--u)) 0;
+  }
+}
+
+@keyframes lab-x70 {
+  from {
+    translate: calc(70 * var(--u)) 0;
+  }
+}
+
+@keyframes lab-x-24 {
+  from {
+    translate: calc(-24 * var(--u)) 0;
+  }
+}
+
+@keyframes lab-fade7 {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes lab-scan {
+  from {
+    --scan: 0%;
+  }
+  to {
+    --scan: 100%;
+  }
+}
+
+@keyframes lab-scanline {
+  from,
+  to {
+    opacity: 1;
+  }
+}
+
+/* opaque from its first frame, invisible before it */
+@keyframes lab-pop {
+  0% {
+    scale: 0.3;
+    opacity: 0;
+  }
+  0.1% {
+    opacity: 1;
+  }
+  100% {
+    scale: 1;
+  }
+}
+
+/* one swell (436 ms of the 1455 ms period); two names so a phase change restarts it */
+@keyframes lab-halo {
+  0% {
+    scale: var(--s0);
+    opacity: var(--o0);
+  }
+  30%,
+  100% {
+    scale: 1;
+    opacity: 0;
+  }
+}
+
+@keyframes lab-halo1 {
+  0% {
+    scale: var(--s0);
+    opacity: var(--o0);
+  }
+  30%,
+  100% {
+    scale: 1;
+    opacity: 0;
+  }
+}
+
+@keyframes lab-turn {
+  to {
+    rotate: 360deg;
+  }
+}
+
+@keyframes lab-xv {
+  from {
+    scale: 1 0;
+  }
+}
+
+@keyframes lab-xh {
+  from {
+    scale: 0 1;
+  }
+}
+
+/* no `to`: each element comes up to its own opacity (the hatch and chip stay faint) */
+@keyframes lab-p1 {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes lab-fade400 {
+  from {
+    opacity: 0;
+  }
+}
+
+/* the clip keeps the accent bar (left of the box) and the plate's shadow */
+@keyframes lab-collapse {
+  from {
+    clip-path: inset(calc(-50 * var(--u)) calc(-50 * var(--u)) calc(-50 * var(--u)) calc(-24 * var(--u)));
+  }
+  to {
+    clip-path: inset(calc(-50 * var(--u)) 100% calc(-50 * var(--u)) calc(-24 * var(--u)));
+  }
+}
+
+@keyframes lab-rewipe {
+  from {
+    clip-path: inset(calc(-50 * var(--u)) 100% calc(-50 * var(--u)) calc(-24 * var(--u)));
+  }
+  to {
+    clip-path: inset(calc(-50 * var(--u)) calc(-50 * var(--u)) calc(-50 * var(--u)) calc(-24 * var(--u)));
+  }
+}
+
+@keyframes lab-clear {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes lab-t9out {
+  to {
+    translate: 0 100%;
+  }
+}
+
+@keyframes lab-t9in {
+  from {
+    translate: 0 calc(-22 * var(--u));
+  }
+}
+
+@keyframes lab-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes lab-grow {
+  from {
+    scale: 1 0;
+  }
+}
+
+@keyframes lab-dot {
+  from {
+    scale: 0;
+  }
+}
+
+/* phones: the ambient stays still (the bars are frosted; nothing moves under them); the
+   ring still pops on with its panel, it just does not turn */
+@media (max-width: 899px), (max-aspect-ratio: 1/1), (max-height: 539px), (pointer: coarse) and (max-width: 1400px) {
+  .lab__ring {
+    --lab-turn: none;
+  }
+
+  .sect--skills[data-phase="settled"] .lab__panel.is-on .lab__halo > i {
+    animation: none;
+  }
+}
+
+
+/* no JavaScript: every panel in reading order; the inert tabs are dropped */
+html:not(.js) .lab__tabs {
+  display: none;
+}
+
+html:not(.js) .lab__panel + .lab__panel {
+  margin-top: 48px;
+}
+
+html:not(.js) :is(.lab__probe, .lab__readout, .lab__hit, .lab__scan, .lab__halo) {
+  display: none;
+}

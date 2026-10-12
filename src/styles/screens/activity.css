@@ -1,0 +1,925 @@
+/* ACTIVITY LOG — five FILE boxes (TOTAL tagged lime like the PV's VISUALIZED
+   bar), the contribution calendar sized off its own width (≈16u cells at
+   16:9; a 14px pitch that scrolls sideways on phones, fitted to the width
+   again on tablets) and the public events as a command log in the rail's
+   dotted style. Motion (MOTION-SPEC §8.5): the boxes, the D10 calendar sweep,
+   the typed log and the L7 wave line, keyed on the screen's data-phase; the
+   crosshair and ring are placed from screens/activity.ts. */
+
+.logs {
+  display: flex;
+  flex-direction: column;
+  gap: calc(30 * var(--u));
+  /* leaves the band under the chrome's pager dots clear */
+  padding-top: calc(36 * var(--u));
+  --f-readout: "JetBrains Mono", "Noto Sans SC", ui-monospace, monospace;
+  /* D10: a revealed cell lands overexposed, then cools to its own colour */
+  --heat-hot: color-mix(in srgb, var(--bg-hi) 35%, #fff);
+}
+
+:root[data-theme="dark"] .logs {
+  --heat-hot: color-mix(in srgb, var(--ink) 70%, #fff);
+}
+
+/* ───────── FILE boxes ───────── */
+
+.logs__stats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: calc(12 * var(--u));
+}
+
+/* Every box has the same rows (index, tag, Chinese; then figure, unit), and
+   the figure block, the same height in all five, is pinned to the bottom:
+   the five figures share a line whatever the labels above them do. */
+.logs__stat {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: calc(14 * var(--u));
+  min-width: 0;
+  padding: calc(16 * var(--u)) calc(12 * var(--u)) calc(14 * var(--u));
+  /* .cornered paints the four squares as backgrounds; the plate goes under them */
+  background-color: color-mix(in srgb, var(--bg-hi) 55%, transparent);
+  box-shadow: inset 0 0 0 1px var(--hair);
+}
+
+.logs__stat dt {
+  display: grid;
+  justify-items: start;
+  gap: calc(6 * var(--u));
+}
+
+.logs__no {
+  font-family: var(--f-mono);
+  font-size: max(10px, calc(11 * var(--u)));
+  line-height: 1.2;
+  color: var(--sub);
+}
+
+/* LONGEST STREAK fits one line down to 1440 wide; narrower boxes break it in two */
+.logs__stat .tag {
+  max-width: 100%;
+  font-size: max(10px, calc(13 * var(--u)));
+  letter-spacing: 0.02em;
+  white-space: normal;
+}
+
+.logs__stat dt small {
+  font-size: max(11px, calc(13 * var(--u)));
+  line-height: 1.4;
+  letter-spacing: 0.06em;
+  color: var(--sub);
+}
+
+.logs__stat dd {
+  display: grid;
+  justify-items: start;
+  gap: calc(6 * var(--u));
+}
+
+.logs__stat dd b {
+  font-weight: 700;
+  font-size: max(26px, calc(60 * var(--u)));
+  line-height: 0.92;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.logs__stat dd small {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  min-height: 1.4em;
+  font-family: var(--f-mono);
+  font-size: max(10px, calc(12 * var(--u)));
+  line-height: 1.4;
+  letter-spacing: 0.08em;
+  color: var(--sub);
+}
+
+/* TOTAL: a lime meter after the unit, like VISUALIZED */
+.logs__stat.is-hi dd small {
+  justify-self: stretch;
+}
+
+.logs__stat.is-hi dd small::after {
+  content: "";
+  flex: 1;
+  height: max(4px, calc(7 * var(--u)));
+  background: var(--lime);
+}
+
+/* BEST DAY: the same orange as its cell in the calendar */
+.logs__stat.is-best dd small i {
+  width: 0.8em;
+  height: 0.8em;
+  background: var(--orange);
+}
+
+/* ───────── calendar ───────── */
+
+.heat {
+  position: relative;
+  padding: calc(16 * var(--u)) calc(12 * var(--u)) calc(14 * var(--u));
+  background: color-mix(in srgb, var(--bg-hi) 45%, transparent);
+  box-shadow: inset 0 0 0 1px var(--hair);
+}
+
+.heat__head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px 16px;
+  margin-bottom: calc(14 * var(--u));
+}
+
+.heat__head h3,
+.events__head h3 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px calc(12 * var(--u));
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.heat__head h3 small,
+.events__head h3 small {
+  font-size: max(11px, calc(13 * var(--u)));
+  letter-spacing: 0.1em;
+  color: var(--sub);
+}
+
+.heat__sel {
+  display: flex;
+  align-items: center;
+  gap: calc(10 * var(--u));
+  font-weight: 600;
+  font-size: max(10px, calc(12 * var(--u)));
+  letter-spacing: 0.08em;
+}
+
+.heat__sel b {
+  display: inline-block;
+  min-width: 25ch;
+  padding: calc(5 * var(--u)) calc(12 * var(--u)) calc(4 * var(--u));
+  box-shadow: inset 0 0 0 max(1px, calc(1.5 * var(--u))) var(--ink);
+  font-family: var(--f-readout);
+  font-weight: 500;
+  font-size: max(11px, calc(14 * var(--u)));
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.heat__scroll {
+  container-type: inline-size;
+  --lbl: max(28px, calc(34 * var(--u)));
+  --gap: max(2px, calc(2.5 * var(--u)));
+}
+
+/* everything below shares one pitch, so labels and cells stay in register; its
+   own stacking context lets halo and bands sit under the cells, the ring over them */
+.heat__body {
+  --pitch: min(calc(18 * var(--u)), calc((100cqi - var(--lbl)) / 53));
+  --cell: calc(var(--pitch) - var(--gap));
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: var(--lbl) max-content;
+  width: max-content;
+}
+
+.heat__months,
+.heat__grid {
+  grid-column: 2;
+  display: grid;
+  grid-template-columns: repeat(53, var(--cell));
+  column-gap: var(--gap);
+}
+
+.heat__months {
+  grid-row: 1;
+  height: max(14px, calc(18 * var(--u)));
+}
+
+.heat__months span,
+.heat__days span {
+  font-weight: 600;
+  font-size: max(10px, calc(11 * var(--u)));
+  line-height: 1;
+  letter-spacing: 0.06em;
+  color: var(--sub);
+  white-space: nowrap;
+  transition: color var(--t-hover) var(--ease-enter);
+}
+
+/* the crosshair's week (its month) and weekday */
+.heat__months span.is-hot,
+.heat__days span.is-hot {
+  color: var(--ink);
+}
+
+.heat__months span {
+  grid-column: var(--c);
+  grid-row: 1;
+}
+
+.heat__days {
+  grid-column: 1;
+  grid-row: 2;
+  display: grid;
+  grid-template-rows: repeat(7, var(--cell));
+  row-gap: var(--gap);
+  align-items: center;
+}
+
+.heat__grid {
+  grid-row: 2;
+  grid-template-rows: repeat(7, var(--cell));
+  row-gap: var(--gap);
+  border-radius: 1px;
+}
+
+.heat__grid:focus-visible {
+  outline-width: 1px;
+  outline-offset: max(4px, calc(7 * var(--u)));
+}
+
+.heat__c {
+  grid-column: var(--c);
+  grid-row: var(--r);
+}
+
+.heat [data-l="0"] {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 24%, transparent);
+}
+
+.heat [data-l="1"] {
+  background: color-mix(in srgb, var(--ink) 26%, transparent);
+}
+
+.heat [data-l="2"] {
+  background: color-mix(in srgb, var(--ink) 48%, transparent);
+}
+
+.heat [data-l="3"] {
+  background: color-mix(in srgb, var(--ink) 72%, transparent);
+}
+
+.heat [data-l="4"] {
+  background: var(--ink);
+}
+
+/* the best day: filled orange with a ring standing off it */
+.heat .is-best {
+  background: var(--orange);
+  box-shadow:
+    0 0 0 max(1px, calc(1.5 * var(--u))) var(--bg-hi),
+    0 0 0 max(2px, calc(3 * var(--u))) var(--orange);
+}
+
+/* days still to come this week: an empty slot */
+.heat .heat__c.is-future {
+  background: none;
+  box-shadow: none;
+}
+
+/* the day the readout reports (today until another is picked); with scripts one
+   ring glides between days instead (.heat__ring) */
+.heat__body:not(.has-ring) .heat__c.is-cur,
+.heat__body:not(.has-ring) .heat__c:not(.is-future):hover {
+  outline: 1px solid var(--ink);
+  outline-offset: 1px;
+}
+
+.heat__body:not(.has-ring) .heat__grid:is(:focus-visible, .is-kbd:focus) .heat__c.is-cur {
+  outline: 2px solid var(--hover);
+  outline-offset: 1px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ───────── crosshair, ring, scan front ───────── */
+
+.heat__ring,
+.heat__band,
+.heat__front {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+}
+
+html:not(.js) :is(.heat__ring, .heat__band, .heat__front, .heat__wave) {
+  display: none;
+}
+
+.heat__ring {
+  z-index: 2;
+  outline: 1px solid var(--ink);
+  outline-offset: 1px;
+}
+
+.heat__grid:is(:focus-visible, .is-kbd:focus) ~ .heat__ring {
+  outline: 2px solid var(--hover);
+}
+
+/* the week and the weekday: a 6 % band with a hairline through its middle, under the cells */
+.heat__band {
+  z-index: -1;
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  opacity: 0;
+  transition: opacity 145.45ms linear;
+}
+
+.heat__band::before {
+  content: "";
+  position: absolute;
+  background: color-mix(in srgb, var(--ink) 25%, transparent);
+}
+
+.heat__band--col::before {
+  left: calc(50% - 0.5px);
+  top: 0;
+  bottom: 0;
+  width: 1px;
+}
+
+.heat__band--row::before {
+  top: calc(50% - 0.5px);
+  left: 0;
+  right: 0;
+  height: 1px;
+}
+
+.heat__body.is-cross .heat__band {
+  opacity: 1;
+}
+
+/* D10's front: a hot hairline running ahead of the revealed cells */
+.heat__front {
+  z-index: 3;
+  width: max(1px, calc(2 * var(--u)));
+  background: var(--glass-edge);
+  box-shadow: 0 0 calc(12 * var(--u)) color-mix(in srgb, var(--orange-soft) 50%, transparent);
+  opacity: 0;
+}
+
+/* the best day re-swells its halo every 40 frames (R9), under the cells */
+.heat__c.is-best {
+  position: relative;
+}
+
+.heat__c.is-best::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: 50%;
+  top: 50%;
+  width: calc(100 * var(--u));
+  height: calc(100 * var(--u));
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    var(--glass-edge) 0 49%,
+    transparent 50% 88%,
+    color-mix(in srgb, var(--ink) 25%, transparent) 89% 90.5%,
+    transparent 91.5% 97.5%,
+    color-mix(in srgb, var(--ink) 25%, transparent) 98% 99.5%,
+    transparent 100%
+  );
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* L7: the calendar's foot rule ripples into a travelling sine */
+.heat__wave {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(-10 * var(--u));
+  height: calc(20 * var(--u));
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.heat__wave svg {
+  display: block;
+  width: calc(79 * 14 * var(--u));
+  height: 100%;
+  overflow: visible;
+}
+
+.heat__wave path {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 1px;
+  vector-effect: non-scaling-stroke;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.heat__foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px 18px;
+  margin-top: calc(14 * var(--u));
+  padding-left: var(--lbl);
+}
+
+.heat__keys kbd {
+  min-width: 1.6em;
+  margin-right: 0.2em;
+}
+
+.heat__keys span > kbd:last-of-type {
+  margin-right: 0.6em;
+}
+
+.heat__legend {
+  display: flex;
+  align-items: center;
+  gap: max(3px, calc(4 * var(--u)));
+  margin-left: auto;
+  font-weight: 600;
+  font-size: max(10px, calc(11 * var(--u)));
+  letter-spacing: 0.08em;
+  color: var(--sub);
+}
+
+.heat__legend span {
+  margin: 0 calc(6 * var(--u));
+}
+
+.heat__legend i {
+  width: max(9px, calc(12 * var(--u)));
+  height: max(9px, calc(12 * var(--u)));
+}
+
+.heat__legend i.is-best {
+  margin-left: calc(18 * var(--u));
+}
+
+
+/* ───────── command log ───────── */
+
+.events__head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px 16px;
+}
+
+.events__head .tag {
+  position: relative;
+  margin-left: calc(6 * var(--u));
+  font-size: max(10px, calc(12 * var(--u)));
+}
+
+/* the rail's COMMAND ENTERED tag has a bar standing off its left edge */
+.events__head .tag::before {
+  content: "";
+  position: absolute;
+  left: calc(-7 * var(--u));
+  top: 0;
+  bottom: 0;
+  width: max(1.5px, calc(2.5 * var(--u)));
+  background: var(--ink);
+}
+
+.events__snap {
+  font-family: var(--f-mono);
+  font-size: max(10px, calc(11 * var(--u)));
+  letter-spacing: 0.08em;
+  color: var(--sub);
+}
+
+/* no row gap: the links' 24px lines already space the rows */
+.events__list {
+  display: grid;
+  margin: calc(12 * var(--u)) 0 0 calc(6 * var(--u));
+  padding-left: calc(16 * var(--u));
+  border-left: 1px dotted var(--sub);
+  font-family: var(--f-readout);
+  font-size: max(11px, calc(13.5 * var(--u)));
+  line-height: 1.55;
+  letter-spacing: 0.02em;
+}
+
+.events__list li {
+  display: grid;
+  grid-template-columns: max-content max-content minmax(0, 1fr);
+  align-items: baseline;
+  gap: 0 1.3em;
+  color: var(--ink-2);
+}
+
+.events__list li:first-child {
+  color: var(--ink);
+}
+
+.events__list time {
+  color: var(--sub);
+  font-variant-numeric: tabular-nums;
+}
+
+.events__cmd {
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+/* a 24px line keeps each link a full target (WCAG 2.5.8) and the ellipsis working;
+   its underline draws in on hover (.hl, L3) */
+.events__list a {
+  justify-self: start;
+  max-width: 100%;
+  min-width: 0;
+  line-height: max(24px, 1.55em);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color var(--t-hover) var(--ease-enter);
+}
+
+.events__list a:hover,
+.events__list a:focus-visible {
+  color: var(--hover);
+}
+
+/* typed in whole characters, a frame each: a clip on the printed line (screens/activity.ts sets --n) */
+.events__list > li.is-typing {
+  clip-path: inset(-4px calc(100% - var(--n, 0) * 1ch) -4px -4px);
+}
+
+.events__list .events__none,
+.events__list .events__idle {
+  display: block;
+  color: var(--sub);
+}
+
+/* the ■ cursor breathes (.breathe) */
+.events__idle i {
+  display: inline-block;
+  width: 0.6em;
+  height: 1.05em;
+  vertical-align: -0.18em;
+  background: var(--ink);
+}
+
+/* ───────── entry (MOTION-SPEC §8.5): delays from the dock (t0) or the reveal ───────── */
+
+/* before the dock nothing of the build shows; the calendar waits for the reveal */
+.sect--activity[data-phase="enter"] :is(.logs__stat .tag, .heat__sel-v),
+.sect--activity:is([data-phase="enter"], [data-phase="dock"]) :is(.heat__c, .heat__months, .heat__days, .heat__sel-v) {
+  opacity: 0;
+}
+
+.sect--activity[data-phase="enter"] .events__list > li {
+  clip-path: inset(0 100% 0 0);
+}
+
+.sect--activity[data-phase="enter"] .heat__wave path {
+  scale: 1 0;
+}
+
+/* each box's tag flickers on (F2) a few frames after its corners (t0 + 109 + i·73) */
+.sect--activity:is([data-phase="dock"], [data-phase="reveal"]) .logs__stat .tag {
+  animation: act-f2 509.09ms steps(1, end) calc(72.73ms + var(--i, 0) * 72.73ms) both;
+}
+
+/* D10: the front reaches each column after (c − 1) steps; a cell turns on in a frame and cools in 182 ms */
+.sect--activity[data-phase="reveal"] .heat__c:not(.is-future) {
+  animation: act-hot 181.82ms var(--ease-expo) calc((var(--c) - 1) * var(--heat-step, 13ms)) both;
+}
+
+/* the ring waits for the front to have crossed the year */
+.sect--activity:is([data-phase="enter"], [data-phase="dock"]) .heat__ring {
+  opacity: 0;
+}
+
+.sect--activity[data-phase="reveal"] .heat__ring {
+  animation: act-hold 1ms linear calc(53 * var(--heat-step, 13ms)) backwards;
+}
+
+@keyframes act-hold {
+  from,
+  to {
+    opacity: 0;
+  }
+}
+
+/* months and weekdays flicker on twos (F6) at reveal + 727 */
+.sect--activity[data-phase="reveal"] :is(.heat__months, .heat__days) {
+  animation: act-f6 363.64ms steps(1, end) 690.91ms both;
+}
+
+/* SELECTED DAY: T1c, the whole value in 11 frames at reveal + 400 */
+.sect--activity[data-phase="reveal"] .heat__sel-v {
+  animation: act-t1c 400ms steps(11, jump-end) 400ms both;
+}
+
+/* L7 at t0 + 1818: the rule gains its ripple, then it travels right at 55u/s for good */
+.sect--activity:is([data-phase="dock"], [data-phase="reveal"]) .heat__wave path {
+  animation: act-amp 509.09ms var(--ease-expo) 1818.18ms both;
+}
+
+.sect--activity:is([data-phase="dock"], [data-phase="reveal"], [data-phase="settled"], [data-phase="leave"]) .heat__wave svg {
+  animation: act-wave 1436.36ms linear 1818.18ms infinite;
+}
+
+.sect--activity[data-phase="settled"] .heat__c.is-best::before {
+  animation: act-halo 1454.55ms var(--ease-expo) infinite;
+}
+
+/* the F2 template with a blank frame in front: [0 | .4 .8 1 .5 .4 .8 1 .8 .5 .5 .5 .75 1] */
+@keyframes act-f2 {
+  0% {
+    opacity: 0;
+  }
+  7.143% {
+    opacity: 0.4;
+  }
+  14.286% {
+    opacity: 0.8;
+  }
+  21.429% {
+    opacity: 1;
+  }
+  28.571% {
+    opacity: 0.5;
+  }
+  35.714% {
+    opacity: 0.4;
+  }
+  42.857% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 1;
+  }
+  57.143% {
+    opacity: 0.8;
+  }
+  64.286% {
+    opacity: 0.5;
+  }
+  85.714% {
+    opacity: 0.75;
+  }
+  92.857%,
+  100% {
+    opacity: 1;
+  }
+}
+
+/* F6 with a blank frame in front: [0 | 1 1 0 0 1 1 .55 .55 1] */
+@keyframes act-f6 {
+  0% {
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  30% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 0.55;
+  }
+  90%,
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes act-hot {
+  0% {
+    opacity: 0;
+  }
+  0.1% {
+    opacity: 1;
+    background-color: var(--heat-hot);
+  }
+}
+
+@keyframes act-t1c {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes act-amp {
+  from {
+    scale: 1 0;
+  }
+}
+
+@keyframes act-wave {
+  from {
+    translate: calc(-79 * var(--u)) 0;
+  }
+  to {
+    translate: 0 0;
+  }
+}
+
+/* R9: a disc r 10 → 25u and two rings to 45u / 50u in 436 ms, then still until the next swell */
+@keyframes act-halo {
+  0% {
+    scale: 0.4;
+    opacity: 1;
+  }
+  30%,
+  100% {
+    scale: 1;
+    opacity: 0;
+  }
+}
+
+/* ambient holds still under reduced motion */
+html[data-motion="reduced"] .heat__wave svg,
+html[data-motion="reduced"] .heat__c.is-best::before {
+  animation: none !important;
+}
+
+/* ───────── smaller 16:9 frames ───────── */
+
+/* 1366×768, 1280×720, and windows up to 1460 wide, whose plate keeps the 16:9
+   frame (1440×900): the pixel floors take more of it, so the rhythm tightens */
+@media (min-width: 900px) and (min-aspect-ratio: 1/1) and (min-height: 540px) and (pointer: fine) and (max-height: 820px), (min-width: 900px) and (max-width: 1460px) and (min-aspect-ratio: 1/1) and (min-height: 540px) and (pointer: fine) {
+  .logs {
+    gap: calc(16 * var(--u));
+  }
+
+  .logs__stat {
+    gap: calc(8 * var(--u));
+    padding-block: calc(12 * var(--u)) calc(10 * var(--u));
+  }
+
+  .logs__stat dt {
+    gap: calc(3 * var(--u));
+  }
+
+  .logs__stat dd b {
+    font-size: max(26px, calc(54 * var(--u)));
+  }
+
+  .heat {
+    padding-block: calc(12 * var(--u)) calc(10 * var(--u));
+  }
+
+  .heat__head {
+    margin-bottom: calc(8 * var(--u));
+  }
+
+  .heat__foot {
+    margin-top: calc(8 * var(--u));
+  }
+
+  .heat__keys {
+    display: none;
+  }
+
+  .events__list {
+    margin-top: calc(8 * var(--u));
+  }
+}
+
+/* ───────── phones & narrow windows ───────── */
+
+@media (max-width: 899px), (max-aspect-ratio: 1/1), (max-height: 539px), (pointer: coarse) and (max-width: 1400px) {
+  .logs {
+    gap: 22px;
+    padding-top: 0;
+  }
+
+  .logs__stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .logs__stat {
+    padding: 12px 14px 12px;
+  }
+
+  .logs__stat.is-hi {
+    grid-column: 1 / -1;
+  }
+
+  .logs__stat dd b {
+    font-size: 30px;
+  }
+
+  .heat {
+    padding: 14px 12px 12px;
+    background: var(--bg-hi);
+  }
+
+  .heat__head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .heat__sel {
+    flex-wrap: wrap;
+  }
+
+  .heat__sel b {
+    min-width: 0;
+    font-size: 13px;
+    white-space: normal;
+  }
+
+  .heat__scroll {
+    --lbl: 32px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--line) transparent;
+    padding: 2px 0 10px;
+  }
+
+  /* phones: a 14px pitch that scrolls sideways; from a 12px pitch up (tablets,
+     668px = 53 × 12 + the label column) the year fits the width, no scroller */
+  .heat__body {
+    --pitch: 14px;
+  }
+
+  @container (min-width: 668px) {
+    .heat__body {
+      --pitch: min(18px, calc((100cqi - var(--lbl)) / 53));
+    }
+  }
+
+  /* the weekday labels stay put while the weeks scroll under them; a blank
+     cell above them covers the month names going the same way (with scripts
+     on, screens/activity.ts hides a name whole before it would show cut) */
+  .heat__days,
+  .heat__body::before {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: var(--bg-hi);
+    box-shadow: 4px 0 6px -4px var(--bg-hi);
+  }
+
+  .heat__body::before {
+    content: "";
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .heat__grid:focus-visible {
+    outline-offset: 2px;
+  }
+
+  .heat__foot {
+    padding-left: 0;
+  }
+
+  .heat__keys {
+    display: none;
+  }
+
+  .heat__legend {
+    margin-left: 0;
+    flex-wrap: wrap;
+  }
+
+  .events__list {
+    gap: 2px;
+    padding-left: 12px;
+    margin-left: 4px;
+    font-size: 12px;
+  }
+
+  .events__list li {
+    grid-template-columns: max-content minmax(0, 1fr);
+  }
+
+  .events__list time {
+    grid-column: 1 / -1;
+  }
+
+  .events__list a {
+    line-height: 40px;
+  }
+
+  /* the calendar scrolls under the frosted bars here: its ambient holds still */
+  .sect--activity .heat__wave svg,
+  .sect--activity .heat__c.is-best::before {
+    animation: none !important;
+  }
+}

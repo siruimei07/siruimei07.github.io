@@ -1,0 +1,871 @@
+/* CONTACT — after the PV's dark file box (4:20): a wire from the left ending
+   in a square, then a box with a thick bar on its left edge. Ink on paper in
+   the light theme, white on black in the dark one, as in the film. Below it
+   the channels, the Toronto clock as a FILE readout, a terminal for the
+   message, and the PERMISSION AUTHORIZED rings (0:20) beside the terminal.
+   Motion (MOTION-SPEC §8.6) is keyed on the screen's data-phase; the typed
+   fields, clock and the rings' turn toward the pointer are screens/contact.ts. */
+
+/* CNCT is the widest logotype: a smaller size keeps the T's crossbar off the tile edge */
+.sect--contact .sect__tile .lt {
+  --lt-size: calc(116 * var(--u));
+}
+
+.comms {
+  --f-readout: "JetBrains Mono", "Noto Sans SC", ui-monospace, monospace;
+  --ring-white: #fff;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) calc(272 * var(--u));
+  grid-template-areas:
+    "file time"
+    "chan rings"
+    "form rings";
+  gap: calc(30 * var(--u)) calc(40 * var(--u));
+  align-items: start;
+}
+
+:root[data-theme="dark"] .comms {
+  --ring-white: color-mix(in srgb, var(--ink) 55%, transparent);
+}
+
+/* ───────── file box ───────── */
+
+.comms__file {
+  grid-area: file;
+  align-self: end;
+  display: flex;
+  align-items: center;
+}
+
+/* the connector (::before, drawn from its left end) and its end cap (::after) */
+.comms__wire {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: calc(48 * var(--u));
+  max-width: calc(190 * var(--u));
+  height: max(9px, calc(14 * var(--u)));
+  margin-right: calc(20 * var(--u));
+}
+
+.comms__wire::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: calc(50% - max(0.5px, calc(1 * var(--u))));
+  width: calc(100% - 10 * var(--u));
+  height: max(1px, calc(2 * var(--u)));
+  background: linear-gradient(90deg, transparent, var(--ink) 55%);
+  transform-origin: left;
+}
+
+.comms__wire::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: max(9px, calc(14 * var(--u)));
+  height: 100%;
+  background: var(--ink);
+}
+
+.comms__box {
+  --stamp: calc(18 * var(--u));
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  flex: none;
+  width: calc(440 * var(--u));
+  min-height: calc(116 * var(--u));
+  padding: calc(27 * var(--u)) calc(30 * var(--u)) calc(24 * var(--u)) calc(52 * var(--u));
+  border: max(1px, calc(1.5 * var(--u))) solid var(--ink);
+  background: color-mix(in srgb, var(--bg-hi) 72%, transparent);
+  font-weight: 500;
+  font-size: max(12px, calc(18 * var(--u)));
+  line-height: 1.3;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+/* the thick bar on the left edge */
+.comms__box::before {
+  content: "";
+  position: absolute;
+  left: -1px;
+  top: -1px;
+  bottom: -1px;
+  width: var(--stamp);
+  background: var(--ink);
+  transform-origin: left;
+}
+
+.comms__box > span[aria-hidden] {
+  display: block;
+  min-height: 1.3em;
+  white-space: pre;
+}
+
+.comms__box b {
+  font-weight: 700;
+}
+
+.comms__led {
+  position: relative;
+  display: inline-block;
+  width: 0.55em;
+  height: 0.55em;
+  margin-left: 0.55em;
+  background: var(--lime);
+  vertical-align: 0.08em;
+}
+
+/* R9: the LED re-swells a halo every 40 frames once the box has settled (under the text) */
+.comms__led::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: 50%;
+  top: 50%;
+  width: 3.6em;
+  height: 3.6em;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--lime) 45%, transparent) 0 49%,
+    transparent 50% 88%,
+    color-mix(in srgb, currentColor 25%, transparent) 89% 92%,
+    transparent 93%
+  );
+  opacity: 0;
+  pointer-events: none;
+}
+
+:root[data-theme="dark"] .comms__box {
+  background: var(--tile);
+  border-color: var(--tile-ink);
+  color: var(--tile-ink);
+}
+
+:root[data-theme="dark"] .comms__box::before {
+  background: var(--tile-ink);
+}
+
+/* ───────── the C-023 box builds (CT-01, delays from the dock) ───────── */
+
+.sect--contact[data-phase="enter"] :is(.comms__file, .comms__channels > li) {
+  opacity: 0;
+}
+
+/* the connector: exponential out, 90 % at 838 ms */
+.sect--contact:is([data-phase="dock"], [data-phase="reveal"]) .comms__wire::before {
+  animation: comms-wire 1600ms var(--ease-exp) both;
+}
+
+/* its end cap blinks on (F10) as the line arrives */
+.sect--contact:is([data-phase="dock"], [data-phase="reveal"]) .comms__wire::after {
+  animation: comms-cap 400ms steps(1, end) 801.82ms both;
+}
+
+/* the box is nothing until its stamp bar shows at 6u and widens to its full width … */
+.sect--contact:is([data-phase="dock"], [data-phase="reveal"]) .comms__box::before {
+  animation: comms-stamp 181.82ms var(--ease-expo) 1200ms both;
+}
+
+/* … then the outline grows from the bar at 492u/s and stops hard (909 ms) */
+.sect--contact:is([data-phase="dock"], [data-phase="reveal"]) .comms__box {
+  animation:
+    comms-box 909.09ms linear 1381.82ms both,
+    comms-hold 1ms linear 1200ms backwards;
+}
+
+@keyframes comms-wire {
+  from {
+    scale: 0 1;
+  }
+}
+
+/* [0 | .8 .14 .57 .05 .85 .42 .87 0 .89 1] */
+@keyframes comms-cap {
+  0% {
+    opacity: 0;
+  }
+  9.091% {
+    opacity: 0.8;
+  }
+  18.182% {
+    opacity: 0.14;
+  }
+  27.273% {
+    opacity: 0.57;
+  }
+  36.364% {
+    opacity: 0.05;
+  }
+  45.455% {
+    opacity: 0.85;
+  }
+  54.545% {
+    opacity: 0.42;
+  }
+  63.636% {
+    opacity: 0.87;
+  }
+  72.727% {
+    opacity: 0;
+  }
+  81.818% {
+    opacity: 0.89;
+  }
+  90.909%,
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes comms-stamp {
+  from {
+    scale: 0.333 1;
+  }
+}
+
+@keyframes comms-hold {
+  from,
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes comms-box {
+  from {
+    clip-path: inset(-2px calc(100% - var(--stamp)) -2px -2px);
+  }
+  to {
+    clip-path: inset(-2px -2px -2px -2px);
+  }
+}
+
+.sect--contact[data-phase="settled"] .comms__led::after {
+  animation: comms-halo 1454.55ms var(--ease-expo) infinite;
+}
+
+@keyframes comms-halo {
+  0% {
+    scale: 0.4;
+    opacity: 1;
+  }
+  30%,
+  100% {
+    scale: 1;
+    opacity: 0;
+  }
+}
+
+/* ───────── channels ───────── */
+
+.comms__channels {
+  grid-area: chan;
+  border-top: max(1.5px, calc(2 * var(--u))) solid var(--ink);
+}
+
+.channel {
+  border-bottom: 1px solid var(--hair);
+}
+
+/* the row itself lifts on hover (.lift) as a plate of its own, bleeding a little past
+   the text so nothing moves sideways; its B5 entry moves the list item around it */
+.channel__in {
+  display: grid;
+  grid-template-columns: calc(108 * var(--u)) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px calc(20 * var(--u));
+  margin-inline: calc(-12 * var(--u));
+  padding: calc(14 * var(--u)) calc(12 * var(--u));
+  background-color: transparent;
+  transition:
+    translate var(--t-hover) var(--ease-enter),
+    box-shadow var(--t-hover) var(--ease-enter),
+    background-color var(--t-hover) var(--ease-enter);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .channel__in:hover {
+    background-color: color-mix(in srgb, var(--bg-hi) 70%, transparent);
+  }
+}
+
+/* B5 from +260u, two frames apart, from t0 + 509 */
+.sect--contact:is([data-phase="dock"], [data-phase="reveal"]) .comms__channels > li {
+  animation:
+    comms-b5 545.45ms var(--ease-expo) calc(509.09ms + var(--n, 0) * 72.73ms) both,
+    comms-on 145.45ms linear calc(509.09ms + var(--n, 0) * 72.73ms) both;
+}
+
+@keyframes comms-b5 {
+  from {
+    translate: calc(260 * var(--u)) 0;
+  }
+}
+
+@keyframes comms-on {
+  from {
+    opacity: 0;
+  }
+}
+
+.channel__label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 0.6em;
+  font-weight: 700;
+  font-size: max(12px, calc(15 * var(--u)));
+  letter-spacing: 0.08em;
+  line-height: 1.3;
+}
+
+.channel__no {
+  flex-basis: 100%;
+  font-family: var(--f-mono);
+  font-weight: 400;
+  font-size: max(10px, calc(11 * var(--u)));
+  letter-spacing: 0.06em;
+  color: var(--sub);
+}
+
+.channel__no::before {
+  content: "■ ";
+  font-size: 0.8em;
+}
+
+.channel__label small {
+  font-weight: 400;
+  font-size: max(11px, calc(13 * var(--u)));
+  letter-spacing: 0.06em;
+  color: var(--sub);
+}
+
+/* the underline draws in on hover (.hl, L3) */
+.channel__value {
+  justify-self: start;
+  font-weight: 600;
+  font-size: max(15px, calc(21 * var(--u)));
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  transition: color var(--t-hover) var(--ease-enter);
+}
+
+.channel__value:hover,
+.channel__value:focus-visible {
+  color: var(--hover);
+}
+
+.channel__act {
+  position: relative;
+}
+
+/* R9 at the copy button when the address is on the clipboard */
+.comms__halo {
+  position: absolute;
+  z-index: -1;
+  left: 50%;
+  top: 50%;
+  width: calc(140 * var(--u));
+  height: calc(140 * var(--u));
+  margin: calc(-70 * var(--u)) 0 0 calc(-70 * var(--u));
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--glass-edge) 80%, transparent) 0 49%,
+    transparent 50% 88%,
+    color-mix(in srgb, var(--ink) 25%, transparent) 89% 90.5%,
+    transparent 91.5% 97.5%,
+    color-mix(in srgb, var(--ink) 25%, transparent) 98% 99.5%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+.channel__act .btn {
+  min-width: calc(112 * var(--u));
+  justify-content: flex-start;
+}
+
+/* ───────── local time ───────── */
+
+.comms__time {
+  grid-area: time;
+  /* leaves the band under the chrome's pager dots clear */
+  margin-top: calc(40 * var(--u));
+  display: flex;
+  flex-direction: column;
+  gap: calc(12 * var(--u));
+  padding: calc(16 * var(--u)) calc(20 * var(--u)) calc(14 * var(--u));
+  background-color: color-mix(in srgb, var(--bg-hi) 55%, transparent);
+  box-shadow: inset 0 0 0 1px var(--hair);
+}
+
+.comms__time-h {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px calc(10 * var(--u));
+}
+
+.comms__time-h small {
+  font-size: max(11px, calc(13 * var(--u)));
+  letter-spacing: 0.06em;
+  color: var(--sub);
+}
+
+.comms__clock b {
+  font-family: var(--f-mono);
+  font-weight: 500;
+  font-size: max(28px, calc(46 * var(--u)));
+  line-height: 1;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.comms__zone {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 2px 12px;
+  padding-top: calc(8 * var(--u));
+  border-top: 1px solid var(--hair);
+  font-family: var(--f-mono);
+  font-size: max(10px, calc(11.5 * var(--u)));
+  letter-spacing: 0.08em;
+  color: var(--sub);
+}
+
+/* ───────── message terminal ───────── */
+
+.comms__form {
+  grid-area: form;
+  display: flex;
+  flex-direction: column;
+  gap: calc(12 * var(--u));
+  min-width: 0;
+}
+
+.comms__lead {
+  font-size: max(13px, calc(16 * var(--u)));
+  line-height: 1.7;
+  letter-spacing: 0.02em;
+  color: var(--ink-2);
+}
+
+.comms__term {
+  background: color-mix(in srgb, var(--bg-hi) 62%, transparent);
+  box-shadow: inset 0 0 0 max(1px, calc(1.5 * var(--u))) var(--ink);
+}
+
+/* a focus ring is there at once (CT-06) */
+.comms__term:focus-within {
+  box-shadow: inset 0 0 0 2px var(--hover);
+}
+
+.comms__term-h {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: calc(5 * var(--u)) calc(14 * var(--u)) calc(4 * var(--u));
+  background: var(--tag-bg);
+  color: var(--tag-ink);
+  font-weight: 600;
+  font-size: max(11px, calc(13 * var(--u)));
+  letter-spacing: 0.08em;
+}
+
+.comms__term-h > span {
+  font-family: var(--f-mono);
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  opacity: 0.8;
+  font-variant-numeric: tabular-nums;
+}
+
+.comms__field {
+  --px: calc(18 * var(--u));
+  --py: calc(14 * var(--u));
+  position: relative;
+  font-family: var(--f-readout);
+  font-size: max(13px, calc(16 * var(--u)));
+  line-height: 1.6;
+}
+
+/* rows="3" in the markup; the four-line height is set here, so short windows can drop to three */
+.comms__field textarea {
+  display: block;
+  width: 100%;
+  min-height: calc(4 * 1.6em + 2 * var(--py));
+  padding: var(--py) var(--px);
+  border: 0;
+  background: transparent;
+  resize: vertical;
+  text-indent: 2ch;
+  caret-color: var(--orange);
+}
+
+.comms__field textarea:focus-visible {
+  outline: none;
+}
+
+.comms__field textarea::placeholder {
+  color: var(--sub);
+  opacity: 1;
+}
+
+/* empty: the block caret stands where the first letter will go, the hint after it */
+.comms__field textarea:placeholder-shown {
+  text-indent: 3.4ch;
+  caret-color: transparent;
+}
+
+.comms__prompt {
+  position: absolute;
+  left: var(--px);
+  top: var(--py);
+  font-weight: 500;
+  pointer-events: none;
+}
+
+.comms__caret {
+  position: absolute;
+  left: calc(var(--px) + 2ch);
+  top: calc(var(--py) + 0.22em);
+  width: 1ch;
+  height: 1.16em;
+  background: var(--ink);
+  pointer-events: none;
+}
+
+.comms__field textarea:focus ~ .comms__caret {
+  background: var(--orange);
+}
+
+.comms__field textarea:not(:placeholder-shown) ~ .comms__caret {
+  display: none;
+}
+
+.comms__send {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px 16px;
+  padding: 0 calc(14 * var(--u)) calc(14 * var(--u));
+}
+
+.comms__thanks {
+  font-size: max(12px, calc(13 * var(--u)));
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+/* ───────── PERMISSION AUTHORIZED rings ───────── */
+
+.comms__rings {
+  grid-area: rings;
+  align-self: center;
+  justify-self: center;
+  width: min(100%, calc(272 * var(--u)));
+  pointer-events: none;
+}
+
+/* four stacked layers, one ring each: a turn moves a composited layer, never repaints */
+.rings {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+}
+
+.rings__layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  transform-origin: 50% 50%;
+}
+
+/* the three rings that follow the pointer get their own layers up front */
+.rings__a,
+.rings__b,
+.rings__c {
+  will-change: transform;
+}
+
+.rings path {
+  fill: none;
+  stroke-dasharray: 1;
+  stroke-linecap: round;
+}
+
+.rings__ink {
+  stroke: var(--ink);
+  stroke-width: 1.4;
+}
+
+.rings__white {
+  stroke: var(--ring-white);
+  stroke-width: 2.6;
+  filter: drop-shadow(0 0 1.2px rgba(40, 32, 24, 0.18));
+}
+
+.rings__thin {
+  stroke: var(--ink);
+  stroke-width: 0.8;
+}
+
+.rings__knob {
+  fill: var(--ink);
+}
+
+.rings__pip {
+  fill: var(--ring-white);
+}
+
+.rings__dot {
+  fill: var(--orange);
+}
+
+/* arcs turn about the emblem's centre; knob, pip and dots pop about their own */
+.rings path {
+  transform-box: view-box;
+  transform-origin: 50% 50%;
+}
+
+.rings circle {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* ───────── rings at the reveal (CT-03) ───────── */
+
+.sect--contact:is([data-phase="enter"], [data-phase="dock"]) .comms__rings {
+  opacity: 0;
+}
+
+/* R5 spiral draw: each arc's dash grows while its gap turns into place, 109 ms apart */
+.sect--contact[data-phase="reveal"] .rings path {
+  animation: rings-draw 727.27ms var(--ease-expo) both;
+}
+
+.sect--contact[data-phase="reveal"] .rings path.rings__white {
+  animation-delay: 109.09ms;
+}
+
+.sect--contact[data-phase="reveal"] .rings path.rings__thin {
+  animation-delay: 218.18ms;
+}
+
+/* R7: knob and pip pop as their arc arrives */
+.sect--contact[data-phase="reveal"] .rings :is(.rings__knob, .rings__pip) {
+  animation: rings-pop 218.18ms var(--ease-pop) 727.27ms both;
+}
+
+.sect--contact[data-phase="reveal"] .rings .rings__pip {
+  animation-delay: 836.36ms;
+}
+
+/* R3: the orange pair orbits 301° counter-clockwise to rest, growing as it goes */
+.sect--contact[data-phase="reveal"] .rings__d {
+  animation: rings-orbit 2727.27ms cubic-bezier(0.15, 0.8, 0.4, 0.95) both;
+}
+
+.sect--contact[data-phase="reveal"] .rings__dot {
+  animation: rings-grow 727.27ms var(--ease-expo) both;
+}
+
+@keyframes rings-draw {
+  from {
+    stroke-dashoffset: 1;
+    rotate: -120deg;
+  }
+}
+
+@keyframes rings-pop {
+  from {
+    scale: 0.3;
+    opacity: 0;
+  }
+  1% {
+    opacity: 1;
+  }
+}
+
+@keyframes rings-orbit {
+  from {
+    rotate: 301deg;
+  }
+}
+
+@keyframes rings-grow {
+  from {
+    scale: 0.25;
+  }
+}
+
+/* one turn on TRANSMIT (CT-04); JS skips it under reduced motion */
+.rings.is-spin .rings__a {
+  animation: rings-spin 1454.55ms var(--ease-swap) both;
+}
+
+.rings.is-spin .rings__b {
+  animation: rings-spin-back 1236.36ms var(--ease-swap) 72.73ms both;
+}
+
+.rings.is-spin .rings__c {
+  animation: rings-spin-back 872.73ms var(--ease-swap) 109.09ms both;
+}
+
+.rings.is-spin .rings__d {
+  animation: rings-spin-fast 1309.09ms cubic-bezier(0.15, 0.8, 0.4, 0.95) both;
+}
+
+@keyframes rings-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+@keyframes rings-spin-back {
+  to {
+    rotate: -360deg;
+  }
+}
+
+@keyframes rings-spin-fast {
+  to {
+    rotate: 720deg;
+  }
+}
+
+/* smaller 16:9 frames (1366×768, 1280×720, and windows up to 1460 wide, whose
+   plate keeps the 16:9 frame): tighter rhythm, a three-line terminal */
+@media (min-width: 900px) and (min-aspect-ratio: 1/1) and (min-height: 540px) and (pointer: fine) and (max-height: 820px), (min-width: 900px) and (max-width: 1460px) and (min-aspect-ratio: 1/1) and (min-height: 540px) and (pointer: fine) {
+  .comms {
+    row-gap: calc(12 * var(--u));
+  }
+
+  .channel__in {
+    padding-block: calc(7 * var(--u));
+  }
+
+  .comms__time {
+    gap: calc(8 * var(--u));
+  }
+
+  .comms__clock b {
+    font-size: max(28px, calc(40 * var(--u)));
+  }
+
+  .comms__send {
+    padding-bottom: calc(10 * var(--u));
+  }
+
+  .comms__form {
+    gap: calc(8 * var(--u));
+  }
+
+  .comms__lead {
+    line-height: 1.5;
+  }
+
+  .comms__field textarea {
+    min-height: calc(3 * 1.6em + 2 * var(--py));
+  }
+}
+
+html[data-motion="reduced"] .comms__led::after {
+  animation: none !important;
+}
+
+/* copying and the clock need scripts; the plain page keeps the links */
+html:not(.js) [data-copy],
+html:not(.js) .comms__time {
+  display: none;
+}
+
+/* ───────── phones & narrow windows ───────── */
+
+@media (max-width: 899px), (max-aspect-ratio: 1/1), (max-height: 539px), (pointer: coarse) and (max-width: 1400px) {
+  /* the same share of the tile as on desktop (82px for the other words) */
+  .sect--contact .sect__tile .lt {
+    --lt-size: 68px;
+  }
+
+  .comms {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "file"
+      "chan"
+      "time"
+      "form";
+    gap: 22px;
+  }
+
+  .comms__rings {
+    display: none;
+  }
+
+  .comms__time {
+    margin-top: 0;
+  }
+
+  .comms__wire {
+    flex: none;
+    width: 30px;
+    min-width: 0;
+    margin-right: 10px;
+  }
+
+  .comms__box {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+    min-height: 0;
+    padding: 16px 14px 15px 30px;
+    font-size: 13px;
+  }
+
+  .comms__box {
+    --stamp: 10px;
+  }
+
+  /* the page scrolls under the frosted bars here: its ambient holds still */
+  .comms__led::after {
+    animation: none !important;
+  }
+
+  .channel__in {
+    grid-template-columns: minmax(0, 1fr) auto;
+    margin-inline: 0;
+    padding: 12px 0;
+  }
+
+  .channel__label {
+    grid-column: 1 / -1;
+  }
+
+  .channel__value {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+  }
+
+  .channel__act .btn {
+    min-width: 112px;
+  }
+
+  .comms__field {
+    --px: 14px;
+    --py: 12px;
+    /* 16px keeps iOS from zooming into the field */
+    font-size: 16px;
+  }
+}

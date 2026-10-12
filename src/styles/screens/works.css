@@ -1,0 +1,938 @@
+/* PROJECT ARCHIVE — the PV's file selection. Index of files on the left (a
+   vertical tab list that scrolls past ~7 files); the selected file on the
+   right: FILE NUMBER box (t0032), the drawn cassette (t0040) with its data
+   beside it, then title, CONFIDENTIALITY, notes and ACCESS FILE. Motion
+   (MOTION-SPEC §8.4): the index builds in CSS from the dock; the record, the
+   glint and the cassette are driven from screens/works.ts. */
+
+/* the D9 scan front on the cassette, read by its mask and its glow line */
+@property --cas-scan {
+  syntax: "<percentage>";
+  inherits: true;
+  initial-value: 100%;
+}
+
+.sect--works {
+  --files-plate: rgba(255, 255, 255, 0.42);
+  /* the cassette: translucent ivory resin, grey mouldings, amber inlay */
+  --cas-hi: rgba(255, 255, 255, 0.94);
+  --cas-mid: rgba(247, 243, 236, 0.84);
+  --cas-lo: rgba(233, 226, 215, 0.8);
+  --cas-edge: rgba(146, 136, 120, 0.5);
+  --cas-bevel: rgba(255, 255, 255, 0.9);
+  --cas-line: rgba(118, 108, 94, 0.42);
+  --cas-ring: rgba(150, 146, 140, 0.26);
+  --cas-hole: rgba(255, 255, 255, 0.6);
+  --cas-amber: #d98a3c;
+  --cas-tan: #dcc6ae;
+  --cas-label: #fbfaf7;
+  --cas-ink: #23231f;
+  --cas-sub: #9d988e;
+  --cas-emboss: rgba(118, 108, 94, 0.36);
+  --cas-screw: #eceae6;
+  --cas-shadow: rgba(60, 48, 36, 0.16);
+  /* D11: the warm light that catches the rack (f717–776) */
+  --glint: color-mix(in srgb, var(--orange-soft) 72%, #fff);
+}
+
+:root[data-theme="dark"] .sect--works {
+  --files-plate: color-mix(in srgb, var(--bg-hi) 60%, transparent);
+  --cas-hi: rgba(64, 78, 84, 0.72);
+  --cas-mid: rgba(38, 50, 55, 0.7);
+  --cas-lo: rgba(26, 35, 39, 0.74);
+  --cas-edge: rgba(224, 227, 220, 0.26);
+  --cas-bevel: rgba(224, 227, 220, 0.14);
+  --cas-line: rgba(224, 227, 220, 0.26);
+  --cas-ring: rgba(224, 227, 220, 0.12);
+  --cas-hole: rgba(224, 227, 220, 0.05);
+  --cas-amber: var(--orange-soft);
+  --cas-tan: #6f604f;
+  --cas-label: #dfe2db;
+  --cas-ink: #101517;
+  --cas-sub: #6b7476;
+  --cas-emboss: rgba(224, 227, 220, 0.22);
+  --cas-screw: #2a363b;
+  --cas-shadow: rgba(0, 0, 0, 0.4);
+  --glint: var(--orange-soft);
+}
+
+.files {
+  display: grid;
+  grid-template-columns: minmax(0, max(200px, calc(222 * var(--u)))) minmax(0, 1fr);
+  column-gap: calc(30 * var(--u));
+  align-items: start;
+  min-height: 100%;
+}
+
+/* ───────── index ───────── */
+
+.files__index {
+  display: flex;
+  flex-direction: column;
+  gap: calc(14 * var(--u));
+  min-width: 0;
+}
+
+.files__h {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.files__count {
+  font-family: var(--f-mono);
+  font-size: max(10px, calc(12 * var(--u)));
+  letter-spacing: 0.08em;
+  color: var(--sub);
+}
+
+.files__list {
+  position: relative;
+  display: grid;
+  gap: calc(8 * var(--u));
+  max-height: calc(560 * var(--u));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+
+.file-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "code state"
+    "title title"
+    "zh zh";
+  align-items: center;
+  gap: calc(5 * var(--u)) calc(10 * var(--u));
+  width: 100%;
+  min-height: 44px;
+  padding: calc(12 * var(--u)) calc(14 * var(--u)) calc(13 * var(--u)) calc(20 * var(--u));
+  text-align: left;
+  background: var(--files-plate);
+  box-shadow: inset 0 0 0 1px var(--hair);
+  color: var(--ink);
+  overflow: hidden;
+  /* RhineLabUI hover lift (200 ms ÷ 1.1), sideways: the rows hang on their bars */
+  transition:
+    translate var(--t-hover) var(--ease-enter),
+    background-color var(--t-hover) var(--ease-enter),
+    color var(--t-hover) var(--ease-enter);
+}
+
+.file-row::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: max(3px, calc(5 * var(--u)));
+  background: var(--line);
+  transition:
+    background-color var(--t-hover) var(--ease-enter),
+    box-shadow var(--t-hover) var(--ease-enter);
+}
+
+/* the glint stays as a glow under the chosen row's bar */
+.file-row.is-glow::before {
+  box-shadow: 0 0 calc(16 * var(--u)) max(1px, calc(2 * var(--u))) var(--select);
+}
+
+/* ambient D11: a glint runs along the row's lower edge (screens/works.ts animates it) */
+.file-row::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: calc(90 * var(--u));
+  height: max(2px, calc(3 * var(--u)));
+  background: linear-gradient(90deg, transparent, var(--glint) 70%, transparent);
+  translate: -100% 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* the travelling glint: a warm sliver running down the rows' bars to the chosen one */
+.files__glint {
+  position: absolute;
+  z-index: 2;
+  left: 0;
+  top: 0;
+  width: max(3px, calc(5 * var(--u)));
+  height: calc(96 * var(--u));
+  background: linear-gradient(180deg, transparent, var(--glint) 42%, #fff 50%, var(--glint) 58%, transparent);
+  box-shadow: 0 0 calc(10 * var(--u)) color-mix(in srgb, var(--glint) 70%, transparent);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.file-row__code {
+  grid-area: code;
+  font-family: var(--f-mono);
+  font-weight: 500;
+  font-size: max(11px, calc(13 * var(--u)));
+  letter-spacing: 0.08em;
+}
+
+.file-row__state {
+  grid-area: state;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  font-style: normal;
+  font-weight: 700;
+  font-size: max(10px, calc(10 * var(--u)));
+  letter-spacing: 0.08em;
+  color: var(--sub);
+  white-space: nowrap;
+}
+
+.file-row__state::before {
+  content: "";
+  width: 0.7em;
+  height: 0.7em;
+  border-radius: 50%;
+  background: var(--line);
+}
+
+.file-row__state--live::before {
+  background: var(--lime);
+}
+
+.file-row__title {
+  grid-area: title;
+  font-weight: 700;
+  font-size: max(13px, calc(17 * var(--u)));
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  overflow-wrap: anywhere;
+}
+
+.file-row small {
+  grid-area: zh;
+  font-size: max(11.5px, calc(13 * var(--u)));
+  line-height: 1.3;
+  color: var(--sub);
+}
+
+.file-row:hover,
+.file-row:focus-visible {
+  color: var(--hover);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .file-row:hover {
+    translate: calc(6 * var(--u)) 0;
+  }
+
+  .file-row[aria-selected="false"]:hover::before {
+    background: var(--select);
+  }
+}
+
+/* the scrolling list would clip a ring drawn outside the row */
+.file-row:focus-visible {
+  outline-offset: -4px;
+}
+
+.file-row[aria-selected="true"] {
+  background: var(--tag-bg);
+  color: var(--tag-ink);
+  box-shadow: none;
+}
+
+.file-row[aria-selected="true"]::before {
+  background: var(--lime);
+}
+
+.file-row[aria-selected="true"] :is(small, .file-row__state) {
+  color: color-mix(in srgb, var(--tag-ink) 68%, transparent);
+}
+
+.files__keys {
+  margin-top: calc(4 * var(--u));
+}
+
+.files__more {
+  margin-top: auto;
+  padding-top: calc(10 * var(--u));
+  font-weight: 600;
+  font-size: max(11px, calc(13 * var(--u)));
+  letter-spacing: 0.08em;
+}
+
+.files__more a {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 0.6em;
+  min-height: 32px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--line);
+}
+
+.files__more small {
+  font-family: var(--f-mono);
+  font-weight: 500;
+  /* 10px at least; untracked, so the handle still fits on the link's line in the 200px column */
+  font-size: max(10px, 0.83em);
+  letter-spacing: 0;
+  color: var(--sub);
+}
+
+.files__more a:hover,
+.files__more a:focus-visible {
+  color: var(--hover);
+}
+
+/* ───────── the selected file ───────── */
+
+.files__detail {
+  position: relative;
+  min-width: 0;
+  /* the FILE NUMBER rule runs to the edge of this column, never beyond */
+  overflow: clip;
+}
+
+html.js .files__detail {
+  display: grid;
+}
+
+/* stacked in one cell: a switch clears the old file over the new one (P4) */
+html.js .file {
+  grid-area: 1 / 1;
+  visibility: hidden;
+}
+
+html.js .file.is-on {
+  /* inherit, not visible: a hidden screen must hide its open panel too */
+  visibility: inherit;
+}
+
+/* the file being cleared: its FILE box goes at once (the new one stands in its place) */
+html.js .file.is-out {
+  pointer-events: none;
+}
+
+html.js .file.is-out .file__no {
+  visibility: hidden;
+}
+
+.file {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, max(110px, calc(130 * var(--u))));
+  grid-template-areas:
+    "no no"
+    "cas side"
+    "title title"
+    "conf conf"
+    "desc desc"
+    "go go";
+  align-content: start;
+  column-gap: calc(20 * var(--u));
+}
+
+.file:focus-visible {
+  outline-offset: -2px;
+}
+
+/* FILE NUMBER: X-001, with its four corner squares and the long rule */
+.file__no {
+  grid-area: no;
+  justify-self: start;
+  position: relative;
+  margin-bottom: calc(20 * var(--u));
+  padding: calc(15 * var(--u)) calc(30 * var(--u)) calc(14 * var(--u));
+  font-weight: 700;
+  font-size: max(14px, calc(23 * var(--u)));
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.file__no::after {
+  content: "";
+  position: absolute;
+  left: calc(100% + 14 * var(--u));
+  bottom: calc(-6 * var(--u));
+  width: calc(1400 * var(--u));
+  height: max(1px, calc(1.5 * var(--u)));
+  background: color-mix(in srgb, var(--ink) 75%, transparent);
+}
+
+.cassette {
+  grid-area: cas;
+  justify-self: center;
+  position: relative;
+  width: 100%;
+  /* its size at 1920×1080: a wider plate must not push the record below the fold */
+  max-width: calc(498 * var(--u));
+  margin-bottom: calc(22 * var(--u));
+  /* an object on the glass, not the glass: it alone leans toward the pointer */
+  perspective: calc(900 * var(--u));
+  /* a sideways drag turns it; an upright one still scrolls the page */
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  html.js .cassette {
+    cursor: grab;
+  }
+
+  html.js .cassette.is-drag {
+    cursor: grabbing;
+  }
+}
+
+.cassette__obj {
+  position: relative;
+}
+
+.cassette__art {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  filter: drop-shadow(0 calc(16 * var(--u)) calc(26 * var(--u)) var(--cas-shadow));
+}
+
+/* the reels turn about their own hubs (view-box units) */
+.cassette__reel {
+  transform-box: view-box;
+  transform-origin: 288px 230px;
+}
+
+.cassette__reel--s {
+  transform-origin: 468px 148px;
+}
+
+/* the stack's shadow, which pops two frames ahead of it (S4) */
+.cassette__shade {
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  top: calc(100% - 16 * var(--u));
+  height: calc(40 * var(--u));
+  background: radial-gradient(closest-side, var(--cas-shadow), transparent);
+  pointer-events: none;
+}
+
+/* D9 scan-print: solid above the glowing slice, a pale ghost below it */
+.cassette__obj.is-scan .cassette__art {
+  mask-image: linear-gradient(#000 var(--cas-scan), rgb(0 0 0 / 0.18) calc(var(--cas-scan) + 1px));
+}
+
+.cassette__scan {
+  position: absolute;
+  z-index: 3;
+  left: 0;
+  right: 0;
+  top: var(--cas-scan);
+  height: max(1px, calc(2 * var(--u)));
+  background: var(--glass-edge);
+  box-shadow: 0 0 calc(12 * var(--u)) color-mix(in srgb, var(--orange-soft) 50%, transparent);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.cassette__obj.is-scan .cassette__scan {
+  opacity: 1;
+}
+
+/* the cassettes stacked below it, as in the PV's extraction shot */
+.cassette__stack {
+  position: absolute;
+  left: 2%;
+  right: 2%;
+  top: calc(100% - 4 * var(--u));
+  display: grid;
+  gap: max(1px, calc(3 * var(--u)));
+  justify-items: center;
+}
+
+.cassette__stack i {
+  width: 100%;
+  height: max(3px, calc(6 * var(--u)));
+  background: linear-gradient(90deg, var(--cas-lo), var(--cas-hi) 40%, var(--cas-mid));
+  box-shadow: inset 0 0 0 1px var(--cas-edge);
+  opacity: 0.8;
+}
+
+.cassette__stack i:nth-child(2) {
+  width: 97%;
+  opacity: 0.5;
+}
+
+.cassette__stack i:nth-child(3) {
+  width: 94%;
+  opacity: 0.28;
+}
+
+.cassette__s1 {
+  stop-color: var(--cas-hi);
+}
+
+.cassette__s2 {
+  stop-color: var(--cas-mid);
+}
+
+.cassette__s3 {
+  stop-color: var(--cas-lo);
+}
+
+.cassette__body {
+  stroke: var(--cas-edge);
+  stroke-width: 1.5;
+}
+
+.cassette__bevel {
+  fill: none;
+  stroke: var(--cas-bevel);
+  stroke-width: 1.2;
+}
+
+.cassette__tan {
+  fill: var(--cas-tan);
+}
+
+.cassette__groove {
+  fill: none;
+  stroke: var(--cas-line);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.cassette__groove--in {
+  stroke-width: 1;
+  opacity: 0.7;
+}
+
+.cassette__guide {
+  fill: none;
+  stroke: var(--cas-line);
+  stroke-width: 0.8;
+  opacity: 0.6;
+}
+
+.cassette__fly path {
+  fill: var(--cas-line);
+}
+
+.cassette__band {
+  fill: none;
+  stroke: var(--cas-line);
+  stroke-width: 1.2;
+}
+
+.cassette__ring {
+  fill: none;
+  stroke: var(--cas-ring);
+  stroke-width: 32;
+}
+
+.cassette__ring--s {
+  stroke-width: 22;
+}
+
+.cassette__line {
+  fill: none;
+  stroke: var(--cas-line);
+  stroke-width: 1.2;
+}
+
+.cassette__hole {
+  fill: var(--cas-hole);
+  stroke: var(--cas-line);
+  stroke-width: 1;
+}
+
+.cassette__seam {
+  fill: none;
+  stroke: var(--cas-line);
+  stroke-width: 1.4;
+}
+
+.cassette__amber {
+  fill: none;
+  stroke: var(--cas-amber);
+  stroke-width: 7;
+}
+
+.cassette__amber--out {
+  stroke-width: 5;
+}
+
+.cassette__inlay {
+  fill: none;
+  stroke: var(--cas-amber);
+  stroke-width: 14;
+}
+
+.cassette__sticker {
+  fill: var(--cas-label);
+  stroke: var(--cas-line);
+  stroke-width: 0.8;
+}
+
+.cassette__lt {
+  fill: var(--cas-ink);
+  font-family: var(--f-latin);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.03em;
+}
+
+.cassette__lt--xs {
+  fill: var(--cas-sub);
+  font-weight: 500;
+  font-size: 8.5px;
+  letter-spacing: 0.08em;
+}
+
+.cassette__bar {
+  fill: var(--cas-ink);
+}
+
+.cassette__barlo {
+  fill: var(--cas-label);
+}
+
+.cassette__rule {
+  fill: none;
+  stroke: var(--cas-line);
+  stroke-width: 1;
+}
+
+.cassette__no {
+  fill: var(--cas-ink);
+  font-family: var(--f-latin);
+  font-weight: 500;
+  font-size: 27px;
+  letter-spacing: 0.02em;
+}
+
+.cassette__mk path {
+  fill: none;
+  stroke: var(--cas-ink);
+}
+
+.cassette__spine {
+  fill: none;
+  stroke: var(--cas-emboss);
+  stroke-width: 1;
+  font-family: var(--f-latin);
+  font-weight: 800;
+  font-size: 21px;
+  letter-spacing: 0.12em;
+}
+
+.cassette__screw circle {
+  fill: var(--cas-screw);
+  stroke: var(--cas-line);
+  stroke-width: 1;
+}
+
+.cassette__screw circle:nth-child(even) {
+  fill: var(--cas-line);
+}
+
+.cassette__socket circle,
+.cassette__hatch,
+.cassette__tick {
+  fill: none;
+  stroke: var(--cas-line);
+  stroke-width: 1.4;
+}
+
+/* the file's data, standing beside the cassette */
+.file__side {
+  grid-area: side;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: calc(12 * var(--u));
+  min-width: 0;
+}
+
+.file__side > div {
+  display: grid;
+  gap: calc(4 * var(--u));
+  padding-bottom: calc(10 * var(--u));
+  border-bottom: 1px solid var(--hair);
+}
+
+.file__side dt {
+  font-weight: 600;
+  font-size: max(10px, calc(11 * var(--u)));
+  letter-spacing: 0.1em;
+  color: var(--sub);
+}
+
+.file__side dd {
+  font-weight: 700;
+  font-size: max(12px, calc(15 * var(--u)));
+  line-height: 1.25;
+  letter-spacing: 0.04em;
+}
+
+.file__side dd b {
+  color: var(--orange);
+}
+
+.file__st dd::before {
+  content: "";
+  display: inline-block;
+  width: 0.55em;
+  height: 0.55em;
+  margin-right: 0.5em;
+  border-radius: 50%;
+  background: var(--line);
+  vertical-align: 0.1em;
+}
+
+.file__st--live dd::before {
+  background: var(--lime);
+}
+
+.file__side .file__stack {
+  border-bottom: 0;
+}
+
+.file__side .chips {
+  gap: 5px;
+  margin-top: 2px;
+}
+
+.file__side .chips li {
+  font-size: max(10px, calc(11 * var(--u)));
+}
+
+.file__title {
+  grid-area: title;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: calc(4 * var(--u)) calc(16 * var(--u));
+  font-weight: 800;
+  font-size: max(22px, calc(38 * var(--u)));
+  line-height: 1.05;
+  letter-spacing: 0.005em;
+}
+
+.file__title small {
+  font-weight: 500;
+  font-size: max(13px, calc(16 * var(--u)));
+  letter-spacing: 0.06em;
+  color: var(--sub);
+}
+
+.file__conf {
+  grid-area: conf;
+  margin-top: calc(10 * var(--u));
+  font-weight: 600;
+  font-size: max(11px, calc(15 * var(--u)));
+  letter-spacing: 0.06em;
+}
+
+.file__conf b {
+  font-weight: 800;
+}
+
+.file__desc {
+  grid-area: desc;
+  max-width: calc(600 * var(--u));
+  margin-top: calc(12 * var(--u));
+  font-size: max(13px, calc(15 * var(--u)));
+  line-height: 1.75;
+  letter-spacing: 0.02em;
+  color: var(--ink-2);
+}
+
+.file__go {
+  grid-area: go;
+  margin-top: calc(18 * var(--u));
+}
+
+/* ───────── entry (MOTION-SPEC §8.4; delays from the dock, t0) ───────── */
+
+/* before the dock nothing of the build shows, even where the glass is already up */
+.sect--works[data-phase="enter"] :is(.files__h .tag, .files__list > li, .file__nov, .file__title, .file__side > div, .file__conf b, .file__go),
+.sect--works:is([data-phase="enter"], [data-phase="dock"]) :is(.cassette__shade, .cassette__stack, .cassette__art) {
+  opacity: 0;
+}
+
+/* ARCHIVE INDEX: B5 tag box from +342u at t0 + 509 */
+.sect--works:is([data-phase="dock"], [data-phase="reveal"]) .files__h .tag {
+  animation:
+    works-box 763.64ms var(--ease-box) 509.09ms both,
+    works-on 145.45ms linear 509.09ms both;
+}
+
+/* the rows: B5 from −60u out of the list's own edge, two frames apart, from t0 + 655 */
+.sect--works:is([data-phase="dock"], [data-phase="reveal"]) .files__list > li:not(.files__glint) {
+  animation:
+    works-row 545.45ms var(--ease-expo) calc(654.55ms + var(--n, 0) * 72.73ms) both,
+    works-on 145.45ms linear calc(654.55ms + var(--n, 0) * 72.73ms) both;
+}
+
+@keyframes works-box {
+  from {
+    translate: calc(342 * var(--u)) 0;
+  }
+}
+
+@keyframes works-row {
+  from {
+    translate: calc(-60 * var(--u)) 0;
+  }
+}
+
+@keyframes works-on {
+  from {
+    opacity: 0;
+  }
+}
+
+/* ───────── phones & narrow windows ───────── */
+
+@media (max-width: 899px), (max-aspect-ratio: 1/1), (max-height: 539px), (pointer: coarse) and (max-width: 1400px) {
+  /* stretch, not the desktop's start: the index and the file span the glass */
+  .files {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 22px;
+  }
+
+  /* the index becomes a strip of cards that scrolls sideways once they no longer fit */
+  .files__list {
+    display: flex;
+    max-height: none;
+    overflow: auto hidden;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    gap: 8px;
+  }
+
+  .files__list li {
+    flex: 1 0 min(76%, 250px);
+    scroll-snap-align: start;
+  }
+
+  .file-row {
+    height: 100%;
+    min-height: 84px;
+    padding: 12px 14px 12px 18px;
+  }
+
+  .file-row__state,
+  .files__more small {
+    font-size: 10px;
+  }
+
+  .files__keys {
+    display: none;
+  }
+
+  .files__more {
+    margin-top: 0;
+    padding-top: 0;
+  }
+
+  .files__more a {
+    align-items: center;
+    min-height: 40px;
+  }
+
+  .file {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "no"
+      "cas"
+      "side"
+      "title"
+      "conf"
+      "desc"
+      "go";
+  }
+
+  .file__no {
+    padding: 10px 18px 9px;
+  }
+
+  .cassette {
+    justify-self: start;
+    max-width: 560px;
+    margin-bottom: 26px;
+  }
+
+  .file__side {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+    gap: 12px 14px;
+  }
+
+  .file__side dd {
+    white-space: nowrap;
+  }
+
+  .file__side .file__stack {
+    grid-column: 1 / -1;
+  }
+
+  .file__title {
+    margin-top: 18px;
+  }
+
+  .file__conf {
+    font-size: 13px;
+  }
+
+  .file__go .btn {
+    min-height: 48px;
+  }
+
+  .file__go .btn small {
+    font-size: 11px;
+  }
+
+  /* a tablet-wide file: the data stands beside the cassette again */
+  .files__detail {
+    container-type: inline-size;
+  }
+
+  @container (min-width: 720px) {
+    .file {
+      grid-template-columns: minmax(0, 560px) minmax(0, 1fr);
+      grid-template-areas:
+        "no no"
+        "cas side"
+        "title title"
+        "conf conf"
+        "desc desc"
+        "go go";
+      column-gap: 24px;
+    }
+
+    .file__side {
+      display: flex;
+    }
+  }
+}
+
+/* no JavaScript: every file in reading order; the inert index buttons are dropped */
+html:not(.js) .files__list,
+html:not(.js) .files__keys {
+  display: none;
+}
+
+html:not(.js) .file + .file {
+  margin-top: 56px;
+}

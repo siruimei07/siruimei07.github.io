@@ -1,0 +1,911 @@
+/* PERSONNEL FILE — the director card, laid out on a grid inside the glass:
+     portrait | rank / name bar / section / code
+     intro    | INFO + rings, PROFILE card
+     GitHub meters across the foot
+   Sized to fit the plate without scrolling from 1280×720 up (a compact
+   block takes over in the small frames). It builds like the PV's director
+   dossiers (MOTION-SPEC §8.2), keyed on the screen's data-phase. */
+
+/* two lines: a little smaller than the shared size, so the N clears the tile dot */
+.sect--profile .sect__tile .lt--two {
+  --lt-size: calc(108 * var(--u));
+}
+
+.dossier {
+  position: relative;
+  display: grid;
+  grid-template-columns: calc(330 * var(--u)) minmax(0, 1fr);
+  grid-template-areas:
+    "portrait id"
+    "info deck"
+    "params params";
+  column-gap: calc(44 * var(--u));
+  row-gap: calc(16 * var(--u));
+  align-items: start;
+  /* parts slide in from the right during the build: they appear at this edge, and
+     never widen the scrolling body */
+  overflow-x: clip;
+}
+
+.dossier__portrait {
+  grid-area: portrait;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  min-height: calc(300 * var(--u));
+  overflow: hidden;
+  box-shadow:
+    0 0 0 max(2px, calc(4 * var(--u))) var(--glass-edge),
+    0 calc(20 * var(--u)) calc(50 * var(--u)) rgba(40, 32, 24, 0.14);
+}
+
+/* pale teal wash behind the director portraits */
+.dossier__bg {
+  position: absolute;
+  /* oversized, so the slow dolly (0.92 → 1) never shows an edge */
+  inset: -5%;
+  background: linear-gradient(160deg, #dcebea, #eef3f1 60%, #e3e9e6);
+}
+
+:root[data-theme="dark"] .dossier__bg {
+  background: linear-gradient(160deg, #22343a, #1a272b 60%, #1f2d31);
+}
+
+.dossier__portrait img {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 28%;
+  filter: saturate(0.9) contrast(1.02);
+}
+
+/* the inspection line (screens/profile.ts): a hairline with end ticks that follows
+   the pointer's height over the portrait, and its reading at the right edge */
+.dossier__scan {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--t-hover) var(--ease-enter);
+}
+
+.dossier__portrait.is-inspect .dossier__scan {
+  opacity: 1;
+}
+
+.dossier__scan-l {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: color-mix(in srgb, var(--ink) 35%, transparent);
+}
+
+.dossier__scan-l::before,
+.dossier__scan-l::after {
+  content: "";
+  position: absolute;
+  top: calc(-3 * var(--u));
+  width: 1px;
+  height: calc(6 * var(--u) + 1px);
+  background: var(--ink);
+}
+
+.dossier__scan-l::before {
+  left: calc(6 * var(--u));
+}
+
+.dossier__scan-l::after {
+  right: calc(6 * var(--u));
+}
+
+.dossier__scan-y {
+  position: absolute;
+  right: calc(10 * var(--u));
+  bottom: calc(5 * var(--u));
+  padding: 0.1em 0.4em 0.05em;
+  background: color-mix(in srgb, var(--bg-hi) 88%, transparent);
+  color: var(--ink);
+  font-family: var(--f-mono);
+  font-weight: 500;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ───────── rank, name, section, code ───────── */
+
+.dossier__id {
+  grid-area: id;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding-top: calc(20 * var(--u));
+}
+
+.dossier__rank {
+  font-size: max(12px, calc(20 * var(--u)));
+  padding: 0.2em 1.6em 0.14em 0.9em;
+  margin-left: calc(26 * var(--u));
+}
+
+.dossier__name {
+  margin-top: calc(12 * var(--u));
+  font-size: max(26px, calc(50 * var(--u)));
+  padding: 0.16em 0.5em 0.08em;
+  box-shadow: calc(-30 * var(--u)) 0 0 var(--tag-bg);
+}
+
+.dossier__sec {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  gap: calc(26 * var(--u));
+  margin-top: calc(12 * var(--u));
+  padding: calc(10 * var(--u)) calc(18 * var(--u));
+  background: color-mix(in srgb, var(--bg-hi) 80%, transparent);
+}
+
+/* the backing plate (S4): a light face on a soft shadow of its own, which pops first */
+.dossier__plate {
+  position: relative;
+  flex: none;
+  display: flex;
+}
+
+.dossier__plate-sh {
+  position: absolute;
+  inset: 0;
+  box-shadow: 0 calc(8 * var(--u)) calc(22 * var(--u)) rgba(40, 32, 24, 0.12);
+}
+
+:root[data-theme="dark"] .dossier__plate-sh {
+  box-shadow: 0 calc(8 * var(--u)) calc(22 * var(--u)) rgba(0, 0, 0, 0.32);
+}
+
+.dossier__mini {
+  flex: none;
+  padding: calc(8 * var(--u)) calc(10 * var(--u)) calc(6 * var(--u));
+  /* the knock-out colour, so the ∞ cuts cleanly into the letters */
+  background: var(--knock);
+  box-shadow: none;
+}
+
+.dossier__mini::before,
+.dossier__mini::after {
+  display: none;
+}
+
+:root[data-theme="dark"] .dossier__mini {
+  --knock: var(--bg-hi);
+  color: var(--ink);
+}
+
+.dossier__mini .lt {
+  --lt-size: max(24px, calc(38 * var(--u)));
+}
+
+/* right-anchored, ending in the ■ cursor it slides out of (T7d) */
+.dossier__loaded {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.35em;
+  font-weight: 500;
+  font-size: max(10px, calc(15 * var(--u)));
+  letter-spacing: 0.06em;
+  line-height: 1.3;
+}
+
+.dossier__loaded-t {
+  display: block;
+  text-align: right;
+}
+
+.dossier__loaded i,
+.dossier__code i {
+  flex: none;
+  font-style: normal;
+  font-size: 0.8em;
+}
+
+.dossier__coderow {
+  align-self: stretch;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-top: calc(12 * var(--u));
+  padding: 0 calc(10 * var(--u)) 0 calc(18 * var(--u));
+}
+
+.dossier__code {
+  font-family: var(--f-mono);
+  font-weight: 500;
+  font-size: max(13px, calc(21 * var(--u)));
+  letter-spacing: 0.08em;
+}
+
+.dossier__lockup {
+  font-size: max(8px, calc(12 * var(--u)));
+  opacity: 0.92;
+}
+
+/* ───────── intro & links ───────── */
+
+.dossier__info {
+  grid-area: info;
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: calc(12 * var(--u));
+}
+
+/* the frosted back layer of the two-layer info plate (P3): it leads the face in and
+   rests a little behind it */
+.dossier__info::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: calc(-8 * var(--u)) calc(-14 * var(--u));
+  translate: calc(9 * var(--u)) calc(7 * var(--u));
+  background: color-mix(in srgb, var(--bg-hi) 42%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--glass-edge) 70%, transparent);
+  pointer-events: none;
+}
+
+:root[data-theme="dark"] .dossier__info::before {
+  background: color-mix(in srgb, var(--bg-hi) 50%, transparent);
+  box-shadow: inset 0 0 0 1px var(--hair);
+}
+
+.dossier__intro {
+  font-size: max(13px, calc(16 * var(--u)));
+  line-height: 1.75;
+  letter-spacing: 0.02em;
+  color: var(--ink-2);
+  /* no single character left alone on the last line */
+  text-wrap: pretty;
+}
+
+/* the line under the name, like the PV's "PHD IN PARTICLE PHYSICS" */
+.dossier__en {
+  max-width: calc(470 * var(--u));
+  margin: calc(10 * var(--u)) 0 0 calc(4 * var(--u));
+  font-weight: 500;
+  font-size: max(10.5px, calc(12.5 * var(--u)));
+  line-height: 1.45;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.dossier__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: calc(4 * var(--u));
+}
+
+.dossier__links .btn {
+  padding-inline: 0.85em 1em;
+}
+
+/* ───────── INFO + rings + PROFILE card ───────── */
+
+.dossier__deck {
+  grid-area: deck;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: calc(20 * var(--u));
+  min-width: 0;
+}
+
+.dossier__deco {
+  position: relative;
+  z-index: 0;
+  flex: 1 1 0;
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: calc(16 * var(--u));
+  padding-top: calc(44 * var(--u));
+  min-width: 0;
+}
+
+.dossier__ghost {
+  /* as large as the room left of the card allows */
+  font-size: min(calc(76 * var(--u)), 35cqi);
+  letter-spacing: 0.02em;
+}
+
+:root[data-theme="dark"] .dossier__ghost {
+  color: color-mix(in srgb, var(--ink) 12%, transparent);
+}
+
+/* the lift is the card's own wrapper: the card's entry scales it (S1) */
+.dossier__lift {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  width: max(282px, calc(338 * var(--u)));
+  max-width: 100%;
+}
+
+.dossier__card {
+  padding-inline: calc(14 * var(--u));
+}
+
+.dossier__card .card__fields {
+  gap: calc(5 * var(--u));
+  padding: calc(12 * var(--u)) 0 calc(10 * var(--u));
+}
+
+.dossier__card .card__fields > div {
+  grid-template-columns: 4.7em 1fr;
+  gap: 0.7em;
+}
+
+.dossier__rings {
+  margin-left: calc(10 * var(--u));
+}
+
+.dossier__card .card__fields dt {
+  font-size: max(10.5px, calc(13 * var(--u)));
+}
+
+.dossier__card .card__fields dd {
+  font-size: max(13px, calc(16 * var(--u)));
+  line-height: 1.25;
+  /* a narrow card would leave 本科在读's 读 alone on a line */
+  text-wrap: pretty;
+}
+
+/* ───────── GitHub meters, one strip ───────── */
+
+.dossier__params {
+  grid-area: params;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: calc(12 * var(--u)) calc(30 * var(--u));
+  padding-top: calc(14 * var(--u));
+  border-top: 1px solid var(--hair);
+}
+
+.dossier__params-h {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: calc(6 * var(--u));
+}
+
+.dossier__bars {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: calc(10 * var(--u)) calc(22 * var(--u));
+}
+
+.dossier__bars li > span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.dossier__bars li > span em {
+  display: flex;
+  align-items: center;
+  gap: 0.45em;
+  font-style: normal;
+}
+
+/* the label's ■: it flickers (F2) when the meter is hovered */
+.dossier__sq {
+  flex: none;
+  width: 0.5em;
+  height: 0.5em;
+  background: currentColor;
+}
+
+/* <small> alone would shrink the zh label under the 10px floor at u < 1 */
+.dossier__bars li > span small {
+  margin-left: 0;
+  font-size: max(10px, 0.83em);
+}
+
+/* the fill is its own layer so it can grow from the left (B4); the outline stays on top */
+.dossier__bars li > i {
+  position: relative;
+  background: none;
+  box-shadow: none;
+}
+
+.dossier__bars li > i::before,
+.dossier__bars li > i::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.dossier__bars li > i::before {
+  right: auto;
+  width: calc(var(--v, 0) * 100%);
+  background: var(--fill, #8b8a86);
+  transform-origin: left;
+}
+
+.dossier__bars li > i::after {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 45%, transparent);
+}
+
+/* a meter lifts on hover, without the plate shadow (it has no plate) */
+.dossier__bars li.lift:hover {
+  box-shadow: none;
+}
+
+.dossier__params-h .tag {
+  overflow: clip;
+}
+
+.dossier__mq {
+  display: inline-block;
+}
+
+/* ───────── small desktop frames (u < 0.8: 1440×900, 1366×768, 1280×720): the px floors outgrow the plate ───────── */
+
+@media (min-width: 900px) and (min-aspect-ratio: 1/1) and (min-height: 540px) and (pointer: fine) and (max-width: 1535px),
+  (min-width: 900px) and (min-aspect-ratio: 1/1) and (min-height: 540px) and (pointer: fine) and (max-height: 863px) {
+  .dossier {
+    row-gap: calc(10 * var(--u));
+  }
+
+  .dossier__portrait {
+    min-height: calc(240 * var(--u));
+  }
+
+  .dossier__id {
+    padding-top: calc(4 * var(--u));
+  }
+
+  .dossier__name,
+  .dossier__sec,
+  .dossier__coderow {
+    margin-top: calc(8 * var(--u));
+  }
+
+  .dossier__sec {
+    padding-block: calc(6 * var(--u));
+  }
+
+  .dossier__mini .lt {
+    --lt-size: max(22px, calc(34 * var(--u)));
+  }
+
+  .dossier__info {
+    gap: calc(8 * var(--u));
+  }
+
+  .dossier__intro {
+    line-height: 1.55;
+  }
+
+  /* a mouse target (pointer: fine), so a little under the 40px touch size is fine */
+  .dossier__links {
+    gap: 6px;
+    margin-top: 0;
+  }
+
+  .dossier__links .btn {
+    min-height: 36px;
+  }
+
+  .dossier__deco {
+    padding-top: calc(24 * var(--u));
+  }
+
+  .dossier__params {
+    padding-top: calc(8 * var(--u));
+  }
+
+  /* COMMITS has the longest label (近一年提交) and the biggest number */
+  .dossier__bars {
+    grid-template-columns: minmax(0, 1.3fr) repeat(4, minmax(0, 1fr));
+    column-gap: calc(16 * var(--u));
+  }
+}
+
+/* ───────── phones & narrow windows ───────── */
+
+@media (max-width: 899px), (max-aspect-ratio: 1/1), (max-height: 539px), (pointer: coarse) and (max-width: 1400px) {
+  .sect--profile .sect__tile .lt--two {
+    --lt-size: 58px;
+  }
+
+  .dossier {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 22px;
+  }
+
+  .dossier__portrait {
+    width: min(100%, 340px);
+    aspect-ratio: 1;
+  }
+
+  .dossier__id {
+    padding-top: 0;
+  }
+
+  .dossier__rank {
+    margin-left: 10px;
+  }
+
+  .dossier__name {
+    max-width: 100%;
+    font-size: clamp(26px, 9vw, 40px);
+    box-shadow: -10px 0 0 var(--tag-bg);
+  }
+
+  .dossier__sec {
+    gap: 16px;
+    padding: 12px 14px;
+  }
+
+  .dossier__coderow {
+    padding-left: 10px;
+  }
+
+  .dossier__lockup {
+    font-size: 9px;
+  }
+
+  .dossier__links .btn {
+    min-height: 44px;
+  }
+
+  .dossier__deck {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+  }
+
+  .dossier__deco {
+    flex: none;
+    margin: 0 0 -14px;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 4px 0 0;
+  }
+
+  .dossier__ghost {
+    font-size: 64px;
+  }
+
+  .dossier__lift {
+    width: auto;
+  }
+
+  .dossier__en {
+    max-width: none;
+    font-size: 13px;
+  }
+
+  .dossier__params {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dossier__params-h {
+    flex-direction: row;
+  }
+
+  .dossier__bars {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 22px;
+  }
+
+  .dossier__bars li:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .dossier__bars li > span small {
+    font-size: 11px;
+  }
+}
+
+/* no JavaScript: a plain readable record */
+html:not(.js) .dossier__portrait {
+  max-width: 340px;
+}
+
+/* ───────── the dossier build (MOTION-SPEC §8.2, atlas §6.3 dossier variant) ─────────
+   t0 is the dock. The rules apply from "enter" (held at their first frame while the
+   card flies in) through "reveal", counting from the dock; the base styles are the
+   end state, so settling — on time at t0 + 7600, or early on any input — shows the
+   finished file at once. The typed code, the T7c/T7d slides and the card rows'
+   flickers are the screen's (screens/profile.ts). */
+
+.sect--profile[data-phase="enter"] .dossier,
+.sect--profile[data-phase="enter"] .dossier *,
+.sect--profile[data-phase="enter"] .dossier *::before {
+  /* the shorthand in each build rule resets the play state: this has to win over it */
+  animation-play-state: paused !important;
+}
+
+/* 0: the name bar pops up from a dash (S2), anchored low on its left */
+.sect--profile:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) .dossier__name {
+  transform-origin: left bottom;
+  animation: dossier-s2 891ms var(--ease-pop) backwards;
+}
+
+/* + 73: the rank tag slides in along the plane, keeping its tilt (S10) */
+.sect--profile:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) .dossier__rank {
+  animation:
+    dossier-x160 1018ms cubic-bezier(0.1, 0.4, 0.2, 1) 73ms backwards,
+    home-fade 145ms linear 73ms backwards;
+}
+
+/* + 364: the English line comes in short from the right (T12) */
+.sect--profile:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) .dossier__en {
+  animation:
+    dossier-x70 509ms var(--ease-expo) 364ms backwards,
+    home-fade 291ms linear 364ms backwards;
+}
+
+/* + 764: the portrait wipes in top to bottom, hard-edged (D8) */
+.sect--profile:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) .dossier__portrait {
+  animation: dossier-d8 473ms cubic-bezier(0.25, 0.3, 0.55, 0.8) 764ms backwards;
+}
+
+/* + 1236 … 1491: the section plate — its shadow pops two frames ahead of the face,
+   the logotype five frames after it (S4) */
+.sect--profile:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) .dossier__sec {
+  animation: d1-wait 0s 1236ms backwards;
+}
+
+.sect--profile:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) .dossier__plate-sh {
+  animation: dossier-s4 545ms var(--ease-expo) 1236ms backwards;
+}
+
+.sect--profile:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) .dossier__mini {
+  animation: dossier-s4 545ms var(--ease-expo) 1309ms backwards;
+}
+
+.sect--profile:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) .dossier__mini .lt {
+  animation: dossier-logo 545ms var(--ease-expo) 1491ms backwards;
+}
+
+/* + 1455: PERSONAL INFORMATION LOADED leaves its ■ (the slide is the screen's) */
+.sect--profile:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) .dossier__loaded {
+  animation: d1-wait 0s 1455ms backwards;
+}
+
+/* + 1600: ■ code (typed by the screen) and the orange lockup pops (R7) */
+.sect--profile:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) .dossier__coderow {
+  animation: d1-wait 0s 1600ms backwards;
+}
+
+.sect--profile:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) .dossier__lockup {
+  animation: home-pop 327ms var(--ease-pop) 1600ms backwards;
+}
+
+/* + 1982: the two-layer info plate (P3) — the frosted layer leads, the face follows three frames on */
+.sect--profile:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) .dossier__info::before {
+  animation:
+    dossier-p3 836ms var(--ease-quart) 1982ms backwards,
+    d1-wait 0s 1982ms backwards;
+}
+
+.sect--profile:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) :is(.dossier__intro, .dossier__links) {
+  animation:
+    dossier-p3f 836ms var(--ease-quart) 2091ms backwards,
+    d1-wait 0s 2091ms backwards;
+}
+
+/* + 2600: the links' plates wipe in (B2 first entrance) */
+.sect--profile:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) .dossier__links .btn {
+  animation:
+    home-wipe 436ms var(--ease-wipe) 2600ms backwards,
+    d1-wait 0s 2600ms backwards;
+}
+
+.sect--profile:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) .dossier__links .btn + .btn {
+  animation-delay: 2673ms;
+}
+
+/* + 2400: the parameters strip — its tags take their text in from the right (T7b),
+   then the meters stack in from the plate's edge two frames apart (B5), each fill
+   growing from the left (B4) as its value slides out (screen) */
+.sect--profile:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) .dossier__params {
+  animation: d1-wait 0s 2400ms backwards;
+}
+
+.sect--profile:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) .dossier__mq {
+  animation: dossier-mq 436ms var(--ease-marquee) 2400ms backwards;
+}
+
+.sect--profile:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) .tag + .tag .dossier__mq {
+  animation-delay: 2473ms;
+}
+
+.sect--profile:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) .dossier__bars li > * {
+  animation:
+    dossier-x260 545ms var(--ease-expo) calc(2473ms + var(--n, 0) * 72.73ms) backwards,
+    d1-wait 0s calc(2473ms + var(--n, 0) * 72.73ms) backwards;
+}
+
+.sect--profile:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) .dossier__bars li > i::before {
+  animation: dossier-fill 800ms var(--ease-bar) calc(2655ms + var(--n, 0) * 72.73ms) backwards;
+}
+
+/* + 2800: the PROFILE card pops from its centre, opaque from the first frame (S1);
+   the rings pop a 2.5-frame stagger apart (R7) and INFO fades up in place (P1) */
+.sect--profile:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) .dossier__card {
+  animation: dossier-s1 800ms var(--ease-quart) 2800ms backwards;
+}
+
+.sect--profile:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) .dossier__rings i {
+  animation: home-pop 327ms var(--ease-pop) 2800ms backwards;
+}
+
+.sect--profile:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) .dossier__rings i:nth-child(2) {
+  animation-delay: 2891ms;
+}
+
+.sect--profile:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) .dossier__rings i:nth-child(3) {
+  animation-delay: 2982ms;
+}
+
+.sect--profile:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) .dossier__ghost {
+  animation: dossier-p1 491ms var(--ease-p1) 2800ms backwards;
+}
+
+/* the decor waits a little small for the dolly that follows the build */
+.sect--profile:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) .dossier__deco {
+  scale: 0.96;
+}
+
+.sect--profile:is([data-phase="enter"], [data-phase="dock"], [data-phase="reveal"]) .dossier__bg {
+  scale: 0.92;
+}
+
+/* after the build: the post-cut parallax dolly on the decor only (text is never
+   scaled), far layer 0.92 → 1 and near 0.96 → 1, exp-out τ 4.5 s */
+.sect--profile:is([data-phase="settled"], [data-phase="leave"]) .dossier__deco {
+  animation: dossier-dolly-near 20.7s var(--ease-exp) both;
+}
+
+.sect--profile:is([data-phase="settled"], [data-phase="leave"]) .dossier__bg {
+  animation: dossier-dolly-far 20.7s var(--ease-exp) both;
+}
+
+@keyframes dossier-s2 {
+  from {
+    scale: 0.15;
+  }
+}
+
+@keyframes dossier-x160 {
+  from {
+    translate: calc(160 * var(--u)) 0;
+  }
+}
+
+@keyframes dossier-x70 {
+  from {
+    translate: calc(70 * var(--u)) 0;
+  }
+}
+
+@keyframes dossier-x260 {
+  from {
+    translate: calc(260 * var(--u)) 0;
+  }
+}
+
+/* the clip reaches past the portrait's ring and drop shadow, so nothing pops at the end */
+@keyframes dossier-d8 {
+  from {
+    clip-path: inset(calc(-6 * var(--u)) calc(-60 * var(--u)) 100% calc(-60 * var(--u)));
+  }
+  to {
+    clip-path: inset(calc(-6 * var(--u)) calc(-60 * var(--u)) calc(-80 * var(--u)) calc(-60 * var(--u)));
+  }
+}
+
+@keyframes dossier-s4 {
+  0% {
+    scale: 0.6;
+    opacity: 0;
+  }
+  0.1% {
+    opacity: 1;
+  }
+  100% {
+    scale: 1;
+  }
+}
+
+@keyframes dossier-logo {
+  0% {
+    scale: 0.3;
+    opacity: 0;
+  }
+  45% {
+    opacity: 1;
+  }
+  100% {
+    scale: 1;
+  }
+}
+
+/* the back layer comes 600u from the right and rests on its offset */
+@keyframes dossier-p3 {
+  from {
+    translate: calc(609 * var(--u)) calc(7 * var(--u));
+  }
+}
+
+@keyframes dossier-p3f {
+  from {
+    translate: calc(600 * var(--u)) 0;
+  }
+}
+
+@keyframes dossier-mq {
+  from {
+    translate: calc(195 * var(--u)) 0;
+  }
+}
+
+@keyframes dossier-fill {
+  from {
+    scale: 0 1;
+  }
+}
+
+@keyframes dossier-s1 {
+  from {
+    scale: 0;
+  }
+}
+
+@keyframes dossier-p1 {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes dossier-dolly-near {
+  from {
+    scale: 0.96;
+  }
+  to {
+    scale: 1;
+  }
+}
+
+@keyframes dossier-dolly-far {
+  from {
+    scale: 0.92;
+  }
+  to {
+    scale: 1;
+  }
+}
+
+/* phones: the build runs, the ambient dolly does not (nothing moves under the bars) */
+@media (max-width: 899px), (max-aspect-ratio: 1/1), (max-height: 539px), (pointer: coarse) and (max-width: 1400px) {
+  .sect--profile[data-phase] :is(.dossier__deco, .dossier__bg) {
+    scale: none;
+    animation: none;
+  }
+}

@@ -1,5 +1,5 @@
 {
-  "name": "tsukuyomi-profile",
+  "name": "rhine-lab-profile",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -16,9 +16,8 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@fontsource/jetbrains-mono": "^5.3.0",
     "@fontsource/montserrat": "^5.3.0",
-    "@fontsource/noto-sans-sc": "^5.3.0",
-    "@fontsource/shippori-mincho-b1": "^5.2.8",
     "three": "^0.186.1"
   },
   "devDependencies": {

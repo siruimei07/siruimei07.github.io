@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="2 -81.5 306 306">
+  <!-- The ∞± mark (MARK_LOOPS / MARK_SIGNS in src/markup.ts), centred in a square, in ink on light tabs and pale on dark ones. -->
+  <style>
+    path { fill: none; stroke: #0b0c0b; }
+    @media (prefers-color-scheme: dark) { path { stroke: #e0e3dc; } }
+  </style>
+  <path stroke-width="26" d="M156 75C127 48 103 15 70 15C37 15 15 39 15 70S38 128 70 128C103 128 127 96 176 52M155 75C182 99 208 128 240 128C273 128 295 105 295 73S273 15 240 15C221 15 207 23 192 38"/>
+  <path stroke-width="15" d="M44 70h50M69 45v50M219 70h44"/>
+</svg>

@@ -1,0 +1,796 @@
+/* The PV's parts, as reusable pieces. Screens compose these; they should not
+   restyle them beyond size and position. The motion utilities at the end
+   (.breathe, .hl, .lift, .roll, .mslide) are the shared hover and readout
+   vocabulary of MOTION-SPEC §4.3, timed at 1.1×. */
+
+:root {
+  --grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  --hexmask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='84' height='145.5' viewBox='0 0 84 145.5'><path d='M42 1 82 24.25v48.5L42 96 2 72.75v-48.5zM42 96v49.5M2 145.5' fill='none' stroke='black' stroke-width='1.6'/><path d='M0 120.6 0 145.5M84 120.6V145.5' fill='none' stroke='black' stroke-width='1.6'/></svg>");
+}
+
+/* ───────── tags ───────── */
+
+.tag {
+  display: inline-block;
+  padding: 0.14em 0.62em 0.1em;
+  background: var(--tag-bg);
+  color: var(--tag-ink);
+  font-family: var(--f-latin);
+  font-weight: 600;
+  font-size: max(10px, calc(14 * var(--u)));
+  line-height: 1.35;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.tag--line {
+  background: transparent;
+  color: var(--ink);
+  box-shadow: inset 0 0 0 max(1px, calc(2 * var(--u))) var(--ink);
+  padding: 0.3em 0.8em 0.24em;
+}
+
+.tag--grey {
+  background: #6d6d69;
+  color: #fbfbf9;
+  font-weight: 700;
+  padding: 0.24em 0.8em 0.16em;
+}
+
+.tag--xs {
+  font-size: max(10px, calc(10 * var(--u)));
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.16em 0.7em 0.08em;
+}
+
+.tag--lime {
+  background: var(--lime);
+  color: #11140b;
+}
+
+.tag--orange {
+  background: var(--orange);
+  color: #fff;
+}
+
+.tag--tilt {
+  transform: rotate(-2.2deg);
+  transform-origin: left bottom;
+}
+
+/* ───────── the ∞ mark ───────── */
+
+.mark {
+  width: 1em;
+  height: auto;
+  aspect-ratio: 310 / 145;
+}
+
+.lockup {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9em;
+  color: var(--ink);
+}
+
+.lockup__mark {
+  width: 6.4em;
+  aspect-ratio: 310 / 145;
+}
+
+.lockup__name {
+  font-weight: 700;
+  font-size: 0.62em;
+  letter-spacing: 0.89em;
+  margin-right: -0.89em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.lockup--orange {
+  color: var(--orange);
+}
+
+.lockup--orange .lockup__mark {
+  filter: drop-shadow(0 0 calc(10 * var(--u)) color-mix(in srgb, var(--orange-soft) 60%, transparent));
+}
+
+/* ───────── logotype (CMPT CTRL / STRU / NRG) ───────── */
+
+.lt {
+  --lt-size: calc(150 * var(--u));
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  color: inherit;
+  font-family: var(--f-latin);
+  line-height: 1;
+  user-select: none;
+}
+
+.lt__word {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  font-weight: 800;
+  font-size: var(--lt-size);
+  letter-spacing: -0.055em;
+  line-height: 0.76;
+  padding-top: 0.04em;
+}
+
+.lt--two .lt__word {
+  line-height: 0.8;
+}
+
+.lt__line {
+  display: flex;
+  white-space: nowrap;
+}
+
+.lt__c {
+  position: relative;
+  display: inline-block;
+}
+
+.lt__at {
+  position: absolute;
+  /* above the following letters, which would otherwise paint over the mark */
+  z-index: 1;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--ms, 0.6) * 1.155em);
+  transform: translate(-50%, -50%) translate(var(--dx, 0), var(--dy, 0));
+  pointer-events: none;
+}
+
+.lt__mark {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.lt__sub {
+  margin-top: calc(var(--lt-size) * 0.16);
+  font-weight: 400;
+  font-size: max(9px, calc(var(--lt-size) * 0.135));
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+
+/* black grainy tile (the PV's section tiles) */
+.tile {
+  --knock: var(--tile);
+  position: relative;
+  display: grid;
+  place-items: center;
+  background: var(--tile);
+  color: var(--tile-ink);
+  overflow: hidden;
+  isolation: isolate;
+  box-shadow:
+    0 0 0 max(2px, calc(3 * var(--u))) rgba(255, 255, 255, 0.92),
+    0 calc(24 * var(--u)) calc(60 * var(--u)) rgba(30, 24, 18, 0.16);
+}
+
+:root[data-theme="dark"] .tile {
+  box-shadow:
+    0 0 0 1px rgba(224, 227, 220, 0.22),
+    0 calc(24 * var(--u)) calc(60 * var(--u)) rgba(0, 0, 0, 0.5);
+}
+
+/* folded-cloth shading behind the letters */
+.tile::before {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  z-index: -1;
+  background:
+    radial-gradient(60% 40% at 22% 30%, rgba(255, 255, 255, 0.09), transparent 70%),
+    radial-gradient(50% 70% at 78% 78%, rgba(255, 255, 255, 0.07), transparent 70%),
+    radial-gradient(40% 30% at 64% 18%, rgba(0, 0, 0, 0.5), transparent 70%),
+    linear-gradient(115deg, transparent 40%, rgba(255, 255, 255, 0.05) 52%, transparent 64%);
+}
+
+/* film grain */
+.tile::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: var(--grain);
+  background-size: 180px;
+  opacity: 0.2;
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+.tile__dot {
+  position: absolute;
+  top: 7.5%;
+  right: 5.5%;
+  width: max(8px, calc(20 * var(--u)));
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #8e8e8b;
+}
+
+.tile--light {
+  --knock: #f7f6f3;
+  background: #f7f6f3;
+  color: #0b0c0b;
+}
+
+.tile--light::after {
+  mix-blend-mode: multiply;
+  opacity: 0.12;
+}
+
+/* ───────── glass panel ───────── */
+
+.glass {
+  position: relative;
+  isolation: isolate;
+  background: linear-gradient(128deg, var(--glass-hi) 0%, var(--glass) 34%, var(--glass) 70%, var(--glass-hi) 100%);
+  border: max(1px, calc(2 * var(--u))) solid var(--glass-edge);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.28),
+    inset calc(16 * var(--u)) calc(16 * var(--u)) calc(60 * var(--u)) rgba(255, 255, 255, 0.28),
+    0 calc(40 * var(--u)) calc(110 * var(--u)) var(--glass-shadow);
+  -webkit-backdrop-filter: blur(16px) saturate(1.04);
+  backdrop-filter: blur(16px) saturate(1.04);
+}
+
+/* the inner, lighter pane set into the plate */
+.glass::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 5% 2.2% 6% 22%;
+  /* from the glass edge token (light: white .34 → .12; dark: pale ink .06 → .02), so the
+     pane follows the theme cascade with its plate instead of snapping */
+  background: linear-gradient(160deg, color-mix(in srgb, var(--glass-edge) 37%, transparent), color-mix(in srgb, var(--glass-edge) 13%, transparent));
+  border: 1px solid color-mix(in srgb, var(--glass-edge) 52%, transparent);
+  transform-origin: 0 50%;
+}
+
+/* honeycomb, fading in from the right edge */
+.glass::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0 0 0 48%;
+  background: var(--hex);
+  -webkit-mask: var(--hexmask) 0 0 / calc(84 * var(--u)) auto repeat, linear-gradient(90deg, transparent, #000 60%);
+  -webkit-mask-composite: source-in;
+  mask: var(--hexmask) 0 0 / calc(84 * var(--u)) auto repeat intersect, linear-gradient(90deg, transparent, #000 60%);
+  pointer-events: none;
+}
+
+/* huge pale word behind the content (INFO, AHRENS PA…) */
+.ghost {
+  display: block;
+  color: var(--ghost);
+  font-family: var(--f-latin);
+  font-weight: 800;
+  line-height: 0.8;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  text-shadow: 0 calc(2 * var(--u)) calc(10 * var(--u)) rgba(80, 70, 60, 0.06);
+  user-select: none;
+  pointer-events: none;
+  transform-origin: 0 50%;
+}
+
+/* ■ TEXT with its echo */
+.sq {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  font-weight: 600;
+  font-size: max(10px, calc(15 * var(--u)));
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+.sq > span:first-child::before {
+  content: "";
+  display: inline-block;
+  width: 0.5em;
+  height: 0.5em;
+  margin-right: 0.55em;
+  background: currentColor;
+  vertical-align: 0.15em;
+}
+
+.sq__echo {
+  padding-left: 1.05em;
+  opacity: 0.16;
+  filter: blur(0.4px);
+}
+
+/* the clip edge sits right after the ■, so a sliding text emerges from it */
+.sq__clip {
+  display: inline-block;
+  vertical-align: top;
+  overflow: clip;
+  overflow-clip-margin: 0.2em;
+}
+
+.sq__clip > span {
+  display: inline-block;
+}
+
+/* the black name bar (AHRENS PARVIS, WELCOME TO / RHINE LAB.LLC.) */
+.namebar {
+  display: inline-block;
+  padding: 0.12em 0.42em 0.06em;
+  background: var(--tag-bg);
+  color: var(--tag-ink);
+  font-family: var(--f-latin);
+  font-weight: 700;
+  line-height: 1.06;
+  letter-spacing: 0.035em;
+  white-space: nowrap;
+}
+
+/* three lime progress rings */
+.rings3 {
+  display: inline-flex;
+  gap: calc(22 * var(--u));
+}
+
+.rings3 i {
+  width: max(16px, calc(26 * var(--u)));
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: max(2px, calc(3.5 * var(--u))) solid var(--lime);
+  border-right-color: transparent;
+  transform: rotate(var(--r, -40deg));
+}
+
+.rings3 i:nth-child(2) {
+  --r: 50deg;
+}
+
+.rings3 i:nth-child(3) {
+  --r: 140deg;
+}
+
+/* a box with four corner squares (FILE NUMBER: X-001); each square's strength is
+   its own registered number (--c-tl … --c-br, 1 at rest), driven by fx.ts corners() */
+.cornered {
+  --c: max(5px, calc(8 * var(--u)));
+  position: relative;
+  background:
+    linear-gradient(color-mix(in srgb, var(--ink) calc(var(--c-tl) * 100%), transparent) 0 0) left top / var(--c) var(--c) no-repeat,
+    linear-gradient(color-mix(in srgb, var(--ink) calc(var(--c-tr) * 100%), transparent) 0 0) right top / var(--c) var(--c) no-repeat,
+    linear-gradient(color-mix(in srgb, var(--ink) calc(var(--c-bl) * 100%), transparent) 0 0) left bottom / var(--c) var(--c) no-repeat,
+    linear-gradient(color-mix(in srgb, var(--ink) calc(var(--c-br) * 100%), transparent) 0 0) right bottom / var(--c) var(--c) no-repeat;
+}
+
+/* ───────── callout (the PV's SERVICES SECT. labels around the ∞) ───────── */
+
+.callout {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: calc(20 * var(--u)) 0 0 calc(22 * var(--u));
+  color: var(--ink);
+}
+
+.callout__br {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: calc(36 * var(--u));
+  height: calc(36 * var(--u));
+  border-left: max(3px, calc(7 * var(--u))) solid var(--glass-edge);
+  border-top: max(3px, calc(7 * var(--u))) solid var(--glass-edge);
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.06));
+}
+
+:root[data-theme="dark"] .callout__br {
+  border-color: rgba(224, 227, 220, 0.5);
+}
+
+.callout .tag {
+  font-size: max(10px, calc(13 * var(--u)));
+  padding-right: 2.6em;
+}
+
+.callout__title {
+  margin-top: calc(6 * var(--u));
+  font-weight: 700;
+  font-size: max(17px, calc(31 * var(--u)));
+  line-height: 1.05;
+  letter-spacing: -0.005em;
+  text-transform: uppercase;
+}
+
+.callout__rule {
+  display: block;
+  align-self: stretch;
+  height: max(1px, calc(2 * var(--u)));
+  margin: calc(9 * var(--u)) 0 calc(11 * var(--u));
+  background: color-mix(in srgb, var(--ink) 55%, transparent);
+  transform-origin: left;
+}
+
+.callout__desc {
+  font-weight: 400;
+  font-size: max(10px, calc(13 * var(--u)));
+  letter-spacing: 0.02em;
+  line-height: 1.55;
+  color: var(--ink-2);
+  text-transform: uppercase;
+}
+
+.callout__zh {
+  margin-top: calc(4 * var(--u));
+  font-family: var(--f-cjk);
+  font-size: max(12px, calc(15 * var(--u)));
+  color: var(--sub);
+  letter-spacing: 0.06em;
+}
+
+.callout__title {
+  transition: color var(--t-hover) var(--ease-enter);
+}
+
+a.callout:hover .callout__title,
+a.callout:focus-visible .callout__title {
+  color: var(--hover);
+}
+
+/* ───────── buttons, chips, fields, bars ───────── */
+
+/* B2 plate wipe (atlas §6.7): the black plate's leading edge is --wipe. It paints
+   two layers from the same edge, the plate (border box) and the text (clipped to the
+   glyphs), so the label inverts exactly where the plate is. The ■ is a box, not a
+   glyph: it carries the same split, re-based on the button (--bw, --bx; app.ts). */
+.btn {
+  --wipe: 0%;
+  --btn-ink: var(--ink);
+  --btn-on: var(--bg);
+  --btn-bg: transparent;
+  --btn-plate: var(--ink);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7em;
+  min-height: 40px;
+  padding: 0.62em 1.15em 0.56em 0.95em;
+  border: 0;
+  box-shadow: inset 0 0 0 max(1.5px, calc(2 * var(--u))) var(--ink);
+  color: var(--btn-ink);
+  font-weight: 700;
+  font-size: max(12px, calc(14 * var(--u)));
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1;
+  white-space: nowrap;
+  isolation: isolate;
+  overflow: hidden;
+  background-image:
+    linear-gradient(90deg, var(--btn-on) var(--wipe), var(--btn-ink) var(--wipe)),
+    linear-gradient(90deg, var(--btn-plate) var(--wipe), var(--btn-bg) var(--wipe));
+  -webkit-background-clip: text, border-box;
+  background-clip: text, border-box;
+  -webkit-text-fill-color: transparent;
+  /* the collapse runs back R→L into the left edge */
+  transition: --wipe var(--t-collapse) var(--ease-collapse);
+}
+
+.btn::before {
+  content: "";
+  width: 0.5em;
+  height: 0.5em;
+  flex: none;
+  background: linear-gradient(90deg, var(--btn-on) var(--wipe), var(--btn-ink) var(--wipe)) calc(-1 * var(--bx, 0px)) 0 / var(--bw, 100%) 100% no-repeat;
+}
+
+@media (hover: hover) {
+  .btn:hover {
+    --wipe: 100%;
+    transition: --wipe var(--t-wipe) var(--ease-wipe);
+  }
+}
+
+.btn:focus-visible {
+  --wipe: 100%;
+  transition: --wipe var(--t-wipe) var(--ease-wipe);
+}
+
+.btn--ink {
+  --btn-ink: var(--bg);
+  --btn-on: var(--bg);
+  --btn-bg: var(--ink);
+  --btn-plate: var(--hover);
+}
+
+/* the text layer needs the fill to be transparent; forced colours paint the text itself */
+@media (forced-colors: active) {
+  .btn {
+    -webkit-text-fill-color: currentColor;
+    background-image: none;
+  }
+}
+
+.btn small {
+  font-family: var(--f-cjk);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+  text-transform: none;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(8 * var(--u)) calc(10 * var(--u));
+}
+
+.chips li {
+  padding: 0.32em 0.7em 0.26em;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 45%, transparent);
+  font-weight: 600;
+  font-size: max(11px, calc(13 * var(--u)));
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+/* white data card with a black header (PROFILE / RACE / HEIGHT / POB) */
+.card {
+  display: flex;
+  flex-direction: column;
+  padding: calc(14 * var(--u)) calc(18 * var(--u)) calc(14 * var(--u));
+  background: #fbfbf9;
+  color: #0b0c0b;
+  box-shadow: 0 calc(12 * var(--u)) calc(36 * var(--u)) rgba(50, 40, 30, 0.1);
+}
+
+:root[data-theme="dark"] .card {
+  background: #1b2428;
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--hair);
+}
+
+.card__head {
+  align-self: stretch;
+  padding: 0.18em 0.5em 0.1em;
+  background: #0b0c0b;
+  color: #fff;
+  font-weight: 600;
+  font-size: max(11px, calc(14 * var(--u)));
+  letter-spacing: 0.04em;
+}
+
+:root[data-theme="dark"] .card__head {
+  background: var(--ink);
+  color: var(--tag-ink);
+}
+
+.card__fields {
+  display: grid;
+  gap: calc(6 * var(--u));
+  padding: calc(14 * var(--u)) 0 calc(12 * var(--u));
+}
+
+.card__fields > div {
+  display: grid;
+  grid-template-columns: minmax(5.5em, auto) 1fr;
+  align-items: baseline;
+  gap: 0.8em;
+}
+
+.card__fields dt {
+  font-weight: 500;
+  font-size: max(11px, calc(14 * var(--u)));
+  letter-spacing: 0.04em;
+}
+
+.card__fields dd {
+  font-weight: 600;
+  font-size: max(13px, calc(19 * var(--u)));
+  line-height: 1.3;
+}
+
+.card__foot {
+  border-top: max(2px, calc(3 * var(--u))) solid currentColor;
+  padding-top: calc(6 * var(--u));
+  text-align: right;
+  font-weight: 500;
+  font-size: max(10px, calc(13 * var(--u)));
+  letter-spacing: 0.08em;
+  opacity: 0.6;
+}
+
+/* labelled bars with a fill (the PV's VISUALIZED meters) */
+.bars {
+  display: grid;
+  gap: calc(10 * var(--u));
+}
+
+.bars li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: calc(4 * var(--u)) 1em;
+}
+
+.bars li > span {
+  font-weight: 600;
+  font-size: max(10px, calc(12 * var(--u)));
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.bars li > span small {
+  margin-left: 0.6em;
+  font-family: var(--f-cjk);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: var(--sub);
+}
+
+.bars li > b {
+  font-weight: 700;
+  font-size: max(13px, calc(18 * var(--u)));
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.bars li > i {
+  grid-column: 1 / -1;
+  height: max(5px, calc(9 * var(--u)));
+  background: linear-gradient(90deg, var(--fill, #8b8a86) calc(var(--v, 0) * 100%), transparent 0);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 45%, transparent);
+}
+
+.bars li.is-hi > i {
+  --fill: var(--lime);
+}
+
+/* small key hints */
+.keys {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4em 1em;
+  font-size: max(10px, calc(12 * var(--u)));
+  letter-spacing: 0.06em;
+  color: var(--sub);
+  text-transform: uppercase;
+}
+
+.keys kbd {
+  display: inline-block;
+  min-width: 1.9em;
+  margin-right: 0.4em;
+  padding: 0.12em 0.4em 0.06em;
+  box-shadow: inset 0 0 0 1px currentColor;
+  font-family: var(--f-mono);
+  font-size: 0.92em;
+  text-align: center;
+  color: var(--ink);
+}
+
+/* ───────── motion utilities (MOTION-SPEC §4.3, A-31 … A-33) ───────── */
+
+/* ■ cursor breathing: a trapezoid, 1055 ms a period */
+.breathe {
+  animation: breathe var(--t-breathe) linear infinite;
+}
+
+@keyframes breathe {
+  0%,
+  12% {
+    opacity: 1;
+  }
+  50%,
+  62% {
+    opacity: 0.45;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* L3 hover underline: draws from the left, retracts quicker */
+.hl {
+  background: linear-gradient(currentColor, currentColor) 0 100% / 0% max(1px, calc(2 * var(--u))) no-repeat;
+  transition: background-size 218ms var(--ease-exit);
+}
+
+.hl:focus-visible,
+a:focus-visible > .hl {
+  background-size: 100% max(1px, calc(2 * var(--u)));
+  transition: background-size 400ms var(--ease-draw);
+}
+
+/* RhineLabUI hover lift (200 ms ÷ 1.1); a precise pointer only */
+.lift {
+  transition:
+    translate var(--t-hover) var(--ease-enter),
+    box-shadow var(--t-hover) var(--ease-enter);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .hl:hover,
+  a:hover > .hl {
+    background-size: 100% max(1px, calc(2 * var(--u)));
+    transition: background-size 400ms var(--ease-draw);
+  }
+
+  .lift:hover {
+    translate: 0 calc(-1 * max(2px, calc(6 * var(--u))));
+    box-shadow: var(--lift-base, 0 0 transparent), 0 calc(14 * var(--u)) calc(30 * var(--u)) var(--glass-shadow);
+  }
+}
+
+/* rolling readout (fx.ts rollText): one clipped slot per character, or one for a word */
+.roll {
+  display: inline-flex;
+  font-variant-numeric: tabular-nums;
+}
+
+.roll__box {
+  display: inline-flex;
+}
+
+.roll__slot {
+  position: relative;
+  display: inline-block;
+  overflow: clip;
+  white-space: pre;
+  -webkit-mask-image: linear-gradient(transparent, #000 0.08em, #000 calc(100% - 0.08em), transparent);
+  mask-image: linear-gradient(transparent, #000 0.08em, #000 calc(100% - 0.08em), transparent);
+}
+
+.roll__v {
+  display: inline-block;
+}
+
+.roll__v.is-out {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+/* T7c / T7d value slide (fx.ts maskSlide): clipped at its own edges, glyphs keep their height */
+.mslide {
+  display: inline-block;
+}
+
+.is-mslide {
+  clip-path: inset(-0.4em 0 -0.4em 0);
+}
+
+html[data-motion="reduced"] .breathe {
+  animation: none;
+}
+
+/* ■ breathing is ambient: only on the screen that is shown (§8.0), and still on phones,
+   where the page scrolls under the frosted bars (§7.8) */
+html.js .screen:not(.is-active) .breathe {
+  animation: none;
+}
+
+@media (max-width: 899px), (max-aspect-ratio: 1/1), (max-height: 539px), (pointer: coarse) and (max-width: 1400px) {
+  .breathe {
+    animation: none;
+  }
+}
+
+/* reduced: the hover lands on its end state, without the lift */
+html[data-motion="reduced"] .lift:hover {
+  translate: none;
+}

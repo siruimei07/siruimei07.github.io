@@ -1,0 +1,443 @@
+/* The ambient layer (MOTION-SPEC §8.0, work package B; built by src/fx/ambient.ts).
+   #rl-ambient sits just before the 3D canvas: over the body, under the plates
+   and every screen. The paper's vignette is static; everything that moves is
+   inside .amb__field, which ambient.ts keeps clear of a section's glass and
+   cuts soft holes into round the overview's copy. Colours come from tokens on
+   the layer (a theme-cascade cell), so dark mode and the cascade just work.
+   Motion only under .is-live (not reduced, not on phones, not hidden, not
+   during the opening); the field fades in with P1 once the opening is over. */
+
+#rl-ambient {
+  /* pale strands, 3–4 luma above the paper even in its darker corners (atlas: "about 1 % contrast") */
+  --amb-dna: color-mix(in srgb, var(--bg-hi) 30%, transparent);
+  --amb-grid: color-mix(in srgb, var(--ink) 5%, transparent);
+  --amb-tick: color-mix(in srgb, var(--ink) 35%, transparent);
+  --amb-ring: color-mix(in srgb, var(--ink) 25%, transparent);
+  /* the PV's three greys, L ≈ 90 / 145 / 185 on the light paper */
+  --amb-pop-a: color-mix(in srgb, var(--ink) 64%, var(--bg));
+  --amb-pop-b: color-mix(in srgb, var(--ink) 39.5%, var(--bg));
+  --amb-pop-c: color-mix(in srgb, var(--ink) 21%, var(--bg));
+
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-canvas);
+  overflow: hidden;
+  pointer-events: none;
+  contain: strict;
+}
+
+/* dark: the greys mirror to L ≈ 40 / 70 / 100 on the night paper */
+:root[data-theme="dark"] #rl-ambient {
+  --amb-grid: color-mix(in srgb, var(--ink) 6%, transparent);
+  --amb-pop-a: color-mix(in srgb, var(--ink) 9%, var(--bg));
+  --amb-pop-b: color-mix(in srgb, var(--ink) 24%, var(--bg));
+  --amb-pop-c: color-mix(in srgb, var(--ink) 39%, var(--bg));
+}
+
+#rl-ambient i,
+#rl-ambient span {
+  display: block;
+}
+
+/* ───────── B-01: the paper ───────── */
+
+/* the PV's warm plate: #E7E5E1 at the centre to #E1DCD7 in the corners, and a
+   soft spot 2 luma lighter round (1060, 300) of the frame */
+.amb__paper {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(calc(620 * var(--u)) calc(420 * var(--u)) at calc(50% + 100 * var(--u)) calc(50% - 240 * var(--u)), color-mix(in srgb, var(--bg-hi) 24%, transparent), transparent),
+    radial-gradient(farthest-corner at 50% 50%, var(--bg) 24%, color-mix(in srgb, var(--bg) 40%, var(--bg-lo)) 100%);
+}
+
+/* ───────── the field ───────── */
+
+.amb__field {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  opacity: 0;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+#rl-ambient.is-on .amb__field {
+  opacity: 1;
+  transition: opacity var(--t-p1, 491ms) var(--ease-p1);
+}
+
+/* B-05: B's own background layer is the far one (depth 1, 3u at most) */
+.amb__deep {
+  position: absolute;
+  inset: 0;
+}
+
+/* the parallax writes `translate` every frame while the pointer moves: keep
+   those layers on the compositor (a hovering pointer only; phones never move) */
+@media (hover: hover) and (pointer: fine) {
+  html.js:not([data-motion="reduced"]) :is(.screen.is-active, #rl-ambient) [data-depth] {
+    will-change: translate;
+  }
+}
+
+/* ───────── B-02: the helices ───────── */
+
+.amb__helix {
+  position: absolute;
+  overflow: hidden;
+}
+
+.amb__helix svg {
+  display: block;
+  width: 100%;
+  overflow: visible;
+}
+
+.amb__helix path {
+  fill: none;
+  stroke: var(--amb-dna);
+  stroke-linecap: round;
+}
+
+/* right: overview only, straight up the frame's x 1600–1820, 102.6u/s */
+.amb__helix--right {
+  display: none;
+  left: calc(50% + 640 * var(--u));
+  top: 0;
+  width: calc(220 * var(--u));
+  height: 100%;
+}
+
+#rl-ambient[data-view="home"] .amb__helix--right {
+  display: block;
+}
+
+.amb__helix--right svg {
+  height: calc(2448 * var(--u));
+}
+
+/* left: every page, bottom-left quadrant, up-right along 45°, 127u/s; it
+   stays left of x 805u, where a section's glass begins */
+.amb__helix--left {
+  left: calc(110 * var(--u));
+  top: calc(100% - 780 * var(--u));
+  width: calc(300 * var(--u));
+  height: calc(1200 * var(--u));
+  rotate: 45deg;
+  -webkit-mask: linear-gradient(transparent, #000 22%, #000 78%, transparent);
+  mask: linear-gradient(transparent, #000 22%, #000 78%, transparent);
+}
+
+.amb__helix--left svg {
+  height: calc(1580 * var(--u));
+}
+
+#rl-ambient.is-live .amb__helix--right svg {
+  animation: amb-helix-right 2651ms linear infinite;
+}
+
+#rl-ambient.is-live .amb__helix--left svg {
+  animation: amb-helix-left 2992ms linear infinite;
+}
+
+/* one crossing per loop: the strands look alike, so it is seamless */
+@keyframes amb-helix-right {
+  to {
+    transform: translateY(calc(-272 * var(--u)));
+  }
+}
+
+@keyframes amb-helix-left {
+  to {
+    transform: translateY(calc(-380 * var(--u)));
+  }
+}
+
+/* ───────── B-03: the grid lamp ───────── */
+
+/* a 480u square moved to the smoothed pointer; its 96u grid is counter-shifted,
+   so the lines stay put and only the soft circle travels */
+.amb__lamp {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: calc(480 * var(--u));
+  height: calc(480 * var(--u));
+  overflow: hidden;
+  opacity: 0;
+  -webkit-mask: radial-gradient(closest-side, #000 40%, rgb(0 0 0 / 0.55) 68%, transparent);
+  mask: radial-gradient(closest-side, #000 40%, rgb(0 0 0 / 0.55) 68%, transparent);
+  transition: opacity 545ms linear;
+  will-change: transform, opacity;
+}
+
+#rl-ambient.is-lamp .amb__lamp {
+  opacity: 1;
+  transition-duration: 291ms;
+}
+
+.amb__grid {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: calc(576 * var(--u));
+  height: calc(576 * var(--u));
+  background:
+    linear-gradient(90deg, var(--amb-grid) 1px, transparent 1px) 0 0 / calc(96 * var(--u)) calc(96 * var(--u)),
+    linear-gradient(var(--amb-grid) 1px, transparent 1px) 0 0 / calc(96 * var(--u)) calc(96 * var(--u));
+  will-change: transform;
+}
+
+/* ───────── B-04: the crosshair and its readout ───────── */
+
+.amb__cross {
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  transition: opacity 145ms linear;
+  will-change: transform, opacity;
+}
+
+#rl-ambient.is-cross .amb__cross {
+  opacity: 1;
+}
+
+/* four 20u ticks, 8u clear of the pointer */
+.amb__cross > i {
+  position: absolute;
+  background: var(--amb-tick);
+}
+
+.amb__cross > i:nth-child(odd) {
+  top: 0;
+  width: calc(20 * var(--u));
+  height: 1px;
+}
+
+.amb__cross > i:nth-child(even) {
+  left: 0;
+  width: 1px;
+  height: calc(20 * var(--u));
+}
+
+.amb__cross > i:nth-child(1) {
+  right: calc(8 * var(--u));
+}
+
+.amb__cross > i:nth-child(3) {
+  left: calc(8 * var(--u));
+}
+
+.amb__cross > i:nth-child(2) {
+  bottom: calc(8 * var(--u));
+}
+
+.amb__cross > i:nth-child(4) {
+  top: calc(8 * var(--u));
+}
+
+#rl-ambient .amb__xy {
+  position: absolute;
+  left: calc(16 * var(--u));
+  top: calc(16 * var(--u));
+  font-family: var(--f-mono);
+  font-weight: 500;
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  white-space: pre;
+  color: var(--sub);
+}
+
+/* ───────── B-06: the paper halo (atlas R9, 436 ms) ───────── */
+
+.amb__halo {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.amb__halo > i {
+  position: absolute;
+  border-radius: 50%;
+  animation:
+    amb-halo-grow 436ms var(--ease-expo) both,
+    amb-halo-fade 436ms linear both;
+}
+
+/* the disc grows r 10 → 25u and fades in its second half */
+.amb__halo > i:nth-child(1) {
+  --s0: 0.4;
+  left: calc(-25 * var(--u));
+  top: calc(-25 * var(--u));
+  width: calc(50 * var(--u));
+  height: calc(50 * var(--u));
+  background: var(--glass-edge);
+  box-shadow: 0 0 calc(10 * var(--u)) var(--glass-edge);
+  animation-name: amb-halo-grow, amb-halo-disc;
+}
+
+/* two hairline rings spread from the disc's edge to r 45u and 50u */
+.amb__halo > i:nth-child(2),
+.amb__halo > i:nth-child(3) {
+  border: max(1px, calc(1 * var(--u))) solid var(--amb-ring);
+}
+
+.amb__halo > i:nth-child(2) {
+  --s0: 0.222;
+  left: calc(-45 * var(--u));
+  top: calc(-45 * var(--u));
+  width: calc(90 * var(--u));
+  height: calc(90 * var(--u));
+}
+
+.amb__halo > i:nth-child(3) {
+  --s0: 0.2;
+  left: calc(-50 * var(--u));
+  top: calc(-50 * var(--u));
+  width: calc(100 * var(--u));
+  height: calc(100 * var(--u));
+}
+
+@keyframes amb-halo-grow {
+  from {
+    scale: var(--s0);
+  }
+  to {
+    scale: 1;
+  }
+}
+
+@keyframes amb-halo-fade {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes amb-halo-disc {
+  45% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* ───────── B-10: pop squares (overview; WAAPI from src/fx/pops.ts) ───────── */
+
+.amb__pop {
+  position: absolute;
+  background: var(--amb-pop-b);
+  will-change: transform, opacity;
+}
+
+.amb__pop--a {
+  background: var(--amb-pop-a);
+}
+
+.amb__pop--c {
+  background: var(--amb-pop-c);
+}
+
+/* the inner square opens onto the paper */
+.amb__pop > i {
+  position: absolute;
+  inset: 34%;
+  background: var(--bg-hi);
+  scale: 0;
+}
+
+/* ───────── B-08: the glass's hex lamp ───────── */
+
+/* the honeycomb of .glass::after, same box, mask and origin, at 2.2 × its
+   strength in a soft spot under the cursor; inserted as the glass's first child */
+.glass__lamp {
+  --amb-hex: var(--hex);
+  position: absolute;
+  z-index: -1;
+  inset: 0 0 0 48%;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0;
+  -webkit-mask: var(--hexmask) 0 0 / calc(84 * var(--u)) auto repeat, linear-gradient(90deg, transparent, #000 60%);
+  -webkit-mask-composite: source-in;
+  mask: var(--hexmask) 0 0 / calc(84 * var(--u)) auto repeat intersect, linear-gradient(90deg, transparent, #000 60%);
+  transition: opacity 182ms linear;
+}
+
+@supports (color: rgb(from red r g b / alpha)) {
+  .glass__lamp {
+    --amb-hex: rgb(from var(--hex) r g b / calc(alpha * 2.2));
+  }
+}
+
+/* dark: the lines are paler than the glass, so lighting them eats into the 4.5:1 of the
+   grey labels (--sub) printed over them; the lamp adds 0.4 × the honeycomb, which keeps
+   the brightest lit line at ≥ 4.5:1 (the dark --hex leaves it that headroom, tokens.css) */
+:root[data-theme="dark"] .glass__lamp {
+  --amb-hex: color-mix(in srgb, var(--hex) 40%, transparent);
+}
+
+.glass__lamp.is-lit {
+  opacity: 1;
+}
+
+.glass__lamp > i {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: calc(400 * var(--u));
+  height: calc(400 * var(--u));
+  background: radial-gradient(closest-side, var(--amb-hex) 30%, transparent);
+  will-change: transform;
+}
+
+/* ───────── B-11: grabbing the ∞ (data-plate-* set by the 3D plates) ───────── */
+
+html[data-plate-hover="1"] .screen.is-active {
+  cursor: grab;
+}
+
+html[data-plate-drag="1"],
+html[data-plate-drag="1"] * {
+  cursor: grabbing !important;
+}
+
+/* ───────── gates ───────── */
+
+/* the opening covers everything; nothing here starts until it has gone */
+html.is-booting #rl-ambient .amb__field {
+  opacity: 0;
+  transition: none;
+}
+
+/* phones: everything still (the frosted bars must never have motion beneath
+   them), and no helix under the one column of copy */
+@media (max-width: 899px), (max-aspect-ratio: 1/1), (max-height: 539px), (pointer: coarse) and (max-width: 1400px) {
+  .amb__helix,
+  .amb__lamp,
+  .amb__cross,
+  .amb__pops,
+  .glass__lamp {
+    display: none;
+  }
+}
+
+html[data-motion="reduced"] .amb__halos,
+html[data-motion="reduced"] .amb__lamp,
+html[data-motion="reduced"] .amb__cross,
+html[data-motion="reduced"] .amb__pops,
+html[data-motion="reduced"] .glass__lamp {
+  display: none;
+}
+
+html:not(.js) #rl-ambient,
+html:not(.js) .glass__lamp {
+  display: none !important;
+}

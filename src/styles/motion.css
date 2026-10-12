@@ -1,0 +1,73 @@
+/* Motion that CSS owns. Screen changes, the section reveal and the chrome
+   builds are app.ts timelines on the PV's 1.1× clock (MOTION-SPEC §7); the
+   screens' own builds key on [data-phase] in their files. What is left here:
+   the theme cascade (§7.10), the hold of an overtaken entry (§7.6) and the
+   reduced-motion kill switch. */
+
+/* ───────── theme cascade (RhineLabUI theme wave ÷ 1.1) ─────────
+   Each [data-tc] cell eases the registered colour tokens (tokens.css) after its
+   own delay --td, set by app.ts from its distance to the control that changed
+   the theme. Descendants do not transition: they inherit the cell's tokens
+   frame by frame, gradients included. Cells never nest. */
+
+html.is-theming [data-tc] * {
+  transition: none !important;
+}
+
+html.is-theming [data-tc] {
+  transition-property:
+    --bg, --bg-hi, --bg-lo, --ink, --ink-2, --sub, --line, --hair, --tile, --tile-ink, --tag-bg, --tag-ink, --glass, --glass-hi, --glass-edge,
+    --glass-shadow, --ghost, --hex, --orange, --orange-soft, --lime, --lime-ink, --hover, --select !important;
+  transition-duration: 527ms !important;
+  transition-timing-function: var(--ease-smooth) !important;
+  transition-delay: var(--td, 0ms) !important;
+  /* text inherits a computed colour from <html>, which flips at once: each cell
+     resolves it from its own (still easing) ink instead */
+  color: var(--ink);
+}
+
+/* the root's tokens flip at once; only its painted background eases */
+html.is-theming,
+html.is-theming body {
+  transition: background-color 773ms var(--ease-smooth) !important;
+}
+
+/* ───────── an overtaken entry (§7.6) ─────────
+   A screen navigated away from mid-build keeps its data-phase through the exit
+   (app.ts marks it .is-held), so its CSS builds stay matched and stop where they
+   are while the shell carries it off; deactivation clears both. */
+
+.screen.is-held,
+.screen.is-held *,
+.screen.is-held *::before,
+.screen.is-held *::after {
+  animation-play-state: paused !important;
+}
+
+/* kept until contact.css stops using it */
+@keyframes m-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ───────── reduced motion ─────────
+   CSS motion collapses to its end state; app.ts plays a 145 ms cross-fade
+   for screen changes and skips every other script-driven effect. */
+
+html[data-motion="reduced"] *,
+html[data-motion="reduced"] *::before,
+html[data-motion="reduced"] *::after {
+  animation-duration: 1ms !important;
+  animation-delay: 0ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 1ms !important;
+  transition-delay: 0ms !important;
+}
+
+html[data-motion="reduced"] .home__hint::before {
+  animation: none !important;
+}

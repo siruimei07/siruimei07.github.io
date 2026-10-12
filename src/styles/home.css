@@ -1,0 +1,684 @@
+/* Overview: the ∞ (3D canvas or the flat fallback) with four callouts and the
+   centre pill at the PV's 3:46 positions, plus the director-style name block.
+   The composition lives in a centred 1920×1080 frame so the 3D figure (also
+   centred) and the callouts stay registered at any aspect ratio. */
+
+html.js .home__frame {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(1920 * var(--u));
+  height: calc(1080 * var(--u));
+  transform: translate(-50%, -50%);
+}
+
+.home__flat {
+  display: none;
+}
+
+html.js .home__flat {
+  display: block;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.9;
+  transition: opacity 409ms var(--ease-enter);
+}
+
+.home__flat g {
+  fill: color-mix(in srgb, var(--bg-hi) 70%, #e9dcc8);
+  stroke: color-mix(in srgb, var(--ink) 28%, transparent);
+  stroke-width: 1;
+}
+
+:root[data-theme="dark"] .home__flat g {
+  fill: color-mix(in srgb, var(--ink) 14%, transparent);
+  stroke: color-mix(in srgb, var(--ink) 22%, transparent);
+}
+
+html.gl-on .home__flat {
+  opacity: 0;
+}
+
+/* above the frame, so the dots land on the flat figure's plates, not under them */
+.home__leaders {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+/* one pen path a callout: dot → elbow → along the underline (atlas L2); it is the
+   underline too, so the callout's own rule stays hidden on desktop */
+.home__lead {
+  fill: none;
+  stroke: color-mix(in srgb, var(--ink) 60%, transparent);
+  stroke-width: max(1px, calc(1.6 * var(--u)));
+  transition:
+    stroke var(--t-hover) var(--ease-enter),
+    stroke-width var(--t-hover) var(--ease-enter);
+}
+
+.home__lead.is-hot {
+  stroke: var(--ink);
+  stroke-width: max(1.5px, calc(2.4 * var(--u)));
+}
+
+.home__dot,
+.home__halo-g circle {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.home__dot {
+  fill: var(--ink);
+  transition: transform var(--t-hover) var(--ease-enter);
+}
+
+/* the dot pops 1 → 1.6 r on hover (218 ms) and settles back in 182 */
+.home__dot.is-hot {
+  transform: scale(1.6);
+  transition: transform 218ms var(--ease-pop);
+}
+
+/* R9 halo, played by the screen on hover */
+.home__halo-disc {
+  fill: var(--glass-edge);
+  opacity: 0;
+}
+
+.home__halo-ring {
+  fill: none;
+  stroke: color-mix(in srgb, var(--ink) 25%, transparent);
+  stroke-width: 1px;
+  opacity: 0;
+}
+
+:root[data-theme="dark"] .home__halo-disc {
+  fill: color-mix(in srgb, var(--ink) 34%, transparent);
+}
+
+html.js .home__co .callout__rule {
+  visibility: hidden;
+}
+
+/* ───────── callouts ───────── */
+
+.home__callouts {
+  display: grid;
+  gap: 28px;
+  margin: 32px 0;
+}
+
+html.js .home__co {
+  position: absolute;
+}
+
+/* below the identity block, whose px floors stop it shrinking with --u */
+html.js .home__co--left {
+  left: calc(93 * var(--u));
+  top: max(calc(455 * var(--u)), calc(250 * var(--u) + 170px));
+}
+
+html.js .home__co--left .callout {
+  max-width: calc(425 * var(--u));
+}
+
+html.js .home__co--cross {
+  left: calc(556 * var(--u));
+  top: calc(535 * var(--u));
+}
+
+html.js .home__co--right-top {
+  left: calc(1325 * var(--u));
+  top: calc(186 * var(--u));
+}
+
+html.js .home__co--right-bottom {
+  left: calc(1442 * var(--u));
+  top: calc(638 * var(--u));
+}
+
+.home__co .callout {
+  min-width: calc(250 * var(--u));
+}
+
+/* a halo of paper keeps the copy legible where it crosses the plates */
+.home__co .callout__title,
+.home__co .callout__desc,
+.home__co .callout__zh {
+  text-shadow:
+    0 0 2px var(--bg),
+    0 0 7px var(--bg),
+    0 0 14px var(--bg);
+}
+
+/* the dark plates are lighter than the copy: a halo is not enough there */
+:root[data-theme="dark"] .home__co :is(.callout__desc, .callout__zh) {
+  margin-inline: -0.3em;
+  padding: 0 0.3em;
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+/* ───────── centre pill (RHINE LAB.LLC. ◎) ───────── */
+
+.home__centre {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(16 * var(--u));
+  color: var(--ink);
+}
+
+html.js .home__centre {
+  position: absolute;
+  left: calc(1017 * var(--u));
+  top: calc(536 * var(--u));
+}
+
+.home__pill {
+  display: flex;
+  align-items: baseline;
+  gap: 1.2em;
+  min-width: calc(350 * var(--u));
+  padding: calc(5 * var(--u)) calc(22 * var(--u)) calc(4 * var(--u));
+  background: color-mix(in srgb, var(--bg-hi) 82%, transparent);
+  box-shadow: 0 0 calc(20 * var(--u)) color-mix(in srgb, var(--bg-hi) 70%, transparent);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+.home__pill b {
+  font-weight: 600;
+  font-size: max(12px, calc(17 * var(--u)));
+  letter-spacing: 0.04em;
+  transition: color var(--t-hover) var(--ease-enter);
+}
+
+.home__pill small {
+  font-weight: 500;
+  font-size: max(10px, calc(11 * var(--u)));
+  letter-spacing: 0.12em;
+  color: var(--sub);
+}
+
+.home__ring {
+  --ring: var(--glass-edge);
+  position: relative;
+  flex: none;
+  width: max(14px, calc(24 * var(--u)));
+  height: max(14px, calc(24 * var(--u)));
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 max(1.5px, calc(2.4 * var(--u))) var(--ring), 0 0 0 1px color-mix(in srgb, var(--ink) 12%, transparent);
+}
+
+.home__ring::after {
+  content: "";
+  position: absolute;
+  inset: 30%;
+  border-radius: 50%;
+  background: var(--ring);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ink) 12%, transparent);
+}
+
+/* dark --glass-edge is a 16% veil, which vanishes over the lit plates */
+:root[data-theme="dark"] .home__ring {
+  --ring: color-mix(in srgb, var(--ink) 60%, transparent);
+}
+
+/* R9 halo on the ◎ (the screen plays it on hover): a disc and two hairline rings */
+.home__halo {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  pointer-events: none;
+}
+
+.home__halo > i {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: calc(50 * var(--u));
+  aspect-ratio: 1;
+  border-radius: 50%;
+  translate: -50% -50%;
+  background: var(--glass-edge);
+  opacity: 0;
+}
+
+.home__halo > i + i {
+  width: calc(90 * var(--u));
+  background: none;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 25%, transparent);
+}
+
+.home__halo > i + i + i {
+  width: calc(100 * var(--u));
+}
+
+:root[data-theme="dark"] .home__halo > i:first-child {
+  background: color-mix(in srgb, var(--ink) 34%, transparent);
+}
+
+.home__centre:hover .home__pill b,
+.home__centre:focus-visible .home__pill b {
+  color: var(--hover);
+}
+
+/* ───────── identity block, under the lockup (role · focus · one-liner · links) ───────── */
+
+.home__id {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: calc(16 * var(--u));
+  row-gap: calc(11 * var(--u));
+  align-items: center;
+  max-width: 640px;
+  margin-top: 28px;
+}
+
+/* wide enough to keep GITHUB and MAIL on one row at every desktop size */
+html.js .home__id {
+  position: absolute;
+  left: calc(60 * var(--u));
+  top: calc(250 * var(--u));
+  width: max(400px, calc(560 * var(--u)));
+  max-width: none;
+  margin: 0;
+}
+
+.home__badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: calc(5 * var(--u));
+  width: calc(96 * var(--u));
+  height: calc(66 * var(--u));
+  min-width: 64px;
+  min-height: 44px;
+  background: var(--tag-bg);
+  color: var(--tag-ink);
+}
+
+.home__badge-mark {
+  width: 64%;
+}
+
+.home__badge small {
+  font-size: max(4.5px, calc(5.5 * var(--u)));
+  font-weight: 700;
+  letter-spacing: 0.4em;
+  margin-right: -0.4em;
+  white-space: nowrap;
+}
+
+.home__role {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: calc(4 * var(--u));
+  padding-bottom: calc(8 * var(--u));
+  font-weight: 600;
+  font-size: max(11px, calc(16 * var(--u)));
+  letter-spacing: 0.05em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.home__role span:first-child {
+  font-weight: 800;
+}
+
+/* the underline running out from the badge (the PV's KRISTEN WRIGHT rule) */
+.home__role::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: calc(-40 * var(--u));
+  bottom: 0;
+  height: max(1.5px, calc(2.5 * var(--u)));
+  background: var(--ink);
+}
+
+.home__line {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: calc(5 * var(--u));
+}
+
+.home__line b {
+  font-weight: 700;
+  font-size: max(11px, calc(14 * var(--u)));
+  letter-spacing: 0.08em;
+}
+
+.home__line span {
+  font-size: max(13px, calc(16 * var(--u)));
+  color: var(--ink-2);
+  letter-spacing: 0.02em;
+}
+
+.home__links {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+}
+
+@media (pointer: fine) and (min-width: 900px) and (min-aspect-ratio: 1/1) and (min-height: 540px) {
+  .home__links .btn {
+    min-height: 34px;
+  }
+}
+
+.home__hint {
+  display: none;
+}
+
+html.js .home__hint {
+  position: absolute;
+  left: 50%;
+  top: calc(840 * var(--u));
+  display: flex;
+  align-items: center;
+  gap: 1em;
+  transform: translateX(-50%);
+  font-weight: 600;
+  font-size: max(10px, calc(13 * var(--u)));
+  letter-spacing: 0.24em;
+  color: var(--sub);
+  white-space: nowrap;
+}
+
+/* the ■ breathes (.breathe) */
+.home__sq {
+  flex: none;
+  width: 0.6em;
+  height: 0.6em;
+  background: var(--ink);
+}
+
+.home__hint-t {
+  display: flex;
+  align-items: center;
+  gap: 1em;
+}
+
+.home__hint small {
+  letter-spacing: 0.16em;
+}
+
+/* ───────── phones, tablets, short windows ───────── */
+
+@media (max-width: 899px), (max-aspect-ratio: 1/1), (max-height: 539px), (pointer: coarse) and (max-width: 1400px) {
+  html.js .home {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+
+  html.js .home__frame {
+    position: relative;
+    left: auto;
+    top: auto;
+    width: auto;
+    height: auto;
+    transform: none;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    order: 1;
+  }
+
+  html.js .home__id {
+    order: 0;
+  }
+
+  html.js .home__flat {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1920 / 900;
+    margin: -10px 0 -6px;
+  }
+
+  html.js:not(.gl-on) .home__flat {
+    opacity: 0.9;
+  }
+
+  html.js .home__leaders,
+  html.js .home__hint {
+    display: none;
+  }
+
+  /* no leaders here: the callout keeps its own underline, drawn with its build */
+  html.js .home__co .callout__rule {
+    visibility: visible;
+  }
+
+  html.js .home[data-phase="enter"] .home__co .callout__rule {
+    animation: home-rule 800ms var(--ease-l2) var(--c) backwards;
+  }
+
+  html.js .home__callouts {
+    order: 3;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 22px 18px;
+    margin: 0;
+  }
+
+  html.js .home__co {
+    position: relative;
+    inset: auto;
+  }
+
+  html.js .home__co--left .callout {
+    max-width: none;
+  }
+
+  /* the pill is a link to PROFILE: a full-height touch target */
+  html.js .home__centre {
+    position: relative;
+    inset: auto;
+    order: 1;
+    min-height: 44px;
+  }
+
+  .home__pill {
+    align-self: stretch;
+    align-items: center;
+    min-width: 0;
+    flex: 1;
+  }
+
+  html.js .home__id {
+    position: relative;
+    inset: auto;
+    order: 0;
+    width: auto;
+    min-width: 0;
+  }
+
+  /* inside the gutter, or the screen scrolls sideways */
+  .home__role::after {
+    right: 0;
+  }
+}
+
+/* ───────── the overview build (MOTION-SPEC §8.1, atlas §2.14) ─────────
+   t1 is the moment the screen enters (its "enter" phase). Every rule below applies
+   only while that phase lasts and counts from it; the base styles are the end state,
+   so settling (on time, or early on any input) shows the finished overview at once.
+   A callout's own start c is its --c (views/home.ts). The typing and the hint's
+   flicker are the screen's (screens/home.ts). */
+
+/* typed twins (screens/home.ts typeIn): the real text keeps its place, invisible,
+   while an aria-hidden copy is typed over it; the profile's code uses them too */
+[data-ty] {
+  position: relative;
+}
+
+.ty {
+  display: none;
+}
+
+[data-typing] > .ty {
+  display: block;
+  position: absolute;
+  inset: 0;
+  padding: inherit;
+  pointer-events: none;
+}
+
+[data-typing] > .ty__src {
+  opacity: 0;
+}
+
+/* t1 + 182: the centre ◎ pops (R7) and the name block slides in from the left (M18) */
+html.js .home[data-phase="enter"] .home__ring {
+  animation: home-pop 327ms var(--ease-pop) 182ms backwards;
+}
+
+html.js .home[data-phase="enter"] .home__id {
+  animation:
+    home-slide 764ms cubic-bezier(0.1, 0, 0, 1) 182ms backwards,
+    home-fade 145ms linear 182ms backwards;
+}
+
+/* t1 + 509: the pill's plate runs out from a 1px cursor (B3); its text types at + 891 */
+html.js .home[data-phase="enter"] .home__pill {
+  animation:
+    home-bar 836ms var(--ease-b3) 509ms backwards,
+    d1-wait 0s 509ms backwards;
+}
+
+/* t1 + 946: the links' plates wipe in (B2 first entrance), the second two frames later */
+html.js .home[data-phase="enter"] .home__links .btn {
+  animation:
+    home-wipe 436ms var(--ease-wipe) 946ms backwards,
+    d1-wait 0s 946ms backwards;
+}
+
+html.js .home[data-phase="enter"] .home__links .btn + .btn {
+  animation-delay: 1019ms;
+}
+
+/* c: the anchor dot pops and the leader draws out of it, over the elbow, along the rule */
+html.js .home[data-phase="enter"] .home__dot {
+  animation: home-dot 73ms var(--ease-expo) var(--c) backwards;
+}
+
+html.js .home[data-phase="enter"] .home__lead {
+  stroke-dasharray: 1 1;
+  animation: home-draw 800ms var(--ease-l2) var(--c) backwards;
+}
+
+/* c + 36: the white Γ — its upright grows up (145 ms, accelerating), then the arm runs out (436) */
+html.js .home[data-phase="enter"] .home__co .callout__br {
+  animation: home-arm 581ms linear calc(var(--c) + 36ms) backwards;
+}
+
+/* c + 509: the black label bar runs out from a 1px cursor, white caps only under it (B3) */
+html.js .home[data-phase="enter"] .home__co .tag {
+  animation:
+    home-bar 836ms var(--ease-b3) calc(var(--c) + 509ms) backwards,
+    d1-wait 0s calc(var(--c) + 509ms) backwards;
+}
+
+/* hidden until its delay, then nothing: a 0 s animation holds its first frame only while it waits
+   (shared by the profile and research builds) */
+@keyframes d1-wait {
+  from,
+  to {
+    opacity: 0;
+  }
+}
+
+/* opaque from its first frame, invisible before it */
+@keyframes home-pop {
+  0% {
+    scale: 0.3;
+    opacity: 0;
+  }
+  0.1% {
+    opacity: 1;
+  }
+  100% {
+    scale: 1;
+  }
+}
+
+@keyframes home-slide {
+  from {
+    translate: calc(-160 * var(--u)) 0;
+  }
+}
+
+@keyframes home-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+/* the clip reaches past the plate's glow above, below and to the right */
+@keyframes home-bar {
+  from {
+    clip-path: inset(calc(-24 * var(--u)) calc(100% - 1px) calc(-24 * var(--u)) 0);
+  }
+  to {
+    clip-path: inset(calc(-24 * var(--u)) calc(-24 * var(--u)) calc(-24 * var(--u)) 0);
+  }
+}
+
+@keyframes home-wipe {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes home-dot {
+  from {
+    scale: 0;
+  }
+}
+
+@keyframes home-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* 145 of the 581 ms is the upright (24.96 %) */
+@keyframes home-arm {
+  0% {
+    clip-path: inset(100% calc(100% - max(3px, calc(7 * var(--u)))) 0 0);
+    animation-timing-function: var(--ease-in-fade);
+  }
+  24.96% {
+    clip-path: inset(0 calc(100% - max(3px, calc(7 * var(--u)))) 0 0);
+    animation-timing-function: var(--ease-expo);
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes home-rule {
+  from {
+    transform: scaleX(0);
+  }
+}

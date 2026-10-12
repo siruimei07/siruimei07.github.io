@@ -1,0 +1,1179 @@
+/* The terminal layout (html.js): fixed chrome around full-viewport screens,
+   measured in --u from the PV's 1920×1080 frames. Section frame shared by all
+   six files lives here too. Phones get their own flow at the bottom. Motion is
+   driven by app.ts (WAAPI on the PV's clock); the states here are the rest
+   states, so a cancelled or finished animation always lands on them. */
+
+html.js,
+html.js body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+html.js body {
+  background:
+    radial-gradient(120% 90% at 50% 40%, var(--bg-hi) 0%, var(--bg) 55%, var(--bg-lo) 120%);
+}
+
+html.js .screens {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-screen);
+}
+
+html.js .screen {
+  position: absolute;
+  inset: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+html.js .screen.is-active {
+  visibility: visible;
+  pointer-events: auto;
+}
+
+html.js .screen:focus {
+  outline: none;
+}
+
+/* ───────── brand lockup (RHINE LAB / SYNTHESIZE INFORMATION / ANALYSIS OS) ───────── */
+
+.brand {
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.brand a {
+  display: inline-flex;
+  flex-direction: column;
+  width: max(150px, calc(268 * var(--u)));
+  line-height: 1;
+  color: var(--ink);
+  user-select: none;
+}
+
+.brand a > b {
+  font-weight: 700;
+  font-size: max(24px, calc(44 * var(--u)));
+  line-height: 1.04;
+  letter-spacing: 0.035em;
+  white-space: nowrap;
+}
+
+.brand a > span {
+  font-weight: 500;
+  font-size: max(10.4px, calc(18.6 * var(--u)));
+  line-height: 1.26;
+  letter-spacing: 0.012em;
+  white-space: nowrap;
+}
+
+.brand a > i {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-style: normal;
+  font-size: max(19.6px, calc(35 * var(--u)));
+  line-height: 1.12;
+  white-space: nowrap;
+}
+
+.brand a > i > span {
+  font-weight: 400;
+  letter-spacing: 0.05em;
+}
+
+.brand a > i > b {
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.brand a > b {
+  transition: color var(--t-hover) var(--ease-enter);
+}
+
+.brand a:hover > b,
+.brand a:focus-visible > b {
+  color: var(--hover);
+}
+
+.brand__g.is-off {
+  opacity: 0;
+}
+
+html.js .chrome {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: var(--z-chrome);
+  height: 0;
+}
+
+html.js .brand {
+  position: fixed;
+  left: calc(60 * var(--u));
+  top: calc(114 * var(--u));
+}
+
+/* ───────── pager (the PV's orange • •—○ • •) ───────── */
+
+.pager {
+  display: flex;
+  gap: 4px;
+}
+
+html.js .pager {
+  position: fixed;
+  right: calc(52 * var(--u));
+  top: calc(110 * var(--u));
+  align-items: center;
+}
+
+/* the PV shows the dots only where no glass plate sits: the overview */
+html.js[data-view="sect"] .pager {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.pager a {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: max(26px, calc(30 * var(--u)));
+  height: max(26px, calc(30 * var(--u)));
+}
+
+.pager a > i {
+  width: max(7px, calc(9 * var(--u)));
+  height: max(7px, calc(9 * var(--u)));
+  border-radius: 50%;
+  background: var(--orange);
+  transition:
+    background-color var(--t-hover) var(--ease-enter),
+    box-shadow var(--t-hover) var(--ease-enter);
+}
+
+.pager a > span {
+  position: absolute;
+  top: 100%;
+  right: 50%;
+  translate: 50% 0;
+  padding-top: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  color: var(--ink);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pager a:hover > span,
+.pager a:focus-visible > span {
+  opacity: 1;
+}
+
+.pager a[aria-current="page"] > i {
+  background: transparent;
+  box-shadow: inset 0 0 0 max(1.6px, calc(2.4 * var(--u))) var(--orange);
+  transform: scale(1.55);
+}
+
+/* the short line that ties the previous dot to the current ring */
+.pager a[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  right: 50%;
+  top: 50%;
+  width: calc(100% - 4px);
+  height: max(1.5px, calc(2 * var(--u)));
+  margin-right: max(6px, calc(7 * var(--u)));
+  background: var(--orange);
+  transform: translateY(-50%);
+}
+
+.pager a:first-child[aria-current="page"]::before {
+  display: none;
+}
+
+/* ───────── left rail, rule and lime marker ───────── */
+
+.rail {
+  display: none;
+}
+
+html.js .rail {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  z-index: var(--z-chrome);
+  width: calc(430 * var(--u));
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: calc(250 * var(--u)) 0 calc(250 * var(--u)) calc(46 * var(--u));
+  pointer-events: none;
+  /* hidden, not just transparent, on the overview: no invisible tab stops */
+  opacity: 0;
+  visibility: hidden;
+}
+
+html.js[data-view="sect"] .rail {
+  opacity: 1;
+  visibility: visible;
+}
+
+html.js[data-view="sect"] .rail > * {
+  pointer-events: auto;
+}
+
+.rail__band {
+  position: absolute;
+  left: 0;
+  top: calc(407 * var(--u));
+  width: calc(12 * var(--u));
+  height: calc(291 * var(--u));
+  background: var(--ink);
+}
+
+.rail__dash {
+  display: block;
+  /* the rail runs full on short screens: the thin rules must not be squeezed out */
+  flex-shrink: 0;
+  width: calc(14 * var(--u));
+  height: max(1.5px, calc(2 * var(--u)));
+  background: var(--ink);
+  margin: calc(22 * var(--u)) 0 calc(26 * var(--u));
+}
+
+.rail__cmd {
+  margin-top: auto;
+}
+
+.rail .tag--xs {
+  position: relative;
+}
+
+.rail .tag--xs::before {
+  content: "";
+  position: absolute;
+  left: calc(-6 * var(--u));
+  top: 0;
+  bottom: 0;
+  width: max(1.5px, calc(2.5 * var(--u)));
+  background: var(--ink);
+}
+
+/* starts at 60u and must end short of the tile at 253u, even when the 10px floor kicks in */
+.rail__note {
+  width: min(calc(186 * var(--u)), calc(193 * var(--u) - 12px));
+  margin: calc(12 * var(--u)) 0 calc(28 * var(--u)) calc(14 * var(--u));
+  font-size: max(10px, calc(10.5 * var(--u)));
+  font-weight: 500;
+  line-height: 1.75;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.rail__nav ol {
+  display: flex;
+  flex-direction: column;
+  gap: max(1px, calc(2 * var(--u)));
+}
+
+.rail__nav a {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2.2em auto auto;
+  /* the Chinese name hugs the label: the lower rows sit beside the tile on small screens */
+  justify-content: start;
+  align-items: baseline;
+  align-content: center;
+  column-gap: 0.5em;
+  /* a 24px target at any size (WCAG 2.5.8) */
+  min-height: 24px;
+  padding: max(2px, calc(3 * var(--u))) 0;
+  font-size: max(11px, calc(13.5 * var(--u)));
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1.15;
+  color: var(--sub);
+  transition: color var(--t-hover) var(--ease-enter);
+}
+
+.rail__nav a > b {
+  font-family: var(--f-mono);
+  font-weight: 500;
+  font-size: 0.86em;
+  letter-spacing: 0;
+}
+
+/* full --sub, not faded: it has to keep 4.5:1 on the paper */
+.rail__nav a > small {
+  font-size: max(10px, 0.78em);
+  font-weight: 400;
+  letter-spacing: 0.12em;
+}
+
+/* hover is the site's hover colour; only the current entry is full ink */
+.rail__nav a:hover,
+.rail__nav a:focus-visible {
+  color: var(--hover);
+}
+
+.rail__nav a[aria-current="page"] {
+  color: var(--ink);
+}
+
+.rail__nav a[aria-current="page"] > span {
+  font-weight: 800;
+}
+
+.rail__nav a[aria-current="page"]::after {
+  content: "";
+  position: absolute;
+  left: -1.1em;
+  top: 50%;
+  width: 0.55em;
+  height: 0.55em;
+  background: var(--ink);
+  transform: translateY(-50%);
+}
+
+/* the section chain of 3D plates passes behind the lower rail, as in the PV: a halo of
+   paper keeps the small text there legible over it, in both themes */
+.rail__log,
+.rail__note,
+.foot-sect > span {
+  text-shadow:
+    0 0 2px var(--bg),
+    0 0 6px var(--bg),
+    0 0 12px var(--bg);
+}
+
+.rail__log {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: calc(12 * var(--u)) 0 calc(14 * var(--u)) 0;
+  padding-left: calc(10 * var(--u));
+  border-left: 1px dotted var(--sub);
+  font-family: var(--f-mono);
+  font-size: max(10px, calc(10 * var(--u)));
+  line-height: 1.5;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--sub);
+  max-height: calc(110 * var(--u));
+  min-height: 40px;
+  overflow: hidden;
+  width: calc(214 * var(--u));
+  min-width: 150px;
+}
+
+.rail__log li {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rail__log li:last-child {
+  color: var(--ink);
+}
+
+.rail__end {
+  display: block;
+  flex-shrink: 0;
+  width: calc(214 * var(--u));
+  height: 1px;
+  background: linear-gradient(90deg, var(--ink) 0 calc(14 * var(--u)), transparent calc(14 * var(--u)) calc(24 * var(--u)), var(--ink) calc(24 * var(--u)));
+}
+
+.rule {
+  display: none;
+}
+
+html.js .rule {
+  display: block;
+  position: fixed;
+  left: calc(430 * var(--u));
+  top: 0;
+  bottom: 0;
+  /* behind the screens: section tiles cover it, as in the PV */
+  z-index: calc(var(--z-screen) - 1);
+  width: max(1px, calc(2 * var(--u)));
+  background: color-mix(in srgb, var(--ink) 88%, transparent);
+  transform-origin: top;
+  transform: scaleY(0);
+  pointer-events: none;
+}
+
+html.js[data-view="sect"] .rule {
+  transform: scaleY(1);
+}
+
+/* the lime marker rides on the rule but is not part of it, so the rule's
+   scaleY draw never squashes it; it fades in once the rule has passed */
+.rule__mark {
+  display: none;
+}
+
+html.js .rule__mark {
+  display: block;
+  position: fixed;
+  left: calc(430 * var(--u) + max(1px, calc(2 * var(--u))) / 2);
+  top: 0;
+  z-index: calc(var(--z-screen) - 1);
+  width: calc(38 * var(--u));
+  height: calc(22 * var(--u));
+  min-width: 18px;
+  min-height: 10px;
+  background: var(--lime);
+  transform: translate(-50%, -50%);
+  translate: 0 var(--mark-y, 336px);
+  opacity: 0;
+  pointer-events: none;
+}
+
+html.js[data-view="sect"] .rule__mark {
+  opacity: 1;
+}
+
+/* ───────── foot lines, clock, caption ───────── */
+
+.foot-sect,
+.foot-sign,
+.caption {
+  display: none;
+}
+
+html.js .foot-sect {
+  position: fixed;
+  left: 0;
+  bottom: calc(112 * var(--u));
+  z-index: var(--z-chrome);
+  display: flex;
+  align-items: center;
+  gap: calc(27 * var(--u));
+  font-weight: 700;
+  font-size: max(11px, calc(19 * var(--u)));
+  letter-spacing: 0.01em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+[data-foot-sect] {
+  display: inline-block;
+}
+
+.foot-sect > i {
+  width: calc(46 * var(--u));
+  height: max(6px, calc(13 * var(--u)));
+  background: var(--ink);
+}
+
+html.js .foot-sign {
+  position: fixed;
+  right: calc(60 * var(--u));
+  bottom: calc(112 * var(--u));
+  z-index: var(--z-chrome);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: calc(10 * var(--u));
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.foot-clock {
+  font-family: var(--f-mono);
+  font-size: max(10px, calc(12 * var(--u)));
+  letter-spacing: 0.12em;
+  color: var(--sub);
+  font-variant-numeric: tabular-nums;
+}
+
+.foot-clock__d {
+  display: inline-flex;
+  letter-spacing: 0;
+}
+
+.foot-clock__d .roll__slot {
+  padding-right: 0.12em;
+}
+
+.foot-powered {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 500;
+  font-size: max(10.5px, calc(19 * var(--u)));
+  letter-spacing: 0.01em;
+}
+
+.foot-powered b {
+  margin-left: 0.32em;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.foot-powered i {
+  width: calc(24 * var(--u));
+  height: max(3px, calc(6 * var(--u)));
+  margin-left: calc(18 * var(--u));
+  background: var(--ink);
+}
+
+html.js .caption {
+  position: fixed;
+  left: 50%;
+  bottom: calc(30 * var(--u));
+  z-index: var(--z-chrome);
+  display: block;
+  max-width: min(92vw, calc(1100 * var(--u)));
+  transform: translateX(-50%);
+  font-family: var(--f-cjk);
+  font-weight: 500;
+  font-size: max(13px, calc(23 * var(--u)));
+  line-height: 1.3;
+  letter-spacing: 0.04em;
+  text-align: center;
+  color: var(--ink);
+  text-shadow:
+    0 0 6px var(--bg),
+    0 0 2px var(--bg);
+  pointer-events: none;
+}
+
+/* chrome stays out of the way during the opening */
+html.js.is-booting .chrome,
+html.js.is-booting .rail,
+html.js.is-booting .rule,
+html.js.is-booting .rule__mark,
+html.js.is-booting .foot-sect,
+html.js.is-booting .foot-sign,
+html.js.is-booting .caption,
+html.js.is-booting .screens {
+  opacity: 0;
+  visibility: hidden;
+}
+
+html.js .chrome,
+html.js .foot-sect,
+html.js .foot-sign,
+html.js .caption,
+html.js .screens {
+  transition: opacity 545ms var(--ease-enter);
+}
+
+/* the screen-change veil: over the canvas and the ambient layer, under the screens
+   (white for the white-out, tile black for the push-in; app.ts sets its opacity) */
+.veil,
+.mb-defs {
+  display: none;
+}
+
+html.js .veil {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+}
+
+:root[data-theme="dark"] .veil {
+  background: var(--tile);
+}
+
+/* the motion-blur filter is referenced by url(); it must exist, not render */
+html.js .mb-defs {
+  display: block;
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* ───────── toast ───────── */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  top: calc(env(safe-area-inset-top) + 40 * var(--u) + 12px);
+  z-index: var(--z-toast);
+  padding: 0.5em 1em 0.42em;
+  background: var(--tag-bg);
+  color: var(--tag-ink);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  transform: translateX(-50%);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.toast.is-on {
+  opacity: 1;
+  visibility: visible;
+}
+
+html:not(.js) .toast {
+  display: none;
+}
+
+/* ───────── shared section frame ───────── */
+
+html.js .sect__tile {
+  position: absolute;
+  left: calc(253 * var(--u));
+  top: calc(50% - 135 * var(--u));
+  width: calc(400 * var(--u));
+  height: calc(288 * var(--u));
+  z-index: 2;
+}
+
+/* the card is what flies in, holds, docks and drifts; the tile box itself only takes parallax */
+.sect__card {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.sect__tile .tile {
+  width: 100%;
+  height: 100%;
+}
+
+.sect__tile .lt {
+  --lt-size: calc(146 * var(--u));
+}
+
+.sect__tile .lt--two {
+  --lt-size: calc(118 * var(--u));
+}
+
+.sect__tab {
+  position: absolute;
+  left: calc(46 * var(--u));
+  top: calc(-24 * var(--u));
+  z-index: 3;
+  padding: calc(6 * var(--u)) calc(26 * var(--u)) calc(4 * var(--u));
+  /* opaque: it crosses the rule, which must not show through */
+  background: var(--bg-hi);
+  font-weight: 400;
+  font-size: max(11px, calc(22 * var(--u)));
+  letter-spacing: 0.04em;
+  line-height: 1.3;
+  color: var(--ink-2);
+}
+
+.tile__alt {
+  display: none;
+}
+
+.tile__alt.is-on {
+  display: contents;
+}
+
+/* the plate keeps the 16:9 frame's size on ultrawide and 4:3 screens
+   (at exactly 16:9 each max() is its first term) */
+html.js .sect__panel {
+  position: absolute;
+  left: calc(805 * var(--u));
+  right: max(calc(35 * var(--u)), calc(100vw - 1885 * var(--u)));
+  top: max(calc(45 * var(--u)), calc(50% - 495 * var(--u)));
+  bottom: max(calc(50 * var(--u)), calc(50% - 490 * var(--u)));
+  perspective: calc(2600 * var(--u));
+  perspective-origin: 70% 50%;
+}
+
+html.js .sect__glass {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: calc(64 * var(--u)) calc(72 * var(--u)) calc(56 * var(--u)) calc(96 * var(--u));
+  transform: rotateY(-6deg);
+  transform-origin: 100% 50%;
+}
+
+.sect__ghost {
+  position: absolute;
+  z-index: -1;
+  top: calc(30 * var(--u));
+  left: 21%;
+  right: 0;
+  overflow: hidden;
+  font-size: calc(118 * var(--u));
+  color: color-mix(in srgb, var(--ink) 5%, transparent);
+  text-shadow: none;
+}
+
+.sect__orb {
+  position: absolute;
+  left: calc(64 * var(--u));
+  top: calc(130 * var(--u));
+  width: calc(34 * var(--u));
+  height: calc(34 * var(--u));
+  border-radius: 50%;
+  box-shadow:
+    inset 0 0 0 max(1px, calc(2 * var(--u))) var(--glass-edge),
+    0 0 calc(12 * var(--u)) rgba(0, 0, 0, 0.06);
+}
+
+.sect__orb > i {
+  position: absolute;
+  inset: 22%;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 max(1px, calc(2.5 * var(--u))) color-mix(in srgb, var(--ink) 30%, transparent);
+}
+
+.sect__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: calc(26 * var(--u));
+}
+
+.sect__h {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.7em;
+  min-width: calc(300 * var(--u));
+  padding: calc(5 * var(--u)) calc(22 * var(--u)) calc(4 * var(--u)) calc(20 * var(--u));
+  background: color-mix(in srgb, var(--bg-hi) 78%, transparent);
+  box-shadow: 0 calc(6 * var(--u)) calc(14 * var(--u)) rgba(40, 32, 24, 0.07);
+  font-weight: 500;
+  font-size: max(12px, calc(16 * var(--u)));
+  letter-spacing: 0.06em;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+.sect__no {
+  font-family: var(--f-mono);
+  font-size: max(11px, 0.86em);
+  color: var(--sub);
+}
+
+.sect__h small {
+  font-weight: 400;
+  font-size: max(11px, 0.9em);
+  color: var(--sub);
+  letter-spacing: 0.12em;
+}
+
+.sect__access {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: calc(10 * var(--u));
+}
+
+.sect__access .tag--grey {
+  font-size: max(12px, calc(20 * var(--u)));
+  padding-inline: 0.8em;
+}
+
+.sect__bodywrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  isolation: isolate;
+}
+
+/* a stacking context of its own, so nothing in the content paints above the frost */
+.sect__body {
+  position: relative;
+  z-index: 0;
+  height: 100%;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+  padding-right: calc(8 * var(--u));
+}
+
+/* ── the reveal (MOTION-SPEC §7.5): frost over the body, the decryption marks and
+   line above it, and the CONFIDENTIALITY label; all hidden unless app.ts shows them ── */
+.sect__frost,
+.sect__decrypt,
+.sect__decrypt-label {
+  display: none;
+}
+
+html.js .sect__frost {
+  display: block;
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  visibility: hidden;
+  opacity: 0;
+  background: color-mix(in srgb, var(--bg-hi) 55%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(0.9);
+  backdrop-filter: blur(14px) saturate(0.9);
+  pointer-events: none;
+}
+
+html.js .sect__decrypt {
+  display: block;
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.decrypt__line {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: max(1px, calc(2 * var(--u)));
+  stroke-linecap: butt;
+}
+
+.decrypt__mark,
+.decrypt__pt {
+  fill: var(--ink);
+}
+
+html.js .sect__decrypt-label {
+  display: block;
+  position: absolute;
+  right: 4%;
+  top: 50%;
+  z-index: 6;
+  translate: 0 -50%;
+  visibility: hidden;
+  font-size: max(12px, calc(21 * var(--u)));
+  line-height: 1.2;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  color: var(--ink);
+  pointer-events: none;
+}
+
+.sect__decrypt-label > span {
+  font-weight: 600;
+}
+
+.sect__decrypt-label > b {
+  font-weight: 700;
+}
+
+/* RhineLabUI occlusion bars (document decryption) laid over [data-occlude] lines */
+.is-occluded {
+  position: relative;
+}
+
+.occl {
+  position: absolute;
+  z-index: 1;
+  display: block;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+}
+
+.occl > i {
+  position: absolute;
+  inset: 0;
+  display: block;
+  background: var(--ink);
+}
+
+/* the head's tags take their text in through their own right edge (T7b) */
+.sect__access .tag {
+  overflow: clip;
+}
+
+.sect__access .tag > span {
+  display: inline-block;
+}
+
+.sect__foot {
+  margin-top: calc(18 * var(--u));
+}
+
+/* ───────── phones, narrow or short windows, touch tablets ───────── */
+
+/* The shared phone query, identical in tokens.css, the screen styles and
+   src/three/scene.ts: narrow, portrait or short windows, and touch tablets
+   up to 1400px wide (the 16:9 frame cannot give them 40px touch targets).
+   Screens scroll in one centred column, at most 880px wide. */
+@media (max-width: 899px), (max-aspect-ratio: 1/1), (max-height: 539px), (pointer: coarse) and (max-width: 1400px) {
+  /* a frosted top bar holds the lockup while screens scroll beneath it */
+  html.js .chrome {
+    height: calc(84px + env(safe-area-inset-top));
+    background: color-mix(in srgb, var(--bg) 86%, transparent);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 1px 0 var(--hair);
+  }
+
+  html.js .brand {
+    left: max(16px, env(safe-area-inset-left));
+    top: calc(12px + env(safe-area-inset-top));
+  }
+
+  /* sized so the middle line keeps the 10px label floor */
+  .brand a {
+    width: 145px;
+  }
+
+  .brand a > b {
+    font-size: 23.4px;
+  }
+
+  .brand a > span {
+    font-size: 10px;
+  }
+
+  .brand a > i {
+    font-size: 18.7px;
+  }
+
+  html.js .pager {
+    display: none;
+  }
+
+  html.js .rule,
+  html.js .rule__mark,
+  html.js .foot-sect,
+  html.js .foot-sign,
+  html.js .caption,
+  html.js [data-caption-say] {
+    display: none;
+  }
+
+  /* the rail becomes a bottom tab bar, on every screen */
+  html.js .rail {
+    top: auto;
+    right: 0;
+    width: auto;
+    height: auto;
+    padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    flex-direction: row;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 -1px 0 var(--hair);
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  html.js .rail > * {
+    pointer-events: auto;
+  }
+
+  html.js .rail > :not(.rail__nav) {
+    display: none;
+  }
+
+  html.js .rail__nav {
+    width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  /* six equal tabs: 53px each at 320px wide, never below 40px */
+  html.js .rail__nav ol {
+    flex-direction: row;
+    gap: 0;
+    margin: 0;
+    min-width: 0;
+  }
+
+  html.js .rail__nav li {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  html.js .rail__nav a {
+    grid-template-columns: auto;
+    justify-content: stretch;
+    justify-items: center;
+    min-width: 0;
+    min-height: 54px;
+    padding: 8px 4px 6px;
+    font-size: 11px;
+    text-align: center;
+  }
+
+  html.js .rail__nav a > b {
+    font-size: 10px;
+  }
+
+  /* short Chinese names fit the tab bar; the English label stays for screen readers */
+  html.js .rail__nav a > span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  html.js .rail__nav a > small {
+    font-size: 13px;
+    letter-spacing: 0.08em;
+  }
+
+  html.js .rail__nav a[aria-current="page"] > small {
+    font-weight: 700;
+  }
+
+  html.js .rail__nav a[aria-current="page"]::after {
+    left: 50%;
+    top: 0;
+    width: 28px;
+    height: 3px;
+    background: var(--lime-ink);
+    transform: translateX(-50%);
+  }
+
+  /* scroll-padding keeps a focused control clear of both frosted bars */
+  html.js .screen {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: calc(104px + env(safe-area-inset-top)) max(16px, env(safe-area-inset-right), calc(50% - 440px)) calc(84px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left), calc(50% - 440px));
+    scroll-padding-top: calc(104px + env(safe-area-inset-top));
+    scroll-padding-bottom: calc(84px + env(safe-area-inset-bottom));
+  }
+
+  .toast {
+    top: calc(env(safe-area-inset-top) + 96px);
+  }
+
+  html.js .sect__tile {
+    position: relative;
+    left: auto;
+    top: auto;
+    width: min(100%, 340px);
+    height: 168px;
+    margin: 0 0 22px;
+  }
+
+  .sect__tile .lt {
+    --lt-size: 82px;
+  }
+
+  .sect__tile .lt--two {
+    --lt-size: 64px;
+  }
+
+  .sect__tab {
+    left: 18px;
+    top: -14px;
+    font-size: 11px;
+    padding: 3px 14px 2px;
+  }
+
+  html.js .sect__panel {
+    position: relative;
+    inset: auto;
+    perspective: none;
+  }
+
+  html.js .sect__glass {
+    height: auto;
+    padding: 22px 18px 20px;
+    transform: none;
+  }
+
+  .sect__ghost {
+    font-size: 58px;
+    top: 10px;
+    left: 18px;
+  }
+
+  .sect__orb {
+    display: none;
+  }
+
+  .sect__bodywrap {
+    flex: none;
+  }
+
+  .sect__body {
+    height: auto;
+    overflow: visible;
+    padding-right: 0;
+  }
+
+  .sect__h {
+    min-width: 0;
+  }
+}
+
+/* landscape phones: both bars shrink (lockup on one line, tabs without
+   numerals) so the content keeps at least 280px of height */
+@media (orientation: landscape) and (max-height: 500px) {
+  html.js .chrome {
+    height: calc(40px + env(safe-area-inset-top));
+  }
+
+  html.js .brand {
+    top: calc(9px + env(safe-area-inset-top));
+  }
+
+  .brand a {
+    position: relative;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 12px;
+    width: auto;
+  }
+
+  /* the one-line lockup is 20px tall; its touch target fills the 40px bar */
+  .brand a::after {
+    content: "";
+    position: absolute;
+    inset: -10px -8px;
+  }
+
+  .brand a > b {
+    font-size: 19px;
+  }
+
+  .brand a > span {
+    display: none;
+  }
+
+  .brand a > i {
+    gap: 0.3em;
+    font-size: 15px;
+  }
+
+  html.js .rail__nav a {
+    align-content: center;
+    min-height: 40px;
+    padding: 4px 4px 3px;
+  }
+
+  html.js .rail__nav a > b {
+    display: none;
+  }
+
+  html.js .screen {
+    padding-top: calc(52px + env(safe-area-inset-top));
+    padding-bottom: calc(52px + env(safe-area-inset-bottom));
+    scroll-padding-top: calc(52px + env(safe-area-inset-top));
+    scroll-padding-bottom: calc(52px + env(safe-area-inset-bottom));
+  }
+
+  .toast {
+    top: calc(env(safe-area-inset-top) + 52px);
+  }
+}

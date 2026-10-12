@@ -1,0 +1,511 @@
+/* The opening (PV 0:06–0:27) on RhineLabUI's timeline (src/boot/motion.ts).
+   Static layout in --u, measured from the PV frames around the centre of the
+   1920×1080 frame; boot.ts writes opacity, a few custom properties (--lx, --bx,
+   --track, --dx/--dy, --wash, --paper, --out), clip-paths, the rings' stroke
+   widths and the mark's and rings' SVG geometry. Dark theme is the PV's dark
+   version: dark paper, pale ink. Without JavaScript the whole thing is
+   display: none (base.css). */
+
+.boot {
+  display: none;
+}
+
+html.js .boot {
+  /* the white ring and its cap, words knocked out of the black panel, the exit's wash, the DNA strokes */
+  --boot-pale: #fff;
+  --boot-knock: var(--tag-ink);
+  --boot-wash: #fff;
+  --boot-dna: rgba(255, 255, 255, 0.8);
+  /* the mark slides left of the identity line, and PERMISSION AUTHORIZED closes from a wide
+     tracking: both in full on the 16:9 frame, less on phones */
+  --logo-k: 1;
+  --track-k: 1;
+
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-boot);
+  display: block;
+  overflow: hidden;
+  color: var(--ink);
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+:root[data-theme="dark"] .boot {
+  --boot-pale: color-mix(in srgb, var(--ink) 42%, transparent);
+  --boot-wash: color-mix(in srgb, var(--ink) 14%, var(--bg));
+  --boot-dna: color-mix(in srgb, var(--ink) 9%, transparent);
+}
+
+/* ───────── paper ───────── */
+
+.boot__paper {
+  position: absolute;
+  inset: 0;
+  /* the same paper as <body>, so clearing it at the exit is invisible */
+  background: radial-gradient(120% 90% at 50% 40%, var(--bg-hi) 0%, var(--bg) 55%, var(--bg-lo) 120%);
+  opacity: var(--paper, 1);
+}
+
+.boot__drift {
+  position: absolute;
+  inset: -64px;
+  opacity: 0.42;
+  translate: calc(var(--dx, 0) * var(--u)) calc(var(--dy, 0) * var(--u));
+  scale: 1.08;
+  will-change: translate;
+}
+
+.boot__dna {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  filter: blur(5px);
+}
+
+.boot__dna path {
+  fill: none;
+  stroke: var(--boot-dna);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.boot__strand {
+  stroke-width: 20;
+}
+
+.boot__rung {
+  stroke-width: 7;
+  opacity: 0.45;
+}
+
+/* behind the words: the paper whitens, the ink stays */
+.boot__wash {
+  position: absolute;
+  inset: 0;
+  background: var(--boot-wash);
+  opacity: var(--wash, 0);
+}
+
+/* ───────── scene (everything that leaves at the exit) ───────── */
+
+.boot__scene {
+  position: absolute;
+  inset: 0;
+  /* the welcome card's own origin in the PV (50% / 44% of its box) */
+  transform-origin: 50% calc(50% + 12.6 * var(--u));
+}
+
+/* the corner copy inherits whatever the real chrome uses; the scene is set in Montserrat */
+.boot__scene,
+.boot__skip {
+  font-family: var(--f-latin);
+}
+
+/* low specificity, so each line's own margin below wins */
+:where(.boot__scene) p {
+  margin: 0;
+}
+
+.boot__access,
+.boot__logo,
+.boot__auth,
+.boot__scan,
+.boot__card,
+.boot__cap,
+.boot__skip {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.boot__t {
+  white-space: pre;
+}
+
+.boot__t > [data-ghost],
+.boot__t > [data-off] {
+  visibility: hidden;
+}
+
+/* typed from a fixed left, centred on the frame as a whole line */
+.boot__access {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  font-weight: 500;
+  font-size: max(12px, calc(18 * var(--u)));
+  line-height: 1;
+  letter-spacing: 0.045em;
+  white-space: nowrap;
+}
+
+/* ───────── the ∞, drawn as one dash along its contour ───────── */
+
+.boot__logo {
+  position: absolute;
+  /* starts centred; --lx (frame px) slides it to x = 516, left of the identity line */
+  left: calc(50% - 148 * var(--u));
+  top: calc(50% - 77 * var(--u));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: calc(296 * var(--u));
+  translate: calc(var(--lx, 0) * var(--logo-k) * var(--u)) 0;
+}
+
+.boot__mark {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 310 / 145;
+  overflow: visible;
+}
+
+.boot__mark path {
+  fill: none;
+  stroke: var(--ink);
+}
+
+.boot__contour {
+  stroke-width: 26;
+  stroke-dasharray: 0 1;
+}
+
+.boot__plus,
+.boot__minus {
+  stroke-width: 15;
+  opacity: 0;
+}
+
+.boot__name {
+  margin-top: calc(16 * var(--u));
+  /* the tracking would push the word off centre: pay it back on the left */
+  padding-left: 0.68em;
+  font-weight: 700;
+  font-size: max(10px, calc(15.5 * var(--u)));
+  line-height: 1;
+  letter-spacing: 0.68em;
+  white-space: nowrap;
+}
+
+/* ───────── identity line ───────── */
+
+.boot__auth {
+  position: absolute;
+  left: calc(50% - 27 * var(--u));
+  top: 50%;
+  display: flex;
+  align-items: center;
+  gap: 0.42em;
+  translate: 0 -50%;
+  font-weight: 500;
+  font-size: max(12px, calc(19.5 * var(--u)));
+  line-height: 1;
+  letter-spacing: 0.012em;
+  white-space: nowrap;
+}
+
+.boot__dash {
+  flex: none;
+  width: 0.36em;
+  height: max(2px, 0.13em);
+  background: currentColor;
+}
+
+/* ───────── permission rings, drawn in the frame's own pixels ───────── */
+
+.boot__scan {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(1920 * var(--u));
+  height: calc(1080 * var(--u));
+  translate: -50% -50%;
+}
+
+.boot__scan svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  overflow: visible;
+}
+
+.boot__rings path {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+/* resting widths; while the rings close in, boot.ts thickens them with their radius */
+.boot__rings .boot__r-outer {
+  stroke-width: 2.75;
+}
+
+.boot__rings .boot__r-pale {
+  stroke: var(--boot-pale);
+  stroke-width: 5;
+}
+
+.boot__r-orange {
+  fill: var(--orange);
+}
+
+.boot__r-sat,
+.boot__r-core,
+.boot__r-cap {
+  fill: var(--ink);
+}
+
+.boot__r-cap--pale {
+  fill: var(--boot-pale);
+}
+
+.boot__perm {
+  --perm-track: calc(var(--track, 40) * var(--track-k) * var(--u));
+
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  /* tracking is animated; the same amount on the left keeps the line centred */
+  padding-left: var(--perm-track);
+  font-weight: 400;
+  font-size: max(12px, calc(27.5 * var(--u)));
+  line-height: 1;
+  letter-spacing: var(--perm-track);
+  white-space: nowrap;
+  opacity: 0;
+}
+
+/* ───────── welcome card (the PV's 480 × 340 box at 720, 403) ───────── */
+
+.boot__card {
+  position: absolute;
+  left: 50%;
+  top: calc(50% - 137 * var(--u));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: calc(480 * var(--u));
+  translate: -50% 0;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* the black panel of the cut in */
+.boot__panel {
+  position: absolute;
+  left: 50%;
+  top: calc(-59 * var(--u));
+  width: calc(470 * var(--u));
+  height: calc(392 * var(--u));
+  translate: -50% 0;
+  background: var(--tag-bg);
+  opacity: 0;
+}
+
+.boot__wt {
+  position: relative;
+  font-size: max(19px, calc(52.5 * var(--u)));
+  line-height: max(23px, calc(65 * var(--u)));
+  letter-spacing: 0.035em;
+  padding-left: 0.035em;
+}
+
+/* the name, and the black bar sweeping over it (inverting what it covers) */
+.boot__co {
+  position: relative;
+  width: calc(407 * var(--u));
+  height: max(21px, calc(58 * var(--u)));
+  margin-top: calc(2 * var(--u));
+  font-size: max(17px, calc(48 * var(--u)));
+  letter-spacing: 0.03em;
+  opacity: 0;
+}
+
+.boot__co > span {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-left: 0.03em;
+}
+
+.boot__co-hl {
+  background: var(--tag-bg);
+  color: var(--tag-ink);
+  clip-path: inset(0 100% 0 0);
+}
+
+.boot__db {
+  margin-top: calc(6 * var(--u));
+  font-size: max(13px, calc(33.5 * var(--u)));
+  line-height: max(16px, calc(43 * var(--u)));
+  letter-spacing: 0.012em;
+  opacity: 0;
+}
+
+.boot__wlogo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: calc(12 * var(--u));
+  opacity: 0;
+}
+
+.boot__wmark {
+  display: block;
+  width: calc(203 * var(--u));
+  height: auto;
+  aspect-ratio: 310 / 145;
+}
+
+.boot__name--sm {
+  margin-top: calc(10 * var(--u));
+  font-size: max(10px, calc(11 * var(--u)));
+  letter-spacing: 0.6em;
+  padding-left: 0.6em;
+}
+
+/* ───────── the boot's own corner lockup and signature (same metrics as the chrome) ───────── */
+
+.boot__corner {
+  pointer-events: none;
+}
+
+/* each line slides in from --bx frame px to the right */
+.boot__brand a > * {
+  opacity: 0;
+  translate: calc(var(--bx, 234) * var(--u)) 0;
+}
+
+.boot__sign {
+  position: absolute;
+  right: calc(60 * var(--u));
+  bottom: calc(112 * var(--u));
+  line-height: 1;
+  white-space: nowrap;
+  visibility: hidden;
+}
+
+/* ───────── caption & skip ───────── */
+
+.boot__cap {
+  position: absolute;
+  left: 50%;
+  bottom: calc(30 * var(--u));
+  /* left: 50% would otherwise halve the room it may wrap in */
+  width: max-content;
+  max-width: min(92vw, calc(1100 * var(--u)));
+  translate: -50% 0;
+  font-family: var(--f-cjk);
+  font-weight: 500;
+  font-size: max(13px, calc(23 * var(--u)));
+  line-height: 1.3;
+  letter-spacing: 0.04em;
+  text-align: center;
+  color: var(--ink);
+  text-shadow:
+    0 0 6px var(--bg),
+    0 0 2px var(--bg);
+  pointer-events: none;
+}
+
+.boot__skip {
+  position: absolute;
+  right: calc(60 * var(--u));
+  bottom: calc(112 * var(--u) + max(26px, calc(34 * var(--u))));
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  min-height: 40px;
+  padding: 0 0 0 1.2em;
+  font-weight: 700;
+  font-size: max(11px, calc(14 * var(--u)));
+  letter-spacing: 0.22em;
+  color: var(--sub);
+  pointer-events: none;
+  transition: color var(--t-fast);
+}
+
+.boot__skip > span {
+  font-size: 1.3em;
+  line-height: 1;
+  letter-spacing: 0;
+  translate: 0 -0.06em;
+}
+
+.boot__skip:hover,
+.boot__skip:focus-visible {
+  color: var(--hover);
+}
+
+/* ───────── phones, tablets & narrow windows ───────── */
+
+/* the picture stacks on the centre line wherever the frame is narrow, portrait or short */
+@media (max-width: 899px), (max-aspect-ratio: 1/1), (max-height: 539px) {
+  html.js .boot {
+    --logo-k: 0;
+    /* the full 40 px opening tracking would run off a phone */
+    --track-k: 0.3;
+  }
+
+  /* one helix, on the right, as in the PV's portrait crops */
+  .boot__drift {
+    inset: -64px auto -64px auto;
+    right: calc(-26dvh);
+    width: calc((100dvh + 128px) * 1920 / 1080);
+  }
+
+  .boot__auth {
+    left: 50%;
+    top: calc(50% + 150 * var(--u));
+    translate: -50% -50%;
+  }
+}
+
+/* A touch tablet held landscape lays the site out in CSS pixels (tokens.css), but the opening
+   is one fixed full-screen frame, not a page: its picture keeps the 16:9 frame's unit. The
+   corner copy, caption and SKIP below keep the chrome's metrics, so the hand-off still lines up. */
+@media (pointer: coarse) and (min-width: 900px) and (max-width: 1400px) and (min-aspect-ratio: 1001/1000) and (min-height: 540px) {
+  .boot__paper,
+  .boot__scene {
+    --u: min(calc(100vw / 1920), calc(100dvh / 1080));
+  }
+}
+
+/* wherever the chrome itself switches to its phone layout (the same query as app.css) */
+@media (max-width: 899px), (max-aspect-ratio: 1/1), (max-height: 539px), (pointer: coarse) and (max-width: 1400px) {
+  /* clear of a landscape notch; the same left as the chrome's .brand (app.css), so the hand-off lines up */
+  html.js .boot__brand {
+    left: max(16px, env(safe-area-inset-left));
+  }
+
+  .boot__sign {
+    right: max(16px, env(safe-area-inset-right));
+    bottom: calc(18px + env(safe-area-inset-bottom));
+  }
+
+  /* no signature in the chrome here to take over from this one, and the tab bar
+     fades in right beneath it at the exit: it goes the moment the exit begins */
+  .boot__sign > span {
+    opacity: calc(1 - var(--out, 0) * 10);
+  }
+
+  .boot__cap {
+    bottom: calc(52px + env(safe-area-inset-bottom));
+    max-width: calc(100vw - 2 * max(16px, env(safe-area-inset-left), env(safe-area-inset-right)));
+  }
+
+  .boot__skip {
+    right: max(16px, env(safe-area-inset-right));
+    top: calc(12px + env(safe-area-inset-top));
+    bottom: auto;
+  }
+}

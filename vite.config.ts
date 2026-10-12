@@ -11,13 +11,14 @@ function readSnapshot(): GitHubSnapshot | null {
   }
 }
 
-// Pre-renders every section into index.html so the page has real content
-// before (and without) JavaScript. In dev the renderer is reloaded through the
-// SSR module graph so edits to content.ts show up on refresh.
+// Pre-renders the opening, the overview and every section file into
+// index.html, so the page has real content before (and without) JavaScript.
+// In dev the renderer is reloaded through the SSR module graph so edits to
+// content.ts and src/views/ show up on refresh.
 function staticSections(): Plugin {
   let server: ViteDevServer | undefined;
   return {
-    name: "tsukuyomi-static-sections",
+    name: "static-sections",
     configureServer(s) {
       server = s;
     },
@@ -34,7 +35,7 @@ export default defineConfig({
   plugins: [staticSections()],
   build: {
     target: "es2022",
-    // three.js is one chunk on purpose; it is needed before the first frame.
+    // three.js is loaded on demand in its own chunk (src/three/plates.ts).
     chunkSizeWarningLimit: 900,
     assetsInlineLimit: 0,
   },
